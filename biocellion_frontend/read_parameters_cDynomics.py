@@ -59,7 +59,10 @@ print eperturbations
 # 2D case
 if ( mydomain['nDim'] == 2 ) :
    if ( mydomain['nz'] == 1 ) :
-       mydomain['nz'] = 4 
+       mydomain['nz'] = 4
+       
+if ( mydomain['nz'] < 8 ) :
+    mydomain['nz'] = 8
    
 
 write_biocell_header(diffusibles, celltypes, myreactions, myforces, eperturbations, mydomain, mygridsolver, mysimulator, dirname )

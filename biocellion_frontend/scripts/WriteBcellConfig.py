@@ -45,7 +45,6 @@ def write_biocell_config( diffusibles, celltypes, myreactions, myforces, mydomai
  
 
     config.write("\tinfo.dMax = " + str( dMax  ) +";\n")
-    config.write("\tinfo.hasBool = false;\n")
     config.write("\tinfo.numBoolVars = 0;\n")
     config.write("\tinfo.numStateModelReals = ")
     config.write("CELL_NUM_MODEL_REALS; \n") # his will change cell->
@@ -90,6 +89,7 @@ def write_biocell_config( diffusibles, celltypes, myreactions, myforces, mydomai
     config.write(sol + "];\n")
     config.write("\tgridPhiInfo.elemIdx=DIFFUSIBLE_ELEM_"+sol+";\n")
     config.write('\tgridPhiInfo.name = "'+sol+ '";' + "\n")
+    config.write('\tgridPhiInfo.syncMethod = VAR_SYNC_METHOD_DELTA;' + "\n")
     config.write("\tgridPhiInfo.aa_bcType[0][0] =")
     config.write(mygridsolver['bcType_x-'] + ";\n")
     config.write("\tgridPhiInfo.aa_bcVal[0][0] = ") 

@@ -73,7 +73,7 @@ def write_bcell_xml(diffusibles, celltypes, myreactions, myforces, mydomain, myg
  xml_output.set('path',bcell_path)
  xml_output.set('interval', str(bcell_interval) )
  xml_output.set('particle',"pvtp")
- xml_output.set('grid',"vtm")
+ xml_output.set('grid',"vthb")
  xml_output.set('start_x', str(bcell_start_x) )  
  xml_output.set('start_y', str(bcell_start_y) )
  xml_output.set('start_z', str(bcell_start_z)  )
