@@ -34,15 +34,6 @@ void ModelRoutine::updateSpAgentOutput( const VIdx& vIdx, const SpAgent& spAgent
        if ( AA_INDEX_ODE_OUTPUT[ type ][i-3] < 0 )
            v_extraScalar[i] = -1.0 ;  
        else 
-           v_extraScalar[i] = spAgent.state.getODEVal(0, AA_INDEX_ODE_OUTPUT[ type ][i-3] ) ;
-   }
-
-   // display values of ODEs  
-   for ( S32 i = 3 ; i < NUM_AGENT_OUTPUTS; i++ ) {
-       S32 type = spAgent.state.getType(); 
-       if ( AA_INDEX_ODE_OUTPUT[ type ][i-3] < 0 )
-           v_extraScalar[i] = -1.0 ;  
-       else 
           v_extraScalar[i] = spAgent.state.getODEVal(0, AA_INDEX_ODE_OUTPUT[ type ][i-3] ) ;
    }
 
