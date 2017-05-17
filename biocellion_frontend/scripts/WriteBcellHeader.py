@@ -4,7 +4,7 @@ import math
 from BiocellionParam  import diffusible_solutes, cell_types, domain_parameters, mechanical_parameters, multigrid_solver_parm, basic_simulation_param 
 from BiocellionParam import create_reaction, CreateMonodKinetic, CreateSimpleInhibition, create_e_perturbations
 
-def write_biocell_header( diffusibles, celltypes, myreactions, myforces, eperturbations, mydomain, mygridsolver, mysimulator, directory ):
+def write_biocell_header( diffusibles, celltypes, myreactions, myforces, eperturbations, mydomain, mygridsolver, mysimulator, directory, source_directory ):
 
  num_celltypes  = len( celltypes )
 

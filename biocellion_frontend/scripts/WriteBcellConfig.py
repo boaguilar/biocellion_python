@@ -2,11 +2,11 @@ import os
 import sys 
 from BiocellionParam  import diffusible_solutes, cell_types, domain_parameters, mechanical_parameters, multigrid_solver_parm, basic_simulation_param 
 
-def write_biocell_config( diffusibles, celltypes, myreactions, myforces, mydomain, mygridsolver, mysimulator, directory ):
+def write_biocell_config( diffusibles, celltypes, myreactions, myforces, mydomain, mygridsolver, mysimulator, directory, source_directory ):
 
  # write info of the agents
  config = open(directory+"/model_routine_config.cpp", 'w')
- input_config  = open('template/model_routine_config.cpp', 'r')
+ input_config  = open(source_directory+'/template/model_routine_config.cpp', 'r')
 
  for line in input_config:
      config.write(line)

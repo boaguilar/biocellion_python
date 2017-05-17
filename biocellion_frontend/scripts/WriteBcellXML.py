@@ -2,7 +2,7 @@ import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import Element, SubElement, Comment
 from ElementTree_pretty import prettify
 
-def write_bcell_xml(diffusibles, celltypes, myreactions, myforces, mydomain, mygridsolver, mysimulator, directory):
+def write_bcell_xml(diffusibles, celltypes, myreactions, myforces, mydomain, mygridsolver, mysimulator, directory, source_directory ):
 
  
  # write the files for biocellion
