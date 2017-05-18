@@ -184,6 +184,8 @@ def write_biocell_config( diffusibles, celltypes, myreactions, myforces, mydomai
     config.write("\tinfo.type  = SUMMARY_TYPE_SUM;\n")
     config.write("\tv_summaryOutputRealInfo[GRID_SUMMARY_REAL_LIVE_"+ cell  +"] = info;\n\n")
 
+ config.write("\t// Need to to clean all model parameters here, before child processes start\n")
+ config.write("\tterminateBioModel();\n")
  config.write("\n\treturn;\n")
  config.write("}\n\n")
 

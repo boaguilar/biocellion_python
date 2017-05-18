@@ -54,6 +54,9 @@ from WriteBcellGrid import write_biocell_grid
 from WriteBcellXML import write_bcell_xml  
 from WriteBcellOtherFiles import write_biocell_otherfiles  
 
+from WriteBioModel import write_biomodel_files
+from agent_species import AllAgentSpecies
+
 ## read parameters from input file.
 xmlfilename = g_model_file
 dirname = g_output_dir
@@ -71,6 +74,7 @@ if not os.path.exists(dirname+'/output'):
 
 diffusibles = dict()  # list of solutes (names)
 celltypes = dict() # list of cell types (names)
+agent_species = AllAgentSpecies()
 myreactions = dict() # list of reactions  
 eperturbations = dict() # list of perturbations
 myforces = []  # parameters for force computations
@@ -81,7 +85,7 @@ mysimulator = basic_simulation_param() # timings and other basic arameters of si
 
 
 # read xml from cDynomics
-read_xml(diffusibles, celltypes, myreactions, myforces, eperturbations, mydomain, mygridsolver, mysimulator, xmlfilename, dirname )
+read_xml(diffusibles, celltypes, agent_species, myreactions, myforces, eperturbations, mydomain, mygridsolver, mysimulator, xmlfilename, dirname )
 
 print " -----  Cell Types -------------- "
 print  celltypes
@@ -109,5 +113,5 @@ write_biocell_agent(diffusibles, celltypes, myreactions, myforces, mydomain, myg
 write_biocell_grid(diffusibles, celltypes, myreactions, myforces, mydomain, mygridsolver, mysimulator, dirname, g_source_dir )
 write_bcell_xml(diffusibles, celltypes, myreactions, myforces, mydomain,mygridsolver, mysimulator, dirname, g_source_dir )
 write_biocell_otherfiles(diffusibles, celltypes, myreactions, myforces, mydomain, mygridsolver, mysimulator, dirname, g_source_dir )
-
+write_biomodel_files( agent_species, dirname, g_source_dir )
 

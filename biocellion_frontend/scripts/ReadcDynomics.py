@@ -5,11 +5,10 @@ from xml.etree.ElementTree import Element, SubElement, Comment
 from ElementTree_pretty import prettify
 from BiocellionParam  import diffusible_solutes, cell_types, domain_parameters, mechanical_parameters, multigrid_solver_parm, basic_simulation_param 
 from BiocellionParam import create_reaction, CreateMonodKinetic, CreateSimpleInhibition, CreateBinding, create_e_perturbations
-from agent_species import AllAgentSpecies, AgentSpeciesParam
+from agent_species import AgentSpeciesParam
 
-def read_xml( diffusibles, celltypes, myreactions, myforces, eperturbations,  mydomain, mygridsolver, mysimulator, xmlfilename, directory ):
+def read_xml( diffusibles, celltypes, agent_species, myreactions, myforces, eperturbations,  mydomain, mygridsolver, mysimulator, xmlfilename, directory ):
 
- agent_species = AllAgentSpecies()
  ## read parameters from input file.
  tree = ET.parse(xmlfilename)
  root = tree.getroot()
@@ -458,19 +457,6 @@ def read_xml( diffusibles, celltypes, myreactions, myforces, eperturbations,  my
                eperturbations[name]['variable'] = 'biomass'
                eperturbations[name]['variable_val'] = var_value 
 
-
-
-
-
- print( "" )
- print( "Add to biomodel.h" )
- print( agent_species.getBioModelH( "  ", 0 ) )
- print( "" )
- print( "Add to biomodel.cpp::initializeBioModel()" )
- print( agent_species.getInitializeBioModel( "  ", 1 ) )
- print( "" )
-
-        
  #  Reabtions[ name ] reactions inside every cell 
  
 
