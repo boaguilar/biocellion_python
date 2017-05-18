@@ -5,10 +5,11 @@ from xml.etree.ElementTree import Element, SubElement, Comment
 from ElementTree_pretty import prettify
 from BiocellionParam  import diffusible_solutes, cell_types, domain_parameters, mechanical_parameters, multigrid_solver_parm, basic_simulation_param 
 from BiocellionParam import create_reaction, CreateMonodKinetic, CreateSimpleInhibition, CreateBinding, create_e_perturbations
+from agent_species import AllAgentSpecies, AgentSpeciesParam
 
 def read_xml( diffusibles, celltypes, myreactions, myforces, eperturbations,  mydomain, mygridsolver, mysimulator, xmlfilename, directory ):
 
-
+ agent_species = AllAgentSpecies()
  ## read parameters from input file.
  tree = ET.parse(xmlfilename)
  root = tree.getroot()
@@ -28,7 +29,10 @@ def read_xml( diffusibles, celltypes, myreactions, myforces, eperturbations,  my
  for species in root.findall('species'):
      name = species.get('name')
      celltypes[ name ] = cell_types()
-  
+     if not agent_species.addSpecies( species.get('class'), name ):
+        sys.exit("ERROR : species class not known (" + species.get('class') + ")")
+
+
  # assign an id to the cell types
  bcell_num_celltypes = 0
  for cell  in celltypes :
@@ -125,6 +129,7 @@ def read_xml( diffusibles, celltypes, myreactions, myforces, eperturbations,  my
  # read information from particles (density)
  density_biomass = -1.0
  density_inert  = -1.0 
+ density_capsule  = -1.0 
  for particle in root.findall('particle'):
     if ( particle.get('name') == "biomass" ) :
        for param in particle.findall('param'):
@@ -134,6 +139,10 @@ def read_xml( diffusibles, celltypes, myreactions, myforces, eperturbations,  my
        for param in particle.findall('param'):
           if ( param.get('name') == "density" ) :
              density_inert = float(param.text)
+    elif ( particle.get('name') == "capsule" ):
+       for param in particle.findall('param'):
+          if ( param.get('name') == "density" ) :
+             density_capsule = float(param.text)
     else :
        sys.exit("ERROR :particle name unknow ")
        
@@ -247,6 +256,11 @@ def read_xml( diffusibles, celltypes, myreactions, myforces, eperturbations,  my
     name = species.get('name')
     type_id = celltypes[ name ]['id']
 
+    for param in species.findall('param'):
+       agent_param = AgentSpeciesParam( param.get('name'), param.get('unit'), param.text )
+       if not agent_species.getSpecies( name ).updateParam( agent_param ):
+          sys.exit("ERROR : Unknown param (" + str_agent_param + ") for species (" + name + ")")
+
     for param in species.iter('param'):
        if ( param.get('name') == "divRadius" ):
           celltypes[name]['divRadius']=float(param.text)
@@ -265,8 +279,7 @@ def read_xml( diffusibles, celltypes, myreactions, myforces, eperturbations,  my
        elif ( param.get('name') == "attachToBoundaryDestroyFactor" ):
           myforces[type_id][type_id]['attachToBoundaryDestroyFactor'] = float(param.text)
        elif ( param.get('name') == "tightJunctionToBoundaryStrength" ):
-          myforces[type_id][type_id]['tightJunctionToBoundaryStrength'] = float(param.text)  
-          
+          myforces[type_id][type_id]['tightJunctionToBoundaryStrength'] = float(param.text)
 
        if ( mydomain['nDim'] == 2 ) : # in cdynamics , 2 dimnesional siulations uses cylinder
           for agents in celltypes:
@@ -448,8 +461,16 @@ def read_xml( diffusibles, celltypes, myreactions, myforces, eperturbations,  my
 
 
 
-        
 
+ print( "" )
+ print( "Add to biomodel.h" )
+ print( agent_species.getBioModelH( "  ", 0 ) )
+ print( "" )
+ print( "Add to biomodel.cpp::initializeBioModel()" )
+ print( agent_species.getInitializeBioModel( "  ", 1 ) )
+ print( "" )
+
+        
  #  Reabtions[ name ] reactions inside every cell 
  
 
