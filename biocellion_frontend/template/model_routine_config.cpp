@@ -16,8 +16,8 @@ using namespace std;
 void ModelRoutine::updateIfGridSpacing( REAL& ifGridSpacing ) {
 	/* MODEL START */
 
-  // Need all model parameters here, even if child processes are not started
-  initializeBioModel();
+	// Need all model parameters here, even if child processes are not started
+	initializeBioModel();
 
 	ifGridSpacing = IF_GRID_SPACING;
 
@@ -338,7 +338,7 @@ void ModelRoutine::initGlobal( Vector<U8>& v_globalData ) {
 void ModelRoutine::init( void ) {
 	/* MODEL START */
 
-  initializeBioModel();
+	initializeBioModel();
 
 	/* MODEL END */
 
@@ -348,7 +348,7 @@ void ModelRoutine::init( void ) {
 void ModelRoutine::term( void ) {
 	/* MODEL START */
 
-  terminateBioModel();
+	terminateBioModel();
 
 	/* MODEL END */
 

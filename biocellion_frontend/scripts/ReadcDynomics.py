@@ -5,9 +5,8 @@ from xml.etree.ElementTree import Element, SubElement, Comment
 from ElementTree_pretty import prettify
 from BiocellionParam  import diffusible_solutes, cell_types, domain_parameters, mechanical_parameters, multigrid_solver_parm, basic_simulation_param 
 from BiocellionParam import create_reaction, CreateMonodKinetic, CreateSimpleInhibition, CreateBinding, create_e_perturbations
-from agent_species import AgentSpeciesParam
 
-def read_xml( diffusibles, celltypes, agent_species, myreactions, myforces, eperturbations,  mydomain, mygridsolver, mysimulator, xmlfilename, directory ):
+def read_xml( diffusibles, celltypes, myreactions, myforces, eperturbations,  mydomain, mygridsolver, mysimulator, xmlfilename, directory ):
 
  ## read parameters from input file.
  tree = ET.parse(xmlfilename)
@@ -28,9 +27,6 @@ def read_xml( diffusibles, celltypes, agent_species, myreactions, myforces, eper
  for species in root.findall('species'):
      name = species.get('name')
      celltypes[ name ] = cell_types()
-     if not agent_species.addSpecies( species.get('class'), name ):
-        sys.exit("ERROR : species class not known (" + species.get('class') + ")")
-
 
  # assign an id to the cell types
  bcell_num_celltypes = 0
@@ -254,11 +250,6 @@ def read_xml( diffusibles, celltypes, agent_species, myreactions, myforces, eper
  for species in root.findall('species'):
     name = species.get('name')
     type_id = celltypes[ name ]['id']
-
-    for param in species.findall('param'):
-       agent_param = AgentSpeciesParam( param.get('name'), param.get('unit'), param.text )
-       if not agent_species.getSpecies( name ).updateParam( agent_param ):
-          sys.exit("ERROR : Unknown param (" + str_agent_param + ") for species (" + name + ")")
 
     for param in species.iter('param'):
        if ( param.get('name') == "divRadius" ):

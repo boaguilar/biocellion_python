@@ -54,9 +54,6 @@ from WriteBcellGrid import write_biocell_grid
 from WriteBcellXML import write_bcell_xml  
 from WriteBcellOtherFiles import write_biocell_otherfiles  
 
-from WriteBioModel import write_biomodel_files
-from agent_species import AllAgentSpecies
-
 ## read parameters from input file.
 xmlfilename = g_model_file
 dirname = g_output_dir
@@ -71,47 +68,53 @@ if not os.path.exists(dirname):
 if not os.path.exists(dirname+'/output'):
     os.makedirs( dirname +'/output' )
 
+if True:
+    from WriteBioModel import write_biomodel_files
+    from biomodel import BioModel
+    biomodel = BioModel()
+    biomodel.parseXML( xmlfilename )
+    write_biomodel_files( biomodel, dirname, g_source_dir )
+    print( str( biomodel ) )
+else:
+    diffusibles = dict()  # list of solutes (names)
+    celltypes = dict() # list of cell types (names)
+    myreactions = dict() # list of reactions  
+    eperturbations = dict() # list of perturbations
+    myforces = []  # parameters for force computations
+    mydomain = domain_parameters() # parameters of the domain 
+    mygridsolver =  multigrid_solver_parm() # parameters of the multigrid solver
+    mysimulator = basic_simulation_param() # timings and other basic arameters of simulation
 
-diffusibles = dict()  # list of solutes (names)
-celltypes = dict() # list of cell types (names)
-agent_species = AllAgentSpecies()
-myreactions = dict() # list of reactions  
-eperturbations = dict() # list of perturbations
-myforces = []  # parameters for force computations
-mydomain = domain_parameters() # parameters of the domain 
-mygridsolver =  multigrid_solver_parm() # parameters of the multigrid solver
-mysimulator = basic_simulation_param() # timings and other basic arameters of simulation
 
 
+    # read xml from cDynomics
+    read_xml(diffusibles, celltypes, myreactions, myforces, eperturbations, mydomain, mygridsolver, mysimulator, xmlfilename, dirname )
 
-# read xml from cDynomics
-read_xml(diffusibles, celltypes, agent_species, myreactions, myforces, eperturbations, mydomain, mygridsolver, mysimulator, xmlfilename, dirname )
+    print " -----  Cell Types -------------- "
+    print  celltypes
+    print " -----  Reactions --------------- "
+    print myreactions
+    print " -----  Solutes ----------------- "
+    print diffusibles 
+    print " -----  Forces ------------------ "
+    print myforces 
+    print "------  E Perturbation ---------- "
+    print eperturbations 
 
-print " -----  Cell Types -------------- "
-print  celltypes
-print " -----  Reactions --------------- "
-print myreactions
-print " -----  Solutes ----------------- "
-print diffusibles 
-print " -----  Forces ------------------ "
-print myforces 
-print "------  E Perturbation ---------- "
-print eperturbations 
+    # 2D case
+    if ( mydomain['nDim'] == 2 ) :
+        if ( mydomain['nz'] == 1 ) :
+            mydomain['nz'] = 4
+        
+    if ( mydomain['nz'] < 8 ) :
+        mydomain['nz'] = 8
+    
 
-# 2D case
-if ( mydomain['nDim'] == 2 ) :
-   if ( mydomain['nz'] == 1 ) :
-       mydomain['nz'] = 4
-       
-if ( mydomain['nz'] < 8 ) :
-    mydomain['nz'] = 8
-   
-
-write_biocell_header(diffusibles, celltypes, myreactions, myforces, eperturbations, mydomain, mygridsolver, mysimulator, dirname, g_source_dir )
-write_biocell_config(diffusibles, celltypes, myreactions, myforces, mydomain, mygridsolver, mysimulator, dirname, g_source_dir )
-write_biocell_agent(diffusibles, celltypes, myreactions, myforces, mydomain, mygridsolver, mysimulator, dirname, g_source_dir )
-write_biocell_grid(diffusibles, celltypes, myreactions, myforces, mydomain, mygridsolver, mysimulator, dirname, g_source_dir )
-write_bcell_xml(diffusibles, celltypes, myreactions, myforces, mydomain,mygridsolver, mysimulator, dirname, g_source_dir )
-write_biocell_otherfiles(diffusibles, celltypes, myreactions, myforces, mydomain, mygridsolver, mysimulator, dirname, g_source_dir )
-write_biomodel_files( agent_species, dirname, g_source_dir )
+    
+    write_biocell_header(diffusibles, celltypes, myreactions, myforces, eperturbations, mydomain, mygridsolver, mysimulator, dirname, g_source_dir )
+    write_biocell_config(diffusibles, celltypes, myreactions, myforces, mydomain, mygridsolver, mysimulator, dirname, g_source_dir )
+    write_biocell_agent(diffusibles, celltypes, myreactions, myforces, mydomain, mygridsolver, mysimulator, dirname, g_source_dir )
+    write_biocell_grid(diffusibles, celltypes, myreactions, myforces, mydomain, mygridsolver, mysimulator, dirname, g_source_dir )
+    write_bcell_xml(diffusibles, celltypes, myreactions, myforces, mydomain,mygridsolver, mysimulator, dirname, g_source_dir )
+    write_biocell_otherfiles(diffusibles, celltypes, myreactions, myforces, mydomain, mygridsolver, mysimulator, dirname, g_source_dir )
 
