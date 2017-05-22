@@ -2,6 +2,7 @@
 
 static bool gBioModelInitialized = false;
 Vector<AgentSpecies *> gAgentSpecies;
+Vector<Particle *> gParticles;
 Vector<MechIntrctSpAgent *> gMechIntrctSpAgent;
 
 void initializeBioModel() {

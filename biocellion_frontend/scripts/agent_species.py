@@ -129,6 +129,7 @@ class ParamHolder:
         self.mAttributes = {  }
         self.mParams = {  }
         self.mChildren = {  }
+        self.mHiddenParams = [ ]
         return
 
     def addChild( self, child ):
@@ -161,6 +162,8 @@ class ParamHolder:
     def paramNamesToCpp(self, indent, depth):
         lines = []
         for n in self.mParams:
+            if n in self.mHiddenParams:
+                continue
             s = (depth*indent) + "const std::string %s = \"%s\";" % (self.mParams[ n ].getConstName(), n, )
             lines.append( s )
         return "\n".join( lines )
@@ -168,6 +171,8 @@ class ParamHolder:
     def toCpp(self, varname, indent, depth):
         lines = []
         for n in self.mParams:
+            if n in self.mHiddenParams:
+                continue
             param = self.mParams[ n ]
             if param.getUnit() in Param.mStringUnits:
                 s = (depth*indent) + "%s->setParamString( %s->getIdxString( %s ), \"%s\" );" % (varname, varname, param.getConstName(), param.getValue(), )
@@ -229,6 +234,12 @@ class ParamHolder:
     def getParams(self):
         return self.mParams
 
+    def paramExists( self, name ):
+        return name in self.mParams
+    
+    def getParam( self, name ):
+        return self.mParams[ name ]
+    
     def addParam(self, param):
         n = param.getName()
         if n in self.mParams:
@@ -431,6 +442,8 @@ class AgentSpecies(ParamHolder):
         self.mClassName = class_name
         self.mName = name
         self.mEnumToken = "AGENT_SPECIES_%s_%s" % (class_name, name)
+        self.mUseMechForceReals = False
+        self.mMechForceReals = [ ]
         
         ParamHolder.__init__(self)
         self.addAttribute( Param( "class", "str", "" ) )
@@ -451,12 +464,32 @@ class AgentSpecies(ParamHolder):
         return
 
     def toCpp(self, indent, depth):
+        self.updateUseMechForceReals(  )
+        varname = "species"
         lines = []
         lines.append( (depth*indent) + "{" )
         depth += 1
-        lines.append( (depth*indent) + "AgentSpecies *species = new AgentSpecies( \"%s\", \"%s\", %s, %d, %d, %d, %d );" % (self.mName, self.mClassName, self.mEnumToken, self.countReal(), self.countInt(), self.countBool(), self.countString()) )
-        lines.append( ParamHolder.toCpp( self, "species", indent, depth ) )
-        lines.append( (depth*indent) + "gAgentSpecies.push_back( species );" )
+        lines.append( (depth*indent) + "AgentSpecies *%s = new AgentSpecies( \"%s\", \"%s\", %s, %d, %d, %d, %d );" % (varname, self.mName, self.mClassName, self.mEnumToken, self.countReal(), self.countInt(), self.countBool(), self.countString()) )
+        lines.append( ParamHolder.toCpp( self, varname, indent, depth ) )
+
+        s = (depth*indent) + "%s->setDMax( 2.0 /* FIXME: read from AgentGrid */ );" % (varname, )
+        lines.append( s )
+        s = (depth*indent) + "%s->setNumModelBools( 0 );" % (varname, )
+        lines.append( s )
+        s = (depth*indent) + "%s->setNumModelReals( 0 );" % (varname, )
+        lines.append( s )
+        s = (depth*indent) + "%s->setNumModelInts( 0 );" % (varname, )
+        lines.append( s )
+        if self.mUseMechForceReals:
+            s = (depth*indent) + "%s->setUseMechForceReals( true );" % (varname, )
+            lines.append( s )
+            s = (depth*indent) + "%s->setIdxMechForceReals( %s_MECH_REAL_FORCE_X, %s_MECH_REAL_FORCE_Y, %s_MECH_REAL_FORCE_Z );" % (varname, self.mEnumToken, self.mEnumToken, self.mEnumToken, )
+            lines.append( s )
+        else:
+            s = (depth*indent) + "%s->setUseMechForceReals( false );" % (varname, )
+            lines.append( s )
+
+        lines.append( (depth*indent) + "gAgentSpecies.push_back( %s );" % (varname, ) )
         depth -= 1;
         lines.append( (depth*indent) + "}" )
         return "\n".join( lines )
@@ -470,12 +503,58 @@ class AgentSpecies(ParamHolder):
     def getEnumToken(self):
         return self.mEnumToken
 
-
     def getInitAreas( self ):
         return self.mInitAreas
 
-    def getInitArea( self ):
-        return self.mInitArea
+    def getEnums( self, indent, depth ):
+        self.updateUseMechForceReals(  )
+        lines = [ ]
+        s = self.getMechForceRealsEnum( indent, depth )
+        lines.append( s )
+        return "\n".join( lines )
+    
+    def getMechForceRealsEnum( self, indent, depth ):
+        lines = []
+        lines.append( (depth*indent) + "typedef enum _%s_mech_force_real_type_e {" % ( self.getEnumToken(), ) )
+        depth += 1
+        for name in self.mMechForceReals:
+            s = (depth*indent) + "%s," % ( name, )
+            lines.append( s )
+        s = (depth*indent) + "%s_NUM_MECH_FORCE_REALS" % ( self.getEnumToken(), )
+        lines.append( s )
+        depth -= 1
+        lines.append( (depth*indent) + "} %s_mech_force_real_type_e;" % ( self.getEnumToken(), ) )
+        return "\n".join( lines )
+    
+    def updateUseMechForceReals( self ):
+        if( ( self.paramExists( "shoveLimit" ) and self.getParam( "shoveLimit" ).getValue() > 0.0 ) or
+            ( self.paramExists( "shoveFactor" ) and self.getParam( "shoveFactor" ).getValue() > 0.0 ) or          
+            ( self.paramExists( "shoveScale" ) and self.getParam( "shoveScale" ).getValue() > 0.0 ) ):
+            self.setUseMechForceReals( True )
+        else:          
+            self.setUseMechForceReals( False )
+        return
+
+    def setUseMechForceReals( self, value ):
+        self.mUseMechForceReals = value
+        if value:
+            for s0 in [ "MECH_REAL_FORCE_X", "MECH_REAL_FORCE_Y", "MECH_REAL_FORCE_Z",  ]:
+                s1 = "%s_%s" % ( self.getEnumToken(), s0 )
+                if s1 not in self.mMechForceReals:
+                    self.mMechForceReals.append( s1 )
+        else:
+            removes = [ ]
+            for s0 in [ "MECH_REAL_FORCE_X", "MECH_REAL_FORCE_Y", "MECH_REAL_FORCE_Z",  ]:
+                s1 = "%s_%s" % ( self.getEnumToken(), s0 )
+                removes.append( s1 )
+
+            reals = [ ]
+            for s1 in self.mMechForcesReals:
+                if s1 not in removes:
+                    reals.append( s1 )
+            self.mMechForceReals = reals
+            
+        return
 
     def toString( self, additional ):
         s  = "<species" + self.formatAttributes() + " enumToken=\"" + self.mEnumToken + "\">\n"
@@ -523,8 +602,9 @@ class AgentSpeciesLocated(AgentSpeciesActive):
         self.addParam( Param( "deathRadiusCV", "float",  0.1) )
         self.addParam( Param( "babyMassFrac", "um",  0.5) )
         self.addParam( Param( "babyMassFracCV", "float",  0.1) )
-        self.addParam( Param( "shoveLimit", "um",  0.0) )
-        self.addParam( Param( "shoveFactor", "um",  1.15) )
+        self.addParam( Param( "shoveLimit", "um",  0.0) )    # addition to desired radius
+        self.addParam( Param( "shoveFactor", "um",  1.15) )  # listed as um/length, but treated as radius scalar
+        self.addParam( Param( "shoveScale", "float",  1.0) ) # biocellion-biomodel only
         self.addParam( Param( "fixed", "bool",  False) )
         self.addParam( Param( "noSkinBottomLayerBoundary", "int", 0 ) )
         print("FIXME: <tightJunctions> not yet parsed <tightJunction withSpecies='name' stiffness='value' />")
@@ -606,6 +686,10 @@ class AllAgentSpecies:
         s += "\n"
         s += "\n"
         s += self.getSpeciesEnum(indent, depth)
+        s += "\n"
+        s += "\n"
+        s += self.getSpeciesSpecificEnums(indent, depth)
+        s += "\n"
         return s
 
     def getSpeciesParamNames(self, indent, depth):
@@ -627,12 +711,19 @@ class AllAgentSpecies:
         for name in self.mOrder:
             s = (depth*indent) + "%s," % (self.mAgentSpecies[ name ].getEnumToken(), )
             lines.append( s )
-            s = (depth*indent) + "NUM_AGENT_SPECIES"
-            lines.append( s )
-            depth -= 1
-            lines.append( (depth*indent) + "} agent_species_type_e;" )
+        s = (depth*indent) + "NUM_AGENT_SPECIES"
+        lines.append( s )
+        depth -= 1
+        lines.append( (depth*indent) + "} agent_species_type_e;" )
         return "\n".join( lines )
 
+    def getSpeciesSpecificEnums(self, indent, depth):
+        lines = [ ]
+        for name in self.mOrder:
+            s = self.mAgentSpecies[ name ].getEnums( indent, depth )
+            lines.append( s );
+        return "\n".join( lines )
+    
     def getInitializeBioModel(self, indent, depth):
         s = ""
         for name in self.mOrder:

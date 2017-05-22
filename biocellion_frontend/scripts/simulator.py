@@ -18,6 +18,14 @@ class Simulator( ParamHolder ):
         self.mTimeStep = TimeStep()
         return
 
+    def getBioModelH( self, indent, depth ):
+        lines  = "// FIXME: Simulator \n"
+        return lines
+
+    def getInitializeBioModel( self, indent, depth ):
+        lines  = "// FIXME: Simulator \n"
+        return lines
+
     def getTimeStep( self ):
         return self.mTimeStep
         
@@ -71,6 +79,22 @@ class IDynoMiCS( ParamHolder ):
         self.mParticles = AllParticles()
         
         return
+
+    def getBioModelH( self, indent, depth ):
+        lines  = ""
+        lines += self.mSimulator.getBioModelH( indent, depth )
+        lines += self.mAgentGrid.getBioModelH( indent, depth )
+        lines += self.mAgentSpecies.getBioModelH( indent, depth )
+        lines += self.mParticles.getBioModelH( indent, depth )
+        return lines
+
+    def getInitializeBioModel( self, indent, depth ):
+        lines  = ""
+        lines += self.mSimulator.getInitializeBioModel( indent, depth )
+        lines += self.mAgentGrid.getInitializeBioModel( indent, depth )
+        lines += self.mAgentSpecies.getInitializeBioModel( indent, depth ) + "\n"
+        lines += self.mParticles.getInitializeBioModel( indent, depth )
+        return lines
 
     def getSimulator( self ):
         return self.mSimulator

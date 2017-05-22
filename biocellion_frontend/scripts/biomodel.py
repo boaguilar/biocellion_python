@@ -28,6 +28,12 @@ class BioModel:
         self.SCAN_PARSE_MODE = 2
         return
 
+    def getBioModelH( self, indent, depth ):
+        return self.mIDynoMiCS.getBioModelH( indent, depth )
+
+    def getInitializeBioModel( self, indent, depth ):
+        return self.mIDynoMiCS.getInitializeBioModel( indent, depth )
+
     def parseXML( self, xmlfilename ):
         ## read parameters from input file.
         tree = ET.parse(xmlfilename)
@@ -43,29 +49,9 @@ class BioModel:
         
         if True:
             self.mIDynoMiCS.organizeChildren()
-            print( str( self ) )
-            sys.exit( "Early termination" )
+            # print( str( self ) )
+            # sys.exit( "Early termination" )
             return
-        
-        ## Find meta-information needed for 
-        
-        ### Find names of high level elements
-        
-        ## find <species> as children of <idynomics>
-        for species in root.findall('species'):
-            name = species.get('name')
-            if not self.mAgentSpecies.addSpecies( species.get('class'), name ):
-                sys.exit( "ERROR : species class not known (" + species.get('class') + ")" )
-
-        ## find <particle> as children of <idynomics>
-        for particle in root.findall('particle'):
-            name = particle.get('name')
-            if not self.mParticles.addParticle( name ):
-                sys.exit( "ERROR : particle error (" + name + ")" )
-        
-
-        ## now find species details
-        self.parseSpeciesXML( root )
         
         return
 

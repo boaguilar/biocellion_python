@@ -7,7 +7,7 @@ def write_biomodel_h( biomodel, directory, source_directory ):
     for line in fin:
         fout.write(line)
         if re.search(r'AGENT SPECIES AUTO BEGIN', line):
-            lines = biomodel.getAgentSpecies().getBioModelH( "  ", 0 )
+            lines = biomodel.getBioModelH( "  ", 0 )
             fout.write(lines)
             fout.write("\n")
     fin.close()
@@ -21,7 +21,7 @@ def write_biomodel_cpp( biomodel, directory, source_directory ):
     for line in fin:
         fout.write(line)
         if re.search(r'AGENT SPECIES AUTO BEGIN', line):
-            lines = biomodel.getAgentSpecies().getInitializeBioModel( "  ", 1 )
+            lines = biomodel.getInitializeBioModel( "  ", 1 )
             fout.write(lines)
             fout.write("\n")
     fin.close()

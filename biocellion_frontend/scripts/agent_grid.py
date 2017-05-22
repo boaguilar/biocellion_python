@@ -13,6 +13,14 @@ class AgentGrid( ParamHolder ):
         self.addParam( Param( "sloughDetachedBiomass", "bool", False ) )
         return
 
+    def getBioModelH( self, indent, depth ):
+        lines  = "// FIXME: AgentGrid \n"
+        return lines
+
+    def getInitializeBioModel( self, indent, depth ):
+        lines  = "// FIXME: AgentGrid \n"
+        return lines
+
     def getName(self):
         return self.mName
 

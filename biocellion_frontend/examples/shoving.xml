@@ -79,9 +79,9 @@
    <agentGrid>
     <param name="computationDomain">MyYeastColony</param>
     <param name="resolution" unit="um">4</param>
-    <param name="shovingFraction">0.0025</param>
-    <param name="shovingMaxIter">1000</param>
-    <param name="shovingMutual">true</param>
+    <param name="shovingFraction">0.0025</param> <!-- use to determine how long to keep shoving per time step, fraction of agents that need to move to require another loop -->
+    <param name="shovingMaxIter">1000</param> <!-- use to determine how long to keep shoving per time step -->
+    <param name="shovingMutual">true</param> <!-- true to split shoving between pairs -->
   </agentGrid>
 
   <!--#####################################################################
@@ -95,12 +95,13 @@
     <particle name="inert">
       <param name="mass" unit="fg">0</param>
     </particle>
+    <param name="shoveScale">1</param> <!-- biocellion only -->
+    <param name="shoveFactor" unit="um">1</param> <!-- This is actually dimensionless in use, but cDynoMiCS reads it as a length -->
+    <param name="shoveLimit" unit="um">0.0</param>
     <param name="color">red</param>
     <param name="computationDomain">MyYeastColony</param>
     <param name="divRadius" unit="um">3000</param>
     <param name="deathRadius" unit="um">0</param>
-    <param name="shoveFactor" unit="um">1</param>
-    <param name="shoveLimit" unit="um">0.0</param>
     <param name="epsMax">0.5</param>
     <param name="kHyd" unit="hr-1">0.1</param> 
     <param name="attachCreateFactor">1.0</param>

@@ -16,6 +16,16 @@ public:
   S32 getParamInt(const S32& idx) const;
   BOOL getParamBool(const S32& idx) const;
   const std::string& getParamString(const S32& idx) const;
+  REAL getDMax() const;
+  S32 getNumModelBools() const;
+  S32 getNumModelReals() const;
+  S32 getNumModelInts() const;
+  BOOL getUseMechForceReals() const;
+  S32 getNumMechModelReals() const;
+  S32 getIdxMechForceRealX() const;
+  S32 getIdxMechForceRealY() const;
+  S32 getIdxMechForceRealZ() const;
+  S32 getNumMechModelInts() const;
 
   // these routines make an index, if there isn't one.
   // they are not efficient for inside tight loops
@@ -31,6 +41,12 @@ public:
   void setParamInt(const S32& idx, const S32& param);
   void setParamBool(const S32& idx, const BOOL& param);
   void setParamString(const S32& idx, const std::string& param);
+  void setDMax(const REAL& value);
+  void setNumModelBools(const S32& value);
+  void setNumModelReals(const S32& value);
+  void setNumModelInts(const S32& value);
+  void setUseMechForceReals(const BOOL& value);
+  void setIdxMechForceReals(const S32& idx_x, const S32& idx_y, const S32& idx_z);
   
 protected:
   std::string mName;
@@ -41,6 +57,12 @@ protected:
   Vector<BOOL> mParamsBool;
   Vector<std::string> mParamsString;
   std::map<std::string, S32> mIdxReal, mIdxInt, mIdxBool, mIdxString;
+
+  REAL        mDMax;
+  S32         mNumModelBools, mNumModelReals, mNumModelInts;
+  BOOL        mUseMechForceReals;
+  Vector<S32> mIdxMechForceReals;
+  Vector<S32> mIdxMechModelInts;
 };
 
 #endif /* _AGENT_SPECIES_H_ */

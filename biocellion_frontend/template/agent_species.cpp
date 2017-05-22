@@ -6,7 +6,10 @@ AgentSpecies::AgentSpecies(const std::string& name, const std::string& speciesNa
     mParamsReal(num_real_param),
     mParamsInt(num_int_param),
     mParamsBool(num_bool_param),
-    mParamsString(num_string_param)
+    mParamsString(num_string_param),
+    mDMax(0.0),
+    mNumModelBools(0), mNumModelReals(0), mNumModelInts(0), 
+    mUseMechForceReals(false)
 {
   //empty
 }
@@ -44,6 +47,56 @@ BOOL AgentSpecies::getParamBool(const S32& idx) const
 const std::string& AgentSpecies::getParamString(const S32& idx) const
 {
   return mParamsString[idx];
+}
+
+REAL AgentSpecies::getDMax() const
+{
+  return mDMax;
+}
+
+S32 AgentSpecies::getNumModelBools() const
+{
+  return mNumModelBools;
+}
+
+S32 AgentSpecies::getNumModelReals() const
+{
+  return mNumModelReals;
+}
+
+S32 AgentSpecies::getNumModelInts() const
+{
+  return mNumModelInts;
+}
+
+BOOL AgentSpecies::getUseMechForceReals() const
+{
+  return mUseMechForceReals;
+}
+
+S32 AgentSpecies::getNumMechModelReals() const
+{
+  return (S32) mIdxMechForceReals.size();
+}
+
+S32 AgentSpecies::getIdxMechForceRealX() const
+{
+  return mIdxMechForceReals[0];
+}
+
+S32 AgentSpecies::getIdxMechForceRealY() const
+{
+  return mIdxMechForceReals[1];
+}
+
+S32 AgentSpecies::getIdxMechForceRealZ() const
+{
+  return mIdxMechForceReals[2];
+}
+
+S32 AgentSpecies::getNumMechModelInts() const
+{
+  return (S32) mIdxMechModelInts.size();
 }
 
 template <class T, class U>
@@ -120,4 +173,37 @@ void AgentSpecies::setParamBool(const S32& idx, const BOOL& param)
 void AgentSpecies::setParamString(const S32& idx, const std::string& param)
 {
   mParamsString[idx] = param;
+}
+
+void AgentSpecies::setDMax(const REAL& value)
+{
+  mDMax = value;
+}
+
+void AgentSpecies::setNumModelBools(const S32& value)
+{
+  mNumModelBools = value;
+}
+
+void AgentSpecies::setNumModelReals(const S32& value)
+{
+  mNumModelReals = value;
+}
+
+void AgentSpecies::setNumModelInts(const S32& value)
+{
+  mNumModelInts = value;
+}
+
+void AgentSpecies::setUseMechForceReals(const BOOL& value)
+{
+  mUseMechForceReals = value;
+}
+
+void AgentSpecies::setIdxMechForceReals(const S32& idx_x, const S32& idx_y, const S32& idx_z)
+{
+  mIdxMechForceReals.resize( 3 );
+  mIdxMechForceReals[0] = idx_x;
+  mIdxMechForceReals[1] = idx_y;
+  mIdxMechForceReals[2] = idx_z;
 }
