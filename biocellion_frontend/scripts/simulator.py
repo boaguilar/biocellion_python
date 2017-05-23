@@ -2,6 +2,7 @@ from agent_species import Param, ParamHolder
 from agent_species import AllAgentSpecies
 from particle import AllParticles
 from agent_grid import AgentGrid
+from world import World
 
 class Simulator( ParamHolder ):
 
@@ -14,17 +15,47 @@ class Simulator( ParamHolder ):
         self.addParam( Param( "chemostat", "bool", False ) )
         self.addParam( Param( "diffusionReactionOnAgentTime", "bool", False ) )
         self.addParam( Param( "agentTimeStep", "hr", 0.01 ) )
+        self.mPrivateNumberHiddenParams = [ "randomSeed", "outputPeriod", "agentTimeStep" ]
+        self.mPrivateBoolHiddenParams = [ "restartPreviousRun", "chemostat", "diffusionReactionOnAgentTime" ]
+        self.mPrivateHiddenParams = self.mPrivateNumberHiddenParams + self.mPrivateBoolHiddenParams
+        self.mHiddenParams = self.mHiddenParams + self.mPrivateHiddenParams
 
         self.mTimeStep = TimeStep()
         return
+
+    def getNumBaselineSteps( self ):
+        self.getTimeStep().getParam( 'endOfSimulation' ).checkUnit( 'hr' )
+        self.getParam( 'agentTimeStep' ).checkUnit( 'hr' )
+
+        end_of_simulation = self.getTimeStep().getParam( 'endOfSimulation' ).getValue()
+        agent_time_step = self.getParam( 'agentTimeStep' ).getValue()
+        number_steps = int( end_of_simulation / agent_time_step )
+
+        return number_steps
 
     def getBioModelH( self, indent, depth ):
         lines  = "// FIXME: Simulator \n"
         return lines
 
     def getInitializeBioModel( self, indent, depth ):
-        lines  = "// FIXME: Simulator \n"
-        return lines
+        varname = "gSimulator"
+        lines = []
+        lines.append( (depth*indent) + "{" )
+        depth += 1
+        lines.append( (depth*indent) + "%s = new Simulator( %s, %s, %s, %s, %s, %s );" % (varname, "false", "false", "true", "75321", "0.01", "0.01", ) )
+        lines.append( ParamHolder.toCpp( self, varname, indent, depth ) )
+
+        s = self.getInitializeBioModelSetDataMembers( varname, "->", indent, depth,
+                                                      self.mPrivateBoolHiddenParams,
+                                                      self.mPrivateNumberHiddenParams,
+                                                      [] )
+        lines.append( s )
+        
+        s = self.mTimeStep.getInitializeBioModel( "%s->getTimeStep()" % ( varname, ), indent, depth )
+        lines.append( s )
+        depth -= 1;
+        lines.append( (depth*indent) + "}" )
+        return "\n".join( lines )
 
     def getTimeStep( self ):
         return self.mTimeStep
@@ -52,7 +83,30 @@ class TimeStep( ParamHolder ):
         self.addParam( Param( "timeStepMin", "hr", 0.01 ) )
         self.addParam( Param( "timeStepMax", "hr", 0.01 ) )
         self.addParam( Param( "endOfSimulation", "hr", 0.01 ) )
+
+        self.mPrivateNumberHiddenParams = [ "timeStepIni", "timeStepMin", "timeStepMax", "endOfSimulation" ]
+        self.mPrivateBoolHiddenParams = [ "adaptive" ]
+        self.mPrivateHiddenParams = self.mPrivateNumberHiddenParams + self.mPrivateBoolHiddenParams
+        self.mHiddenParams = self.mHiddenParams + self.mPrivateHiddenParams
+
         return
+
+    def getInitializeBioModel( self, varname, indent, depth ):
+        lines = []
+        lines.append( (depth*indent) + "{" )
+        depth += 1
+        lines.append( ParamHolder.toCpp( self, varname, indent, depth ) )
+
+        s = self.getInitializeBioModelSetDataMembers( varname, ".", indent, depth,
+                                                      self.mPrivateBoolHiddenParams,
+                                                      self.mPrivateNumberHiddenParams,
+                                                      [] )
+        lines.append( s )
+        
+        depth -= 1;
+        lines.append( (depth*indent) + "}" )
+        return "\n".join( lines )
+    
 
     def getName(self):
         return self.mName
@@ -73,7 +127,8 @@ class IDynoMiCS( ParamHolder ):
         self.mName = "idynomics"
         ParamHolder.__init__(self)
 
-        self.mSimulator = Simulator()
+        self.mSimulator = Simulator( )
+        self.mWorld = World( )
         self.mAgentGrid = AgentGrid()
         self.mAgentSpecies = AllAgentSpecies()
         self.mParticles = AllParticles()
@@ -81,23 +136,28 @@ class IDynoMiCS( ParamHolder ):
         return
 
     def getBioModelH( self, indent, depth ):
-        lines  = ""
-        lines += self.mSimulator.getBioModelH( indent, depth )
-        lines += self.mAgentGrid.getBioModelH( indent, depth )
-        lines += self.mAgentSpecies.getBioModelH( indent, depth )
-        lines += self.mParticles.getBioModelH( indent, depth )
-        return lines
+        lines = [ ]
+        lines.append( self.mSimulator.getBioModelH( indent, depth ) )
+        lines.append( self.mWorld.getBioModelH( indent, depth ) )
+        lines.append( self.mAgentGrid.getBioModelH( indent, depth ) )
+        lines.append( self.mAgentSpecies.getBioModelH( indent, depth ) )
+        lines.append( self.mParticles.getBioModelH( indent, depth ) )
+        return "\n".join( lines )
 
     def getInitializeBioModel( self, indent, depth ):
-        lines  = ""
-        lines += self.mSimulator.getInitializeBioModel( indent, depth )
-        lines += self.mAgentGrid.getInitializeBioModel( indent, depth )
-        lines += self.mAgentSpecies.getInitializeBioModel( indent, depth ) + "\n"
-        lines += self.mParticles.getInitializeBioModel( indent, depth )
-        return lines
+        lines  = [ ]
+        lines.append( self.mSimulator.getInitializeBioModel( indent, depth ) )
+        lines.append( self.mWorld.getInitializeBioModel( indent, depth ) )
+        lines.append( self.mAgentGrid.getInitializeBioModel( indent, depth ) )
+        lines.append( self.mAgentSpecies.getInitializeBioModel( indent, depth ) )
+        lines.append( self.mParticles.getInitializeBioModel( indent, depth ) )
+        return "\n".join( lines )
 
     def getSimulator( self ):
         return self.mSimulator
+        
+    def getWorld( self ):
+        return self.mWorld
         
     def getAgentGrid( self ):
         return self.mAgentGrid
@@ -132,6 +192,7 @@ class IDynoMiCS( ParamHolder ):
         s  = "<%s>:\n" % (self.mName)
         s += ParamHolder.__str__( self )
         s += str( self.mSimulator ) + "\n"
+        s += str( self.mWorld ) + "\n"
         s += str( self.mAgentGrid ) + "\n"
         s += str( self.mAgentSpecies ) + "\n"
         s += str( self.mParticles )  + "\n"

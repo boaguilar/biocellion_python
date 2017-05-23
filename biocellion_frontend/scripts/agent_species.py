@@ -24,7 +24,7 @@ class Param:
             self.mUnit = self.mStringStandardUnit
         return
     
-    mRealUnits = ( "float", "um", "hr-1", "g.L-1" ) + mTimeUnits
+    mRealUnits = ( "float", "um", "hr-1", "g.L-1", "m2.m-3" ) + mTimeUnits
     mIntUnits = ( "int" )
     mBoolUnits = ( "bool" )
     
@@ -112,6 +112,12 @@ class Param:
             return False
         return True
 
+    def checkUnit(self, desired_unit):
+        if self.getUnit() != desired_unit:
+            sys.exit( 'ERROR: ' + str( self.mName ) + ' unit should be ' + desired_unit + ' but is actually ' + str( self.getUnit() ) )
+            return False
+        return True
+
     def __str__(self):
         s = '<param name="%s" unit="%s">%s</param>' % (str(self.mName), str(self.mUnit), str(self.mValue))
         return s
@@ -191,8 +197,32 @@ class ParamHolder:
                 lines.append( s )
         return "\n".join( lines )
 
+
+    def getInitializeBioModelSetDataMembers( self, varname, connector, indent, depth, bools, numbers, strings ):
+        lines = [ ]
+
+        for name in bools:
+            Name = name[ 0 ].upper() + name[ 1 : ]
+            s = (depth*indent) + "%s%sset%s( %s );" % (varname, connector, Name, "true" if self.mParams[ name ].getValue() else "false", )
+            lines.append( s )
+            
+        for name in numbers:
+            Name = name[ 0 ].upper() + name[ 1 : ]
+            s = (depth*indent) + "%s%sset%s( %s );" % (varname, connector, Name, self.mParams[ name ].getValue(), )
+            lines.append( s )
+            
+        for name in strings:
+            Name = name[ 0 ].upper() + name[ 1 : ]
+            s = (depth*indent) + "%s%sset%s( \"%s\" );" % (varname, connector, Name, self.mParams[ name ].getValue(), )
+            lines.append( s )
+        
+        return "\n".join( lines )
+
     def getAttributes(self):
         return self.mAttributes
+
+    def getAttribute( self, attr ):
+        return self.mAttributes[ attr ]
 
     def addAttribute(self, attr):
         n = attr.getName()
@@ -330,6 +360,12 @@ class ItemHolder:
 
     def getLastItem( self ):
         return self.mItems[ self.mOrder[ len( self.mOrder ) - 1 ] ]
+
+    def __len__( self ):
+        return len( self.mItems )
+
+    def __getitem__( self, idx ):
+        return self.mItems[ self.mOrder[ idx ] ]
 
     def __str__( self ):
         s = "<ITEM_HOLDER_ITEMS_" + str( self.mItemClass ) + "\n"

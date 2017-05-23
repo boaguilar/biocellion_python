@@ -1,387 +1,377 @@
+/*
+
+  Copyright © 2013 Battelle Memorial Institute. All Rights Reserved.
+
+  NOTICE:  These data were produced by Battelle Memorial Institute (BATTELLE) under Contract No. DE-AC05-76RL01830 with the U.S. Department of Energy (DOE).  For a five year period from May 28, 2013, the Government is granted for itself and others acting on its behalf a nonexclusive, paid-up, irrevocable worldwide license in this data to reproduce, prepare derivative works, and perform publicly and display publicly, by or on behalf of the Government.  There is provision for the possible extension of the term of this license.  Subsequent to that period or any extension granted, the Government is granted for itself and others acting on its behalf a nonexclusive, paid-up, irrevocable worldwide license in this data to reproduce, prepare derivative works, distribute copies to the public, perform publicly and display publicly, and to permit others to do so.  The specific term of the license can be identified by inquiry made to BATTELLE or DOE.  NEITHER THE UNITED STATES NOR THE UNITED STATES DEPARTMENT OF ENERGY, NOR BATTELLE, NOR ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR USEFULNESS OF ANY DATA, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS.
+
+*/
+
 /* DO NOT USE FUNCTIONS THAT ARE NOT THREAD SAFE (e.g. rand(), use Util::getModelRand() instead) */
+
 #include "biocellion.h"
+
 #include "model_routine.h"
 
 /* MODEL START */
 
 #include "model_define.h"
 
-
 /* MODEL END */
-
-S32  INI_N_CELLS;
 
 using namespace std;
 
 void ModelRoutine::updateIfGridSpacing( REAL& ifGridSpacing ) {
-	/* MODEL START */
+  /* MODEL START */
+  
+  initializeBioModel();
+  ifGridSpacing = gAgentGrid->getResolution( );/* sets the grid resolution */
 
-	// Need all model parameters here, even if child processes are not started
-	initializeBioModel();
+  /* MODEL END */
 
-	ifGridSpacing = IF_GRID_SPACING;
-
-	/* MODEL END */
-
-	return;
+  return;
 }
 
 void ModelRoutine::updateOptModelRoutineCallInfo( OptModelRoutineCallInfo& callInfo ) {
-	/* MODEL START */
+  /* MODEL START */
 
-        callInfo.numComputeMechIntrctIters = 1;
-	callInfo.numUpdateIfGridVarPreStateAndGridStepIters = 1;
-	callInfo.numUpdateIfGridVarPostStateAndGridStepIters = 0;
+  // FIXME: Not controlled by XML yet
+  callInfo.numComputeMechIntrctIters = 1;
+  callInfo.numUpdateIfGridVarPreStateAndGridStepIters = 1;
+  callInfo.numUpdateIfGridVarPostStateAndGridStepIters = 1;
 
-	/* MODEL END */
+  /* MODEL END */
 
-	return;
+  return;
 }
 
 void ModelRoutine::updateDomainBdryType( domain_bdry_type_e a_domainBdryType[DIMENSION] ) {
-	/* MODEL START */
-        // this may be periodic?  // an array with the VALUES.
-	a_domainBdryType[0] = DOMAIN_BDRY_TYPE_NONPERIODIC_HARD_WALL;
-	a_domainBdryType[1] = DOMAIN_BDRY_TYPE_NONPERIODIC_HARD_WALL;
-	a_domainBdryType[2] = DOMAIN_BDRY_TYPE_NONPERIODIC_HARD_WALL;
+  /* MODEL START */
 
-	/* MODEL END */
+  CHECK( DIMENSION == 3 );
 
-	return;
+  // FIXME: Not controlled by XML yet
+  for( S32 dim = 0 ; dim < DIMENSION ; dim++ ) {
+    a_domainBdryType[dim] = DOMAIN_BDRY_TYPE_NONPERIODIC_HARD_WALL;
+  }
+
+  /* MODEL END */
+
+  return;
 }
 
 void ModelRoutine::updatePDEBufferBdryType( pde_buffer_bdry_type_e& pdeBufferBdryType ) {
-	/* MODEL START */
+  /* MODEL START */
 
-	pdeBufferBdryType = PDE_BUFFER_BDRY_TYPE_HARD_WALL;
+  // FIXME: Not controlled by XML yet
+  pdeBufferBdryType = PDE_BUFFER_BDRY_TYPE_HARD_WALL;/* relevant to agents only ( not a PDE boundary condition), agents cannot penetrate into the PDE buffer region */
 
-	/* MODEL END */
+  /* MODEL END */
 
-	return;
+  return;
 }
 
 void ModelRoutine::updateTimeStepInfo( TimeStepInfo& timeStepInfo ) {
-	/* MODEL START */
+  /* MODEL START */
 
-	timeStepInfo.durationBaselineTimeStep = BASELINE_TIME_STEP_DURATION;
-	timeStepInfo.numStateAndGridTimeStepsPerBaseline = NUM_STATE_AND_GRID_TIME_STEPS_PER_BASELINE;
+  initializeBioModel();
+  timeStepInfo.durationBaselineTimeStep = gSimulator->getTimeStep().getTimeStepMin();
+  
+  // FIXME: Not controlled by XML yet
+  timeStepInfo.numStateAndGridTimeStepsPerBaseline = NUM_STATE_AND_GRID_TIME_STEPS_PER_BASELINE;
 
-	/* MODEL END */
+  /* MODEL END */
 
-	return;
+  return;
 }
 
 void ModelRoutine::updateSyncMethod( sync_method_e& mechIntrctSyncMethod, sync_method_e& updateIfGridVarSyncMethod/* dummy if both callUpdateIfGridVarPreStateAndGridStep and callUpdateIfGridVarPostStateAndGridStep are set to false in ModelRoutine::updateOptModelRoutineCallInfo */ ) {
-	/* MODEL START */
+  /* MODEL START */
 
-	mechIntrctSyncMethod = SYNC_METHOD_PER_ATTR;
-	updateIfGridVarSyncMethod = SYNC_METHOD_PER_ATTR;
+  mechIntrctSyncMethod = SYNC_METHOD_PER_ATTR;
+  updateIfGridVarSyncMethod = SYNC_METHOD_PER_ATTR;
 
-	/* MODEL END */
+  /* MODEL END */
 
-	return;
+  return;
 }
 
+#if HAS_SPAGENT
+void ModelRoutine::updateSpAgentInfo( Vector<SpAgentInfo>& v_spAgentInfo ) {/* set the mechanical interaction range & the numbers of model specific variables */
+  /* MODEL START */
+  
+  initializeBioModel();
 
-void ModelRoutine::updateJunctionEndInfo( Vector<JunctionEndInfo>& v_junctionEndInfo ) {
-	/* MODEL START */
+  v_spAgentInfo.resize( gAgentSpecies.size() );
+  S32 i;
+  for( i = 0; i < (S32) gAgentSpecies.size(); i++ ) {
+    MechModelVarInfo mechModelVarInfo;
+    mechModelVarInfo.syncMethod = VAR_SYNC_METHOD_DELTA;
+    SpAgentInfo info;
+    
+    // FIXME: DMax not controlled from XML yet
+    info.dMax = gAgentSpecies[ i ]->getDMax();
+    CHECK( info.dMax <= gAgentGrid->getResolution( ) );
+    // FIXME: num*ModelVars not controlled from XML yet
+    info.numBoolVars = gAgentSpecies[ i ]->getNumModelBools();
+    info.numStateModelReals = gAgentSpecies[ i ]->getNumModelReals();
+    info.numStateModelInts = gAgentSpecies[ i ]->getNumModelInts();
+    if( gAgentSpecies[ i ]->getNumMechModelReals() > 0 ) {
+      info.v_mechIntrctModelRealInfo.assign( gAgentSpecies[ i ]->getNumMechModelReals(), mechModelVarInfo );
+    } else {
+      info.v_mechIntrctModelRealInfo.clear();
+    }
+    if( gAgentSpecies[ i ]->getNumMechModelInts() > 0 ) {
+      info.v_mechIntrctModelIntInfo.assign( gAgentSpecies[ i ]->getNumMechModelInts(), mechModelVarInfo );
+    } else {
+      info.v_mechIntrctModelIntInfo.clear();
+    }
+    // FIXME: odeNetInfo not controlled from XML yet
+    info.v_odeNetInfo.clear();
 
-	v_junctionEndInfo.resize( NUM_JUNCTION_END_TYPES );
-	for( S32 i = 0 ; i < NUM_JUNCTION_END_TYPES ; i++ ) {
-		v_junctionEndInfo[i].numModelReals = 0;/* we do not associate any variable to a junction end type */
-		v_junctionEndInfo[i].numModelInts = 0;
-	} 
+    v_spAgentInfo[i] = info;
+  }
 
-	/* MODEL END */
+  /* MODEL END */
 
-	return;
+  return;
+}
+#endif
+
+void ModelRoutine::updateJunctionEndInfo( Vector<JunctionEndInfo>& v_junctionEndInfo ) {/* set the numbers of model specific variables */
+  /* MODEL START */
+
+  // FIXME: junction info not controlled from XML yet
+  v_junctionEndInfo.clear(  );
+  //v_junctionEndInfo.resize( NUM_JUNCTION_TYPES );
+  
+#if USE_DISTANCE_JUNCTIONS
+  v_junctionEndInfo[JUNCTION_TYPE_DISTANCE].numModelReals = 0;
+  v_junctionEndInfo[JUNCTION_TYPE_DISTANCE].numModelInts = 0;
+#endif
+
+  /* MODEL END */
+
+  return;
 }
 
+#if USE_PHI_ONE
+static inline void setPhiPDEChemoattractant( Vector<PDEInfo>& v_phiPDEInfo , S32 idx ) {
+  PDEInfo pdeInfo;
+  GridPhiInfo gridPhiInfo;
+  MGSolveInfo mgSolveInfo;
+  SplittingInfo splittingInfo;
+
+  pdeInfo.pdeIdx = idx;
+  pdeInfo.pdeType = PDE_TYPE_REACTION_DIFFUSION_TIME_DEPENDENT_LINEAR;
+  pdeInfo.numLevels = PHI_AMR_LEVELS[idx];
+  //pdeInfo.ifLevel = PHI_AMR_LEVELS[idx]-1;
+  pdeInfo.ifLevel = 0;
+  pdeInfo.v_tagExpansionSize.assign( PHI_AMR_LEVELS[idx], 0 );
+  pdeInfo.numTimeSteps = NUM_PDE_TIME_STEPS_PER_STATE_AND_GRID_TIME_STEP[idx];
+  pdeInfo.callAdjustRHSTimeDependentLinear = false;
+
+  // set mgSolveInfo.* here
+  mgSolveInfo.numPre = 3;/* multigrid parameters */
+  mgSolveInfo.numPost = 3;/* multigrid parameters */
+  mgSolveInfo.numBottom = 3;/* multigrid parameters */
+  mgSolveInfo.vCycle = true;/* multigrid parameters */
+  mgSolveInfo.maxIters = 30;/* multigrid parameters */
+  mgSolveInfo.epsilon = GRID_PHI_EPSILON;/* multigrid parameters */
+  mgSolveInfo.hang = 1e-6;/* multigrid parameters */
+  mgSolveInfo.normThreshold = GRID_PHI_NORM_THRESHOLD;/* multigrid parameters */
+  
+  pdeInfo.mgSolveInfo = mgSolveInfo;
+
+  // set splittingInfo here
+  pdeInfo.splittingInfo = splittingInfo;
+
+  // set gridPhiInfo here
+  pdeInfo.v_gridPhiInfo.resize( 1 );
+
+  gridPhiInfo.elemIdx = idx;
+  gridPhiInfo.name = GRID_PHI_NAMES[idx];
+  gridPhiInfo.syncMethod = VAR_SYNC_METHOD_DELTA;
+  gridPhiInfo.aa_bcType[0][0] = BC_TYPE_NEUMANN_CONST;
+  gridPhiInfo.aa_bcVal[0][0] = 0.0;
+  gridPhiInfo.aa_bcType[0][1] = BC_TYPE_NEUMANN_CONST;
+  gridPhiInfo.aa_bcVal[0][1] = 0.0;
+  gridPhiInfo.aa_bcType[1][0] = BC_TYPE_NEUMANN_CONST;
+  gridPhiInfo.aa_bcVal[1][0] = 0.0;
+  gridPhiInfo.aa_bcType[1][1] = BC_TYPE_NEUMANN_CONST;
+  gridPhiInfo.aa_bcVal[1][1] = 0.0;
+  gridPhiInfo.aa_bcType[2][0] = BC_TYPE_NEUMANN_CONST;
+  gridPhiInfo.aa_bcVal[2][0] = 0.0;
+  gridPhiInfo.aa_bcType[2][1] = BC_TYPE_NEUMANN_CONST;
+  gridPhiInfo.aa_bcVal[2][1] = 0.0;
+
+  gridPhiInfo.errorThresholdVal = GRID_PHI_NORM_THRESHOLD * -1.0;
+  gridPhiInfo.warningThresholdVal = GRID_PHI_NORM_THRESHOLD * -1.0;
+  gridPhiInfo.setNegToZero = true;
+
+  pdeInfo.v_gridPhiInfo[0] = gridPhiInfo;
+
+  v_phiPDEInfo[idx] = pdeInfo;
+}
+#else
+#endif
+
+void ModelRoutine::updatePhiPDEInfo( Vector<PDEInfo>& v_phiPDEInfo ) {
+  /* MODEL START */
+
+  // FIXME: solute info not controlled from XML yet
+
+#if USE_PHI_ONE
+  CHECK( NUM_GRID_PHIS == 1 );
+
+  v_phiPDEInfo.resize( NUM_GRID_PHIS );
+  setPhiPDEChemoattractant(v_phiPDEInfo, GRID_PHI_ONE_TYPE );
+#else
+  CHECK( NUM_GRID_PHIS == 0 );
+
+  v_phiPDEInfo.clear();
+#endif
+
+  /* MODEL END */
+
+  return;
+}
+
+void ModelRoutine::updateIfGridModelVarInfo( Vector<IfGridModelVarInfo>& v_ifGridModelRealInfo, Vector<IfGridModelVarInfo>& v_ifGridModelIntInfo ) {
+  /* MODEL START */
+
+  // FIXME: grid vars not controlled from XML yet
+
+  IfGridModelVarInfo info;
+  
+  v_ifGridModelRealInfo.clear( );
+#if USE_PHI_ONE
+  v_ifGridModelRealInfo.resize( NUM_GRID_MODEL_REALS);
+  
+#if USE_SECRETION
+  info.name = "phi_one_rhs";
+  info.syncMethod = VAR_SYNC_METHOD_DELTA;/* updateIfGridVar */
+  v_ifGridModelRealInfo[GRID_MODEL_REAL_PHI_ONE_RHS] = info;
+#endif
+#endif  
+  v_ifGridModelIntInfo.clear();
+
+  /* MODEL END */
+
+  return;
+}
 
 void ModelRoutine::updateRNGInfo( Vector<RNGInfo>& v_rngInfo ) {
-	/* MODEL START */
+  /* MODEL START */
 
-	CHECK( NUM_MODEL_RNGS == 3 );
+#if BROWNIAN_MOTION_ON
+  CHECK( NUM_MODEL_RNGS == 2 );
+#else
+  CHECK( NUM_MODEL_RNGS == 1 );
+#endif
 
-	v_rngInfo.resize( 3 );
+  RNGInfo rngInfo;
 
-	RNGInfo rngInfo;
+  rngInfo.type = RNG_TYPE_UNIFORM;
+  rngInfo.param0 = 0.0;
+  rngInfo.param1 = 1.0;
+  rngInfo.param2 = 0.0;/* dummy */
 
-	rngInfo.type = RNG_TYPE_UNIFORM;
-	rngInfo.param0 = 0.0;
-	rngInfo.param1 = 1.0;
-	rngInfo.param2 = 0.0;/* dummy */
-	v_rngInfo[MODEL_RNG_UNIFORM] = rngInfo;
+  v_rngInfo.push_back( rngInfo );
 
-        rngInfo.type = RNG_TYPE_UNIFORM;
-        rngInfo.param0 = 0.9;
-        rngInfo.param1 = 1.1;
-        rngInfo.param2 = 0.0;/* dummy */
-        v_rngInfo[MODEL_RNG_UNIFORM_10PERCENT] = rngInfo ;
- 
-        rngInfo.type = RNG_TYPE_GAUSSIAN;
-        rngInfo.param0 = 0.0;
-        rngInfo.param1 = 1.0;
-        rngInfo.param2 = 0.0;/* dummy */
-        v_rngInfo[MODEL_RNG_GAUSSIAN] = rngInfo;
+#if BROWNIAN_MOTION_ON
+  rngInfo.type = RNG_TYPE_GAUSSIAN;
+  rngInfo.param0 = 0.0;
+  rngInfo.param1 = 1.0;
+  rngInfo.param2 = 0.0;/* dummy */
 
-	/* MODEL END */
+  v_rngInfo.push_back( rngInfo );
+#endif
+  
+  /* MODEL END */
 
-	return;
+  return;
 }
 
 void ModelRoutine::updateFileOutputInfo( FileOutputInfo& fileOutputInfo ) {
-    /* MODEL START */
+  /* MODEL START */
 
-    fileOutputInfo.particleOutput = true;
-    //fileOutputInfo.particleNumExtraOutputVars = NUM_AGENT_OUTPUTS ;
-       
-    fileOutputInfo.v_particleExtraOutputScalarVarName.assign(NUM_AGENT_OUTPUTS, "");
-    for ( S32 i=0 ; i < NUM_AGENT_OUTPUTS ; i++ ) { 
-        fileOutputInfo.v_particleExtraOutputScalarVarName[i] = "ext";
-    }
+  // FIXME: output not controlled from XML yet
 
-    fileOutputInfo.v_particleExtraOutputVectorVarName.clear();
-    fileOutputInfo.v_gridPhiOutput.assign(NUM_DIFFUSIBLE_ELEMS, true);
-    fileOutputInfo.v_gridPhiOutputDivideByKappa.assign(NUM_DIFFUSIBLE_ELEMS,false );
+  fileOutputInfo.particleOutput = true;
+  fileOutputInfo.v_particleExtraOutputScalarVarName.clear();
+  fileOutputInfo.v_particleExtraOutputVectorVarName.clear();
+#if USE_PHI_ONE
+  fileOutputInfo.v_gridPhiOutput.assign( NUM_GRID_PHIS, true );
+  fileOutputInfo.v_gridPhiOutputDivideByKappa.assign( NUM_GRID_PHIS, false );
+#else
+  fileOutputInfo.v_gridPhiOutput.clear();
+  fileOutputInfo.v_gridPhiOutputDivideByKappa.clear();
+#endif
 
-    /* MODEL END */
-    return;
+  /* MODEL END */
+
+  return;
 }
 
-void ModelRoutine::initGlobal( Vector<U8>& v_globalData ) {
-   /* MODEL START */
+void ModelRoutine::updateSummaryOutputInfo( Vector<SummaryOutputInfo>& v_summaryOutputRealInfo, Vector<SummaryOutputInfo>& v_summaryOutputIntInfo ) {
+  /* MODEL START */
 
-   Vector<string> v_modelParam;
-   S8* p_modelParams;
-   S8* p_param;
+  // FIXME: summary not controlled from XML yet
+  v_summaryOutputRealInfo.clear();
+  v_summaryOutputIntInfo.clear();
 
-   UBInitData* p_ubInitData;
-   IniCellData* p_IniCellData ;
+  /* MODEL END */
 
-   FILE* p_file;
-   S8* p_buf;
-   size_t bufSize;
-   ssize_t numCharsRead;
-
-   S32 IniNumberCells = 0;
-   S32 NumberVoxels = 0;
-
-   VIdx ifRegionSize;
-   ifRegionSize[0] = Info::getDomainSize(0) - AGAR_HEIGHT ;
-   ifRegionSize[1] = Info::getDomainSize(1) ;
-   ifRegionSize[2] = Info::getDomainSize(2) ;
-
-   NumberVoxels = ifRegionSize[0] * ifRegionSize[1] * ifRegionSize[2] ;
-
-   Vector<VIdx> v_habitableVIdxOffset;
-
-   p_modelParams = new S8[Info::getModelParam().size() + 1 ]; // + 1 for null termination
-   strcpy( p_modelParams, Info::getModelParam().c_str() );
-
-   p_param = strtok( p_modelParams, " \t\n" );
-   while( p_param != NULL ) {
-      v_modelParam.push_back( string( p_param ) );
-      p_param = strtok( NULL, " \t\n" );
-   }
-
-   delete[] p_modelParams;
-
-   if( v_modelParam.size() != 1 ) {
-           ERROR( "invalid model parameters: invalid number of parameters." );
-   }
- 
-   // read Boxes with yeast cells 
-   p_file = fopen( v_modelParam[0].c_str(), "r" );
-   if( p_file == NULL ) {
-       ERROR( "invalid model parameters: invalid blocked_grid_points file path." );
-   }
-
-   p_buf = NULL;
-   bufSize = 0;
-   S32 count = 0;
-   if (( numCharsRead = getline( &p_buf, &bufSize, p_file ) ) != -1 ) {
-      S8* p_token;
-      p_token = strtok( p_buf, " \t\n" );
-      IniNumberCells = (S32) strtol( p_token, NULL, 10 );
-   }
-   else {
-      ERROR( "Unable to read number of cells" );
-   }
-   INI_N_CELLS = IniNumberCells ;
-
-   // init global data 
-   v_globalData.resize( NumberVoxels*sizeof(UBInitData) + IniNumberCells*sizeof(IniCellData));
-   p_ubInitData = ( UBInitData* )&( v_globalData[ 0  ] );
-   p_IniCellData = ( IniCellData * )&( v_globalData[ NumberVoxels*sizeof(UBInitData) ] );
-   // initialize the  the data (p_ubInitData),  X_SIZE * Z_SIZE  uvInitDatas
-   for( idx_t i = 0 ; i <  ifRegionSize[0] ; i++ ) {
-      for( idx_t j = 0 ; j < ifRegionSize[1]  ; j++ ) {
-         for( idx_t k = 0 ; k < ifRegionSize[2]  ; k++ ) {
-            UBInitData& ubInitData = p_ubInitData[VIdx::getIdx3DTo1D( i, j, k, ifRegionSize )];
-            ubInitData.numCells = 0;
-            ubInitData.IdxIniCellData  = -1 ;
-         }
-      }
-   }
-   for ( S32 i=0; i < IniNumberCells; i++){
-      IniCellData& cellInitData = p_IniCellData[i];
-      cellInitData.x_offset = 0.0 ;
-      cellInitData.y_offset = 0.0 ;
-      cellInitData.z_offset = 0.0 ;
-      cellInitData.a_type = 0 ;
-      cellInitData.biomass = 0.0 ;
-      cellInitData.inert = 0.0 ;
-      cellInitData.IdxIniCellData  = -1 ;
-   }
-
-   while( ( numCharsRead = getline( &p_buf, &bufSize, p_file ) ) != -1 ) {
-
-      VIdx vIdxOffset;
-      VReal posOffset;
-
-
-      S8* p_token;
-      p_token = strtok( p_buf, " \t\n" );
-
-      for( S32 dim = 0 ; dim < DIMENSION ; dim++ ) {
-         if( p_token == NULL ) {
-              ERROR( "invalid blocked_grid_points file." );
-         }
-         REAL Position  = ( REAL )strtod( p_token, NULL );
-         vIdxOffset[dim] = ( idx_t ) ( Position/IF_GRID_SPACING) ;
-         posOffset[dim] = Position - (( (REAL)vIdxOffset[dim]*IF_GRID_SPACING ) + 0.5 * IF_GRID_SPACING ) ;
-
-         if( posOffset[dim] < IF_GRID_SPACING * -0.5 )
-             posOffset[dim] = IF_GRID_SPACING  * -0.5;
-         else if( posOffset[dim] > IF_GRID_SPACING  * 0.5 )
-             posOffset[dim] = IF_GRID_SPACING * 0.5;
-
-         p_token = strtok( NULL, " \t\n" );
-
-         if( ( vIdxOffset[dim] < 0 )   ) {
-             ERROR( "invalid blocked_grid_points file." );
-         }
-      }
-     
-      UBInitData& ubInitData = p_ubInitData[VIdx::getIdx3DTo1D( vIdxOffset, ifRegionSize )];
-      IniCellData& cellInitData = p_IniCellData[count];
-
-      if( p_token == NULL ) {
-          ERROR( "invalid blocked_grid_points file." );
-      }
-      else {
-          // ubInitData.radius  = strtol( p_token, NULL, 10 )  
-          cellInitData.biomass  = ( REAL )strtod( p_token, NULL );
-      }
-
-      p_token = strtok( NULL, " \t\n" );
-      if( p_token == NULL ) {
-          ERROR( "invalid blocked_grid_points file." );
-      }
-      else {
-          cellInitData.inert  =( REAL)strtod( p_token, NULL ) ;
-      } 
-
-      p_token = strtok( NULL, " \t\n" );
-      if( p_token == NULL ) {
-          ERROR( "invalid blocked_grid_points file." );
-      }
-      else {
-          cellInitData.a_type  = strtol( p_token, NULL, 10 ) ;
-      }
-
-      p_token = strtok( NULL, " \t\n" );
-      if( p_token != NULL ) {
-          ERROR( "invalid blocked_grid_points file." );
-      }
-
-      cellInitData.x_offset = (REAL) posOffset[0] ;
-      cellInitData.y_offset = (REAL) posOffset[1] ;
-      cellInitData.z_offset = (REAL)  posOffset[2] ;
-
-      if ( ubInitData.numCells == 0 ) {
-          ubInitData.IdxIniCellData  = count ; //  p_IniCellData[count];
-      }
-      else{
-         S32 nextIdx = ubInitData.IdxIniCellData;
-         if ( nextIdx == -1 )
-             ERROR( "invalid blocked_grid_points file." );
-
-         for ( S32 i = 1; i < ubInitData.numCells; i++) {
-              if ( nextIdx == -1 )
-                 ERROR( "invalid blocked_grid_points file." );
-
-              IniCellData& cellData = p_IniCellData[ nextIdx  ];
-              nextIdx = cellData.IdxIniCellData  ;          
-         }
-
-         IniCellData& cellData = p_IniCellData[ nextIdx  ];
-         if ( cellData.IdxIniCellData != -1 )
-              ERROR( "invalid blocked_grid_points file." );
-         cellData.IdxIniCellData = count;
-      }
-      ubInitData.numCells++ ;
-      count++ ;
-   }
-
-   if( p_buf != NULL ) {
-      free( p_buf );
-   }
-   fclose( p_file );
-
-   /* MODEL END */
-
-   return;
+  return;
 }
 
-void ModelRoutine::init( void ) {
-	/* MODEL START */
+void ModelRoutine::initGlobal( Vector<U8>& v_globalData ) {/* called once per simulation */
+  /* MODEL START */
 
-	initializeBioModel();
+  terminateBioModel();
 
-	/* MODEL END */
+  /* MODEL END */
 
-	return;
+  return;
 }
 
-void ModelRoutine::term( void ) {
-	/* MODEL START */
+void ModelRoutine::init( void ) {/* called once per (MPI) process */
+  /* MODEL START */
+  
+  initializeBioModel();
 
-	terminateBioModel();
+  /* MODEL END */
 
-	/* MODEL END */
+  return;
+}
 
-	return;
+void ModelRoutine::term( void ) {/* called once per (MPI) process */
+  /* MODEL START */
+
+  terminateBioModel();
+
+  /* MODEL END */
+
+  return;
 }
 
 void ModelRoutine::setPDEBuffer( const VIdx& startVIdx, const VIdx& regionSize, BOOL& isPDEBuffer ) {
-	/* MODEL START */
+  /* MODEL START */
 
-	if( (startVIdx[0] + regionSize[0]) >= AGAR_HEIGHT ) {
-		isPDEBuffer = false;
-	}
-	else {
-		isPDEBuffer = true;
-	}
+  isPDEBuffer = false;
 
-	/* MODEL END */
+  /* MODEL END */
 
-	return;
+  return;
 }
 
 void ModelRoutine::setHabitable( const VIdx& vIdx, BOOL& isHabitable ) {
-	/* MODEL START */
+  /* MODEL START */
 
-	if( vIdx[0] >=  AGAR_HEIGHT ) {
-		isHabitable = true;
-	}
-	else {/* currently, cells cannot penetrate agar */
-		isHabitable = false;
-	}
+  isHabitable = true;
 
-	/* MODEL END */
+  /* MODEL END */
 
-	return;
+  return;
 }
 

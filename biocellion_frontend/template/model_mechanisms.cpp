@@ -48,10 +48,12 @@ void MechIntrctSpAgentShove::compute( const S32 iter, const VIdx& vIdx0, const S
 {
   S32 agentType0 = spAgent0.state.getType();
   S32 agentType1 = spAgent1.state.getType();
-  
+
+#if 0
   if( !gMechIntrctShoveEnabled[ agentType0 ][ agentType1 ] ) {
     return;
   }
+#endif
 
   REAL R = mFactors[ agentType0 ] * spAgent0.state.getRadius() + mFactors[ agentType1 ] *  spAgent1.state.getRadius() + ( ( mLimits[ agentType0 ] + mLimits[ agentType1 ] ) / 2.0 );
 
@@ -259,7 +261,7 @@ void MolecularSpecies::setNumTimeSteps(const S32 value)
 void MolecularSpecies::getSubgridOffset(const VReal& vOffset, VIdx& subgridVOffset)
 {
   for( S32 dim = 0; dim < DIMENSION; dim++ ) {
-    REAL offset  = 0.5 + vOffset[dim] / IF_GRID_SPACING;
+    REAL offset  = 0.5 + vOffset[dim] / gAgentGrid->getResolution( );
     subgridVOffset[dim] = offset * getSubgridDimension();
   }
 }
@@ -278,7 +280,7 @@ REAL MolecularSpecies::getSubgridValue(const NbrUBEnv& nbrUBEnv, const VReal& vO
   idx_t subgrid_dimension = getSubgridDimension();
   S32 dim;
   VIdx vidx, vsubidx;
-  REAL step = IF_GRID_SPACING / subgrid_dimension;
+  REAL step = gAgentGrid->getResolution( ) / subgrid_dimension;
   for( dim = 0 ; dim < DIMENSION ; dim++ ) {
     vidx[dim] = 0;
     vsubidx[dim] = (idx_t)(vOffset[dim] + 0.5) / step;
@@ -317,14 +319,15 @@ PDEInfo MolecularSpecies::getPDEInfo() const
 
   // set mgSolveInfo.* here
   // ???FIXME: Need to configure these correctly
+  
   pdeInfo.mgSolveInfo.numPre = 3;/* multigrid parameters */
   pdeInfo.mgSolveInfo.numPost = 3;/* multigrid parameters */
   pdeInfo.mgSolveInfo.numBottom = 3;/* multigrid parameters */
   pdeInfo.mgSolveInfo.vCycle = true;/* multigrid parameters */
   pdeInfo.mgSolveInfo.maxIters = 30;/* multigrid parameters */
-  pdeInfo.mgSolveInfo.epsilon = GRID_PHI_EPSILON;/* multigrid parameters */
+  pdeInfo.mgSolveInfo.epsilon = 1e-8;/* multigrid parameters */
   pdeInfo.mgSolveInfo.hang = 1e-6;/* multigrid parameters */
-  pdeInfo.mgSolveInfo.normThreshold = GRID_PHI_NORM_THRESHOLD;/* multigrid parameters */
+  pdeInfo.mgSolveInfo.normThreshold = 1e-10;/* multigrid parameters */
 
   // set splittingInfo here
   pdeInfo.splittingInfo = splittingInfo;
@@ -349,8 +352,8 @@ PDEInfo MolecularSpecies::getPDEInfo() const
   gridPhiInfo.aa_bcVal[2][1] = 0.0;
 
   // ???FIXME: Need to configure this correctly
-  gridPhiInfo.errorThresholdVal = GRID_PHI_NORM_THRESHOLD * -1.0;
-  gridPhiInfo.warningThresholdVal = GRID_PHI_NORM_THRESHOLD * -1.0;
+  gridPhiInfo.errorThresholdVal = pdeInfo.mgSolveInfo.normThreshold * -1.0;
+  gridPhiInfo.warningThresholdVal = pdeInfo.mgSolveInfo.normThreshold * -1.0;
   gridPhiInfo.setNegToZero = true;
 
   pdeInfo.v_gridPhiInfo[0] = gridPhiInfo;
@@ -537,11 +540,11 @@ void MolecularSpeciesGradient::updateIfSubgridRHSLinear( const VIdx& vIdx, const
   // FIXME: Need all secretion and uptake rates for all agent species.  If present, can solve this generically.
   // secrete from agent
   gridRHS = 0.0;
-  for( ubAgentIdx_t l = 0 ; l < ( ubAgentIdx_t )ubAgentData.v_spAgent.size() ; l++ ) {
-    const SpAgent& spAgent = ubAgentData.v_spAgent[l];
-    S32 agentType = spAgent.state.getType();
-    /* FIXME gridRHS += CHEMO_ATTRACTANT_LONG_SECRETION_RATE[agentType]; */
-  }
+  // for( ubAgentIdx_t l = 0 ; l < ( ubAgentIdx_t )ubAgentData.v_spAgent.size() ; l++ ) {
+  //   const SpAgent& spAgent = ubAgentData.v_spAgent[l];
+  //   S32 agentType = spAgent.state.getType();
+  //   /* FIXME gridRHS += CHEMO_ATTRACTANT_LONG_SECRETION_RATE[agentType]; */
+  // }
   
 }
 
@@ -571,14 +574,14 @@ void MolecularSpeciesShortAttractant::updateIfSubgridRHSLinear( const VIdx& vIdx
   // FIXME: Need all secretion and uptake rates for all agent species.  If present, can solve this generically.
   // secrete from agent
   gridRHS = 0.0;
-  for( ubAgentIdx_t l = 0 ; l < ( ubAgentIdx_t )ubAgentData.v_spAgent.size() ; l++ ) {
-    const SpAgent& spAgent = ubAgentData.v_spAgent[l];
-    VIdx sgridVOffset;
-    getSubgridOffset( spAgent.vOffset, sgridVOffset );
-    if( sgridVOffset == subgridVOffset ) {
-      S32 agentType = spAgent.state.getType();
-      /* FIXME: gridRHS += CHEMO_ATTRACTANT_SHORT_SECRETION_RATE[agentType]; */
-    }
-  }
+  // for( ubAgentIdx_t l = 0 ; l < ( ubAgentIdx_t )ubAgentData.v_spAgent.size() ; l++ ) {
+  //   const SpAgent& spAgent = ubAgentData.v_spAgent[l];
+  //   VIdx sgridVOffset;
+  //   getSubgridOffset( spAgent.vOffset, sgridVOffset );
+  //   if( sgridVOffset == subgridVOffset ) {
+  //     S32 agentType = spAgent.state.getType();
+  //     /* FIXME: gridRHS += CHEMO_ATTRACTANT_SHORT_SECRETION_RATE[agentType]; */
+  //   }
+  // }
   
 }

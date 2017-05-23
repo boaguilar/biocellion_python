@@ -1,3 +1,11 @@
+/*
+
+Copyright © 2013 Battelle Memorial Institute. All Rights Reserved.
+
+NOTICE:  These data were produced by Battelle Memorial Institute (BATTELLE) under Contract No. DE-AC05-76RL01830 with the U.S. Department of Energy (DOE).  For a five year period from May 28, 2013, the Government is granted for itself and others acting on its behalf a nonexclusive, paid-up, irrevocable worldwide license in this data to reproduce, prepare derivative works, and perform publicly and display publicly, by or on behalf of the Government.  There is provision for the possible extension of the term of this license.  Subsequent to that period or any extension granted, the Government is granted for itself and others acting on its behalf a nonexclusive, paid-up, irrevocable worldwide license in this data to reproduce, prepare derivative works, distribute copies to the public, perform publicly and display publicly, and to permit others to do so.  The specific term of the license can be identified by inquiry made to BATTELLE or DOE.  NEITHER THE UNITED STATES NOR THE UNITED STATES DEPARTMENT OF ENERGY, NOR BATTELLE, NOR ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR USEFULNESS OF ANY DATA, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS.
+
+*/
+
 /* DO NOT USE FUNCTIONS THAT ARE NOT THREAD SAFE (e.g. rand(), use Util::getModelRand() instead) */
 
 #include "biocellion.h"
@@ -9,378 +17,405 @@
 using namespace std;
 
 void ModelRoutine::initIfGridVar( const VIdx& vIdx, const UBAgentData& ubAgentData, UBEnv& ubEnv ) {
-    /* MODEL START */
-    for ( S32 sol = 0 ; sol < NUM_DIFFUSIBLE_ELEMS ; sol++ )  {  
+  /* MODEL START */
 
-       if(  vIdx[0] >= AGAR_HEIGHT ) {
-           ubEnv.setPhi( sol,  A_INIT_IF_CONCENTRATION[sol]);
-       }
-       else {
-           ubEnv.setPhi( sol, A_INIT_AGAR_CONCENTRATION[sol]) ;
-       }
+#if USE_PHI_ONE
+	for( S32 elemIdx = 0 ; elemIdx < NUM_GRID_PHIS ; elemIdx++ ) {
+		ubEnv.setPhi( elemIdx, PHI_INIT_VAL[elemIdx] );
+	}
+  
+  for( S32 elemIdx = 0 ; elemIdx < NUM_GRID_MODEL_REALS ; elemIdx++ ) {
+		ubEnv.setModelReal( elemIdx, 0.0 );
+	}
+#endif
+  /* MODEL END */
 
-       if ( (SYSTEM_DIMENSION == 2) && (vIdx[2]>0) )
-           ubEnv.setPhi(sol,0.0);
-    }
-
-    for( S32 sol = 0 ; sol < NUM_GRID_MODEL_REALS ; sol++ ) {
-         ubEnv.setModelReal( sol, 0.0 ); 
-    }
-    /* MODEL END */
-    return;
+  return;
 }
 
-void ModelRoutine::updateIfGridVar( const BOOL pre, const S32 iter, const VIdx& vIdx, const NbrUBAgentData& nbrUBAgentData, NbrUBEnv& nbrUBEnv/*[INOUT]*/) {
-    /* MODEL START */
-    CHECK( pre == true );
-    CHECK( iter == 0 );
+void ModelRoutine::initIfSubgridKappa( const S32 pdeIdx, const VIdx& vIdx, const VIdx& subgridVOffset, const UBAgentData& ubAgentData, const UBEnv& ubEnv, REAL& gridKappa ) {/* relevant only if v_gridPhiOutputDivideByKappa[pdeIdx] is set to true in updateFileOutputInfo() */
+  /* MODEL START */
 
-    if ( ( Info::getCurBaselineTimeStep() < 1 ) && ( Info::getSimInitType() == SIM_INIT_TYPE_CODE )/* not starting from checkpoint data */ ) {
-    /* wait for one baseline time step to reduce cell overlaps */
+  gridKappa = 1.0;
+
+  /* MODEL END */
+
+  return;
+}
+
+#if USE_PHI_CENTER_DROPPER
+static inline void center_dropper( const VIdx& vIdx, const S32 elemIdx, NbrUBEnv& nbrUBEnv ) {
+  
+  for( S32 dim = 0 ; dim < DIMENSION ; dim++ ) {
+    idx_t mid = Info::getDomainSize(dim) / 2;
+    if(mid != vIdx[dim]) {
+      // we are not the middle
+      return;
     }
-    else {
-        if( vIdx[0]  >= AGAR_HEIGHT  ) {/* the cell growth region (+ a top fraction of the agarose cylinder), we are ignoring cell penetration to the agarose cylinder */
-            REAL dt;
-            REAL colonyVolRatio = 0.0;
-            dt = BASELINE_TIME_STEP_DURATION/NUM_STATE_AND_GRID_TIME_STEPS_PER_BASELINE;
+  }
+  
+  REAL phi = nbrUBEnv.getPhi( 0, 0, 0, elemIdx );
+  phi += PHI_DROPPER_CONCENTRATION[elemIdx];
+  nbrUBEnv.setPhi( 0, 0, 0, elemIdx, phi );
+}
+#else
+static inline void center_dropper( const VIdx& vIdx, const S32 elemIdx, NbrUBEnv& nbrUBEnv ) {
+}
+#endif
 
-	    /* iterate over 3 * 3 * 3 boxes */
-	    for( S32 i = -1 ; i <= 1 ; i++ ) {
-	     for( S32 j = -1 ; j <= 1 ; j++ ) {
-	      for( S32 k = -1 ; k <= 1 ; k++ ) {
+void ModelRoutine::updateIfGridVar( const BOOL pre, const S32 iter, const VIdx& vIdx, const NbrUBAgentData& nbrUBAgentData, NbrUBEnv& nbrUBEnv/* [INOUT] */ ) {
+  /* MODEL START */
 
-                  if (((idx_t)(vIdx[0]+i)>=Info::getDomainSize(0)) || ((idx_t)(vIdx[0]+i) < 0)) 
-                      continue;
+  if (pre) {
+    // PRE Iteration
+#if USE_PHI_ONE
+    center_dropper( vIdx, GRID_PHI_ONE_TYPE, nbrUBEnv );
 
-                  if (((idx_t)(vIdx[1]+j)>=Info::getDomainSize(1)) || ((idx_t)(vIdx[1]+j) < 0)) 
-                      continue;
+#if USE_SECRETION
 
-                  if (((idx_t)(vIdx[2]+k)>=Info::getDomainSize(2)) || ((idx_t)(vIdx[2]+k) < 0)) 
-                      continue;
+    REAL rhss[3][3][3][NUM_GRID_PHIS];
+    S32 i, j, k, elemIdx, m;
+    for(i = -1; i < 2; i++) {
+      for(j = -1; j < 2; j++) {
+        for(k = -1; k < 2; k++) {
+          for(elemIdx = 0; elemIdx < NUM_GRID_PHIS; elemIdx++) {
+            rhss[i+1][j+1][k+1][elemIdx] = 0.0;
+          }
+        }
+      }
+    }
 
-                                 
-                  const UBAgentData& ubAgentData = *( nbrUBAgentData.getConstPtr(i,j,k));
-                  VIdx ubVIdxOffset;
-                  ubVIdxOffset[0] = i* -1;
-                  ubVIdxOffset[1] = j* -1;
-                  ubVIdxOffset[2] = k* -1;
+		const UBAgentData& ubAgentData = *( nbrUBAgentData.getConstPtr( 0, 0, 0 ) );
+    for( m = 0 ; m < ( S32 )ubAgentData.v_spAgent.size() ; m++ ) {
+      const SpAgent& spAgent = ubAgentData.v_spAgent[m];
+      agentType_t type = spAgent.state.getType();
+      S32 maxLevel = 4; // 0-7  higher is better approximation, lower is faster to calculate
+      REAL aaa_ratio[3][3][3];
+      Util::computeSphereUBVolOvlpRatio(maxLevel, spAgent.vOffset, spAgent.state.getRadius(), aaa_ratio);
 
-                  for(ubAgentIdx_t l=0; l<(ubAgentIdx_t)ubAgentData.v_spAgent.size(); l++ ) {
-                      const SpAgent& spAgent = ubAgentData.v_spAgent[l];
-                      REAL ratio = Util::computeSphereUBVolOvlpRatio( SPHERE_UB_VOL_OVLP_RATIO_MAX_LEVEL, spAgent.vOffset, spAgent.state.getRadius(), ubVIdxOffset );
-                      
-                      if( ratio > 0.0 ) {
-                          REAL radius;
-			  REAL vol;
-
-                          /* compute colony volume */
-                          radius = spAgent.state.getRadius();
-                          vol = ( 4.0 * MY_PI / 3.0 ) * radius * radius * radius;
-                          colonyVolRatio += vol * ratio;
-                      }
-		  }
+      for(elemIdx = 0; elemIdx < NUM_GRID_PHIS; elemIdx++) {
+        for(i = -1; i < 2; i++) {
+          for(j = -1; j < 2; j++) {
+            for(k = -1; k < 2; k++) {
+              if(aaa_ratio[i+1][j+1][k+1] > 0.0) {
+                rhss[i+1][j+1][k+1][elemIdx] += PHI_CELL_SECRETION_RATE[elemIdx][type] * aaa_ratio[i+1][j+1][k+1];
               }
-             }
-	    }
-        
-            colonyVolRatio /= ( IF_GRID_SPACING * IF_GRID_SPACING * IF_GRID_SPACING ) * UB_FULL_COLONY_VOL_RATIO;
-	    if( colonyVolRatio > 1.0 ) {
-	        colonyVolRatio = 1.0;
-	    }
-
-            nbrUBEnv.setModelReal(0,0,0,GRID_MODEL_REAL_COLONY_VOL_RATIO,colonyVolRatio);
+            }
+          }
         }
-        else {/* the agarose cylinder (excluding the top fraction) */
-	    CHECK( vIdx[0]   <  AGAR_HEIGHT  );
-	    CHECK( nbrUBEnv.getModelReal(0,0,0,GRID_MODEL_REAL_COLONY_VOL_RATIO ) <= 0.0 );
-        }
+      }
     }
-
-/* MODEL END */
-return;
-
+    for(elemIdx = 0; elemIdx < NUM_GRID_PHIS; elemIdx++) {
+      S32 idx = PHI_IDX_TO_RHS_IDX[elemIdx];
+      if( idx >= 0 ) {
+        for(i = -1; i < 2; i++) {
+          for(j = -1; j < 2; j++) {
+            for(k = -1; k < 2; k++) {
+              if( nbrUBEnv.getValidFlag(i, j, k) ) {
+                if(rhss[i+1][j+1][k+1][elemIdx] > 0.0) {
+                  nbrUBEnv.setModelReal( i, j, k, idx, rhss[i+1][j+1][k+1][elemIdx] );
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    
+#endif
+    
+#endif
+  } else {
+    // POST Iteration
+    
+#if USE_PHI_ONE
+#if USE_SECRETION
+    // reset to 0.0 for DELTA variables
+    S32 elemIdx;
+    for(elemIdx = 0; elemIdx < NUM_GRID_PHIS; elemIdx++) {
+      S32 idx = PHI_IDX_TO_RHS_IDX[elemIdx];
+      nbrUBEnv.setModelReal( 0, 0, 0, idx, 0.0 );
+    }
+#endif
+#endif
+  }
+  
+  /* MODEL END */
+  
+  return;
 }
 
-void ModelRoutine::updateIfSubgridKappa( const S32 pdeIdx, const VIdx& vIdx, const VIdx& subgridVOffset, const UBAgentData& ubAgentData, const UBEnv& ubEnv, REAL& gridKappa/* to consider cell volume exclusion in computing diffusion flux, set to 1.0 to ignore the volume occupied by cells */ ) {
-	/* MODEL START */
+void ModelRoutine::updateIfSubgridKappa( const S32 pdeIdx, const VIdx& vIdx, const VIdx& subgridVOffset, const UBAgentData& ubAgentData, const UBEnv& ubEnv, REAL& gridKappa ) {
+  /* MODEL START */
 
-        gridKappa = 1.0;
+  gridKappa = 1.0;
 
-	/* MODEL END */
+  /* MODEL END */
 
-	return;
+  return;
 }
 
-void ModelRoutine::updateIfSubgridAlpha( const S32 elemIdx, const VIdx& vIdx, const VIdx& subgridVOffset,  const UBAgentData& ubAgentData, const UBEnv& ubEnv, REAL& gridAlpha/* decay (-) */ ) {
-	/* MODEL START */
+void ModelRoutine::updateIfSubgridAlpha( const S32 elemIdx, const VIdx& vIdx, const VIdx& subgridVOffset, const UBAgentData& ubAgentData, const UBEnv& ubEnv, REAL& gridAlpha/* decay (-) */ ) {
+  /* MODEL START */
 
-        // Decay Rate can be specified here
-	gridAlpha = 0.0;
+#if USE_PHI_ONE
+	gridAlpha = PHI_DECAY_RATE[elemIdx];
+#else
+  ERROR( "unimplmented." );
+#endif
 
-	/* MODEL END */
+  /* MODEL END */
 
-	return;
+  return;
 }
 
 void ModelRoutine::updateIfSubgridBetaInIfRegion( const S32 elemIdx, const S32 dim, const VIdx& vIdx0, const VIdx& subgridVOffset0, const UBAgentData& ubAgentData0, const UBEnv& ubEnv0, const VIdx& vIdx1, const VIdx& subgridVOffset1, const UBAgentData& ubAgentData1, const UBEnv& ubEnv1, REAL& gridBeta ) {
-	/* MODEL START */
+  /* MODEL START */
 
-    REAL gridBeta0;
-    REAL gridBeta1;
+#if USE_PHI_ONE
+  gridBeta = PHI_DIFFUSION_COEFF[elemIdx];
+#else
+  ERROR( "unimplmented." );
+#endif
 
-    if( vIdx0[0] < AGAR_HEIGHT ) {
-        gridBeta0 = A_DIFFUSION_COEFF_AGAR[elemIdx];
-    }
-    else {
-        gridBeta0 = A_DIFFUSION_COEFF_COLONY[elemIdx];
-        if( A_DIFFUSION_COLONY_ONLY[elemIdx] ) {
-            REAL scale = ubEnv0.getModelReal(GRID_MODEL_REAL_COLONY_VOL_RATIO);
-            CHECK( scale <= 1.0 );
-            gridBeta0 *= scale; 
-        }
-    }
+  /* MODEL END */
 
-    if( vIdx1[0] < AGAR_HEIGHT ) {
-        gridBeta1 = A_DIFFUSION_COEFF_AGAR[elemIdx];
-    }
-    else {
-        gridBeta1 = A_DIFFUSION_COEFF_COLONY[elemIdx];       
-        if( A_DIFFUSION_COLONY_ONLY[elemIdx] ) {
-            REAL scale = ubEnv1.getModelReal(GRID_MODEL_REAL_COLONY_VOL_RATIO);
-            CHECK( scale <= 1.0 );
-            gridBeta1 *= scale;
-        }
-    }
-
-    if ( SYSTEM_DIMENSION == 2 ) {
-        if ( vIdx0[2] > 0 )
-            gridBeta0 = 0.0 ;
-        if ( vIdx1[2] > 0 )
-            gridBeta1 = 0.0 ;
-    }
-
-    if( ( gridBeta0 > 0.0 ) && ( gridBeta1 > 0.0 ) ) {
-        gridBeta = 1.0 / ( ( 1.0 / gridBeta0 + 1.0 / gridBeta1 ) * 0.5 );/* harmonic mean */
-    }
-    else {
-        gridBeta = 0.0;
-    }
-
-    /* MODEL END */
-    return;
+  return;
 }
 
 void ModelRoutine::updateIfSubgridBetaPDEBufferBdry( const S32 elemIdx, const S32 dim, const VIdx& vIdx, const VIdx& subgridVOffset, const UBAgentData& ubAgentData, const UBEnv& ubEnv, REAL& gridBeta ) {
-	/* MODEL START */
+  /* MODEL START */
 
-	CHECK( vIdx[0] > 0 );
-	CHECK( vIdx[0]  < AGAR_HEIGHT );
-	gridBeta = A_DIFFUSION_COEFF_AGAR[elemIdx];
+#if USE_PHI_ONE
+  gridBeta = PHI_DIFFUSION_COEFF[elemIdx];
+#else
+  ERROR( "unimplmented." );
+#endif
 
-        
+  /* MODEL END */
 
-	/* MODEL END */
-
-	return;
+  return;
 }
 
 void ModelRoutine::updateIfSubgridBetaDomainBdry( const S32 elemIdx, const S32 dim, const VIdx& vIdx, const VIdx& subgridVOffset, const UBAgentData& ubAgentData, const UBEnv& ubEnv, REAL& gridBeta ) {
-	/* MODEL START */
+  /* MODEL START */
 
-//	CHECK( dim == 2 );
-//	CHECK( vIdx[2] == ( idx_t )( Info::getDomainSize( dim ) - 1 ) );
+#if USE_PHI_ONE
+	gridBeta = 0.0;/* zero flux at domain boundary */
+#else
+  ERROR( "unimplmented." );
+#endif
 
-	gridBeta = 0.0;
+  /* MODEL END */
 
-	/* MODEL END */
-
-	return;
+  return;
 }
 
+void ModelRoutine::updateIfSubgridRHSLinear( const S32 elemIdx, const VIdx& vIdx, const VIdx& subgridVOffset, const UBAgentData& ubAgentData, const UBEnv& ubEnv, REAL& gridRHS/* uptake(-) and secretion (+) */ ) {
+  /* MODEL START */
 
-//void ModelRoutine::adjustIfSubgridRHSTimeDependentLinear( const S32 elemIdx, const VIdx& vIdx, const VIdx& subgridVOffset, const UBAgentData& ubAgentData,  const UBEnv& ubEnv, REAL& gridRHS/* INOUT, uptake(-) and secretion (+) */ ) {
-	/* MODEL START */
+  //OUTPUT(5, "subgridVOffset: " << subgridVOffset[0] << " " << subgridVOffset[1] << " " << subgridVOffset[2])
+  
+#if USE_PHI_ONE
+#if USE_SECRETION
+  S32 j = PHI_IDX_TO_RHS_IDX[elemIdx];
+  if( j >= 0 ) {
+    gridRHS = ubEnv.getModelReal( GRID_MODEL_REAL_PHI_ONE_RHS );
+    if(gridRHS < 0.0) {
+      ERROR("vIdx: " << (vIdx[0]) << "," << (vIdx[1]) << "," << (vIdx[2])   << " error:  gridRHS: " << gridRHS);
+    }
+  } else {
+    gridRHS = 0.0;
+  }
+#else
+  gridRHS = 0.0;
+#endif
+#else
+  ERROR( "unimplmented." );
+#endif
 
-//	ERROR( "unimplemented." );
+  /* MODEL END */
 
-	/* MODEL END */
+  return;
+}
 
-//	return;
-//}
+void ModelRoutine::adjustIfSubgridRHSTimeDependentLinear( const S32 elemIdx, const VIdx& vIdx, const VIdx& subgridVOffset, const UBAgentData& ubAgentData, const UBEnvModelVar& ubEnvModelVar, const REAL gridPhi, REAL& gridRHS/* INOUT */ ) {
+  /* MODEL START */
 
-void ModelRoutine::updateIfSubgridRHSTimeDependentSplitting( const S32 pdeIdx, const VIdx& vIdx, const VIdx& subgridVOffset, const UBAgentData& ubAgentData, const UBEnvModelVar& ubEnvModelVar, const Vector<double>& v_gridPhi/* [idx] */, Vector<double>& v_gridRHS/* [idx], uptake(-) and secretion (+) */ ) {
-	/* MODEL START */
+#if USE_PHI_ONE
+#if USE_SECRETION
+  S32 j = PHI_IDX_TO_RHS_IDX[elemIdx];
+  if( j >= 0 ) {
+    gridRHS = ubEnvModelVar.getModelReal( GRID_MODEL_REAL_PHI_ONE_RHS );
+  } else {
+    gridRHS = 0.0;
+  }
+#else
+  gridRHS = 0.0;
+#endif
+#else
+  ERROR( "unimplmented." );
+#endif
 
-	ERROR( "unimplemented." );
+  /* MODEL END */
 
-	/* MODEL END */
+  return;
+}
 
-	return;
+void ModelRoutine::updateIfSubgridRHSTimeDependentSplitting( const S32 pdeIdx, const VIdx& vIdx, const VIdx& subgridVOffset, const UBAgentData& ubAgentData, const UBEnvModelVar& ubEnvModelVar, const Vector<double>& v_gridPhi/* [idx] */, Vector<double>& v_gridRHS/* [idx], uptake(-) and secretion (+) */ ) {/* for Wnt & SFRP */
+  /* MODEL START */
+
+  ERROR( "unimplemented." );
+
+  /* MODEL END */
+
+  return;
 }
 
 void ModelRoutine::updateIfGridAMRTags( const VIdx& vIdx, const NbrUBAgentData& nbrUBAgentData, const NbrUBEnv& nbrUBEnv, Vector<S32>& v_finestLevel/* [pdeIdx] */ ) {
-    /* MODEL START */
+  /* MODEL START */
 
-    v_finestLevel.assign(NUM_DIFFUSIBLE_ELEMS, 0 );/* coarsest level */
-    //for( S32 pdeIdx = 0 ; pdeIdx < NUM_DIFFUSIBLE_ELEMS ; pdeIdx++ ) {
-    //        v_finestLevel[pdeIdx] = A_NUM_AMR_LEVELS[pdeIdx] - 1;
-    // }
-
-    /* MODEL END */
-    return;
-}
-
-void ModelRoutine::updateIfGridDirichletBCVal( const S32 elemIdx, const VReal& pos, const S32 dim, const BOOL lowSide, const UBEnvModelVar a_ubEnvModelVar[3], const Vector<REAL> a_gridPhi[3], REAL& bcVal ) {
-	/* MODEL START */
-
-	ERROR( "unimplmented." );
-
-	/* MODEL END */
-
-	return;
-}
-
-void ModelRoutine::updateIfGridNeumannBCVal( const S32 elemIdx, const VReal& pos, const S32 dim, const BOOL lowSide, const UBEnvModelVar a_ubEnvModelVar[3], const Vector<REAL>  a_gridPhi[3], REAL& bcVal ) {
-	/* MODEL START */
-
-	ERROR( "unimplmented." );
-
-	/* MODEL END */
-
-	return;
-}
-
-void ModelRoutine::initPDEBufferPhi( const S32 pdeIdx, const VIdx& startVIdx, const VIdx& pdeBufferBoxSize, Vector<REAL>& v_gridPhi ) {
-	/* MODEL START */
-
-#if ENABLE_CHECK
-	CHECK( startVIdx[0]  < AGAR_HEIGHT );
+#if USE_PHI_ONE
+	v_finestLevel.assign( NUM_GRID_PHIS, 0 );/* coarsest level */
+  for( S32 i = 0; i < NUM_GRID_PHIS; i++ ) {
+    v_finestLevel[i] = PHI_AMR_LEVELS[i] - 1;
+  }
 #endif
 
-    //for( S32 pdeIdx = 0 ; pdeIdx < NUM_DIFFUSIBLE_ELEMS ; pdeIdx++ ) {
-	v_gridPhi[0] = A_INIT_AGAR_CONCENTRATION[ pdeIdx ];
-    //}
+  /* MODEL END */
 
-
-	/* MODEL END */
-
-	return;
+  return;
 }
 
-void ModelRoutine::updatePDEBufferKappa( const S32 pdeIdx, const VIdx& startVIdx, const VIdx& pdeBufferBoxSize, REAL& gridKappa/* to consider cell volume exclusion in computing diffusion flux, set to 1.0 to ignore the volume occupied by cells */ ) {
-	/* MODEL START */
+void ModelRoutine::updateIfGridDirichletBCVal( const S32 elemIdx, const VReal& pos, const S32 dim, const BOOL lowSide, const UBEnvModelVar a_ubEnvModelVar[3], const Vector<REAL> av_gridPhi[3]/* av_gridPhi[].size() == ratio * raito * ratio (ratio = Info::envAuxDataInfo.v_phiRatioFromIfGridToIfSubgrid[elemIdx]), use VIdx::getIdx3DTo1D() to index */, REAL& bcVal ) {
+  /* MODEL START */
 
-	gridKappa = 1.0;
+  ERROR( "unimplemented." );
 
-	/* MODEL END */
+  /* MODEL END */
 
-	return;
+  return;
+}
+
+void ModelRoutine::updateIfGridNeumannBCVal( const S32 elemIdx, const VReal& pos, const S32 dim, const BOOL lowSide, const UBEnvModelVar a_ubEnvModelVar[3], const Vector<REAL> av_gridPhi[3]/* av_gridPhi[].size() == ratio * raito * ratio (ratio = Info::envAuxDataInfo.v_phiRatioFromIfGridToIfSubgrid[elemIdx]), use VIdx::getIdx3DTo1D() to index */, REAL& bcVal ) {
+  /* MODEL START */
+
+  ERROR( "unimplemented." );
+
+  /* MODEL END */
+
+  return;
+}
+
+void ModelRoutine::initPDEBufferPhi( const S32 pdeIdx, const VIdx& startVIdx, const VIdx& pdeBufferBoxSize, Vector<REAL>& v_gridPhi/* [idx] */ ) {
+  /* MODEL START */
+
+  ERROR( "unimplemented." );
+
+  /* MODEL END */
+
+  return;
+}
+
+void ModelRoutine::initPDEBufferKappa( const S32 pdeIdx, const VIdx& startVIdx, const VIdx& pdeBufferBoxSize, REAL& gridKappa ) {/* relevant only if v_gridPhiOutputDivideByKappa[pdeIdx] is set to true in updateFileOutputInfo() */
+  /* MODEL START */
+
+  ERROR( "unimplemented." );
+
+  /* MODEL END */
+
+  return;
+}
+
+void ModelRoutine::updatePDEBufferKappa( const S32 pdeIdx, const VIdx& startVIdx, const VIdx& pdeBufferBoxSize, REAL& gridKappa ) {
+  /* MODEL START */
+
+  ERROR( "unimplemented." );
+
+  /* MODEL END */
+
+  return;
 }
 
 void ModelRoutine::updatePDEBufferAlpha( const S32 elemIdx, const VIdx& startVIdx, const VIdx& pdeBufferBoxSize, REAL& gridAlpha/* decay (-) */ ) {
-	/* MODEL START */
-        // Decay here
-	gridAlpha = 0.0;
+  /* MODEL START */
 
-	/* MODEL END */
+#if USE_PHI_ONE
+	gridAlpha = PHI_DECAY_RATE[elemIdx];
+#else
+  ERROR( "unimplmented." );
+#endif
 
-	return;
+  /* MODEL END */
+
+  return;
 }
 
 void ModelRoutine::updatePDEBufferBetaInPDEBufferRegion( const S32 elemIdx, const S32 dim, const VIdx& startVIdx0, const VIdx& startVIdx1, const VIdx& pdeBufferBoxSize, REAL& gridBeta ) {
-	/* MODEL START */
+  /* MODEL START */
 
-#if ENABLE_CHECK
-	CHECK( startVIdx0[0] + pdeBufferBoxSize[0]  < AGAR_HEIGHT );
+#if USE_PHI_ONE
+  gridBeta = PHI_DIFFUSION_COEFF[elemIdx];
+#else
+  ERROR( "unimplmented." );
 #endif
 
-	gridBeta = A_DIFFUSION_COEFF_AGAR[elemIdx];
+  /* MODEL END */
 
-	/* MODEL END */
-
-	return;
+  return;
 }
 
 void ModelRoutine::updatePDEBufferBetaDomainBdry( const S32 elemIdx, const S32 dim, const VIdx& startVIdx, const VIdx& pdeBufferBoxSize, REAL& gridBeta ) {
-	/* MODEL START */
+  /* MODEL START */
 
-	//CHECK( dim == 2 );
-	//CHECK( startVIdx[2] == 0 );
+#if USE_PHI_ONE
+  gridBeta = PHI_DIFFUSION_COEFF[elemIdx];
+#else
+  ERROR( "unimplmented." );
+#endif
 
-	gridBeta = 0.0;
+  /* MODEL END */
 
-	/* MODEL END */
-
-	return;
+  return;
 }
-
-//void ModelRoutine::updatePDEBufferAdvectionVelocityInPDEBufferRegion( const S32 elemIdx, const S32 dim, const VIdx& startVIdx0, const VIdx& startVIdx1, const VIdx& pdeBufferBoxSize, REAL& gridAdvectionVelocity ) {
-//	/* MODEL START */
-//
-//	ERROR( "unimplemented." );
-//
-//	/* MODEL END */
-//
-//	return;
-//}
-
-//void ModelRoutine::updatePDEBufferAdvectionVelocityDomainBdry( const S32 elemIdx, const S32 dim, const VIdx& startVIdx, const VIdx& pdeBufferBoxSize, REAL& gridAdvectionVelocity ) {
-//	/* MODEL START */
-//
-//	ERROR( "unimplemented." );
-//
-//	/* MODEL END */
-//
-//	return;
-//}
 
 void ModelRoutine::updatePDEBufferRHSLinear( const S32 elemIdx, const VIdx& startVIdx, const VIdx& pdeBufferBoxSize, const REAL gridPhi, REAL& gridRHS/* uptake(-) and secretion (+) */ ) {
-	/* MODEL START */
+  /* MODEL START */
 
-	gridRHS = 0.0;
+  ERROR( "unimplemented." );
 
-	/* MODEL END */
+  /* MODEL END */
 
-	return;
+  return;
 }
-
-//void ModelRoutine::adjustPDEBufferRHSTimeDependentLinear( const S32 elemIdx, const VIdx& startVIdx, const VIdx& pdeBufferBoxSize, const REAL gridPhi, REAL& gridRHS/* INOUT, uptake(-) and secretion (+) */ ) {
-	/* MODEL START */
-
-//	ERROR( "unimplemented." );
-
-	/* MODEL END */
-
-//	return;
-//}
 
 void ModelRoutine::updatePDEBufferRHSTimeDependentSplitting( const S32 pdeIdx, const VIdx& startVIdx, const VIdx& pdeBufferBoxSize, const Vector<double>& v_gridPhi/* [idx] */, Vector<double>& v_gridRHS/* [idx], uptake(-) and secretion (+) */ ) {
-	/* MODEL START */
+  /* MODEL START */
 
-	ERROR( "unimplemented." );
+  ERROR( "unimplemented." );
 
-	/* MODEL END */
+  /* MODEL END */
 
-	return;
+  return;
 }
 
-void ModelRoutine::updatePDEBufferDirichletBCVal( const S32 elemIdx, const VReal& startPos, const VReal& pdeBufferBoxSize, const S32 dim, const BOOL lowSide, REAL& bcVal ) {
-	/* MODEL START */
+void ModelRoutine::updatePDEBufferDirichletBCVal( const S32 elemIdx, const VReal& startPos, const VReal& pdeBufferFaceSize, const S32 dim, const BOOL lowSide, REAL& bcVal ) {
+  /* MODEL START */
 
-	ERROR( "unimplmented." );
+  ERROR( "unimplmented." );
 
-	/* MODEL END */
+  /* MODEL END */
 
-	return;
+  return;
 }
 
-void ModelRoutine::updatePDEBufferNeumannBCVal( const S32 elemIdx, const VReal& startPos, const VReal& pdeBufferBoxSize, const S32 dim, const BOOL lowSide, REAL& bcVal ) {
-	/* MODEL START */
+void ModelRoutine::updatePDEBufferNeumannBCVal( const S32 elemIdx, const VReal& startPos, const VReal& pdeBufferFaceSize, const S32 dim, const BOOL lowSide, REAL& bcVal ) {
+  /* MODEL START */
 
-	ERROR( "unimplmented." );
+  ERROR( "unimplmented." );
 
-	/* MODEL END */
+  /* MODEL END */
 
-	return;
+  return;
 }
 

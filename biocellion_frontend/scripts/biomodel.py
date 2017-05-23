@@ -1,7 +1,7 @@
 import sys
 import xml.etree.ElementTree as ET
 from agent_species import Param
-import simulator, particle, agent_species, agent_grid
+import simulator, particle, agent_species, agent_grid, computation_domain
 
 def same_type( a, b ):
     if type( a ).__name__ == 'instance':
@@ -27,6 +27,9 @@ class BioModel:
         self.SCAN_VALIDATE_MODE = 1
         self.SCAN_PARSE_MODE = 2
         return
+
+    def getIDynoMiCS( self ):
+        return self.mIDynoMiCS
 
     def getBioModelH( self, indent, depth ):
         return self.mIDynoMiCS.getBioModelH( indent, depth )
@@ -311,8 +314,78 @@ class BioModel:
         return ok
 
     def scanWorldXML( self, node, parent_object=None ):
+        may_attributes = (  )
+        required_attributes = (  )
+        may_children = ( "bulk", "agar", "computationDomain", )
+        required_children = (  )
+        may_params = (  )
+        required_params = (  )
+        node_object = self.mIDynoMiCS.getWorld( )
+        parent_object = None # don't need to add this as a child
+        child_methods = {
+            "bulk": self.scanWorldBulkXML,
+            "agar": self.scanWorldAgarXML,
+            "computationDomain": self.scanWorldComputationDomainXML,
+        }
+        
+        ok = self.scanNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
+        
+        return ok
+
+    def scanWorldBulkXML( self, node, parent_object=None ):
         ok = True
-        print( "world not scaned yet" )
+        print( "world-bulk not scaned yet" )
+        return ok
+
+    def scanWorldAgarXML( self, node, parent_object=None ):
+        ok = True
+        print( "world-agar not scaned yet" )
+        return ok
+
+    def scanWorldComputationDomainXML( self, node, parent_object=None ):
+        may_attributes = ( "name",  )
+        required_attributes = ( "name",  )
+        may_children = ( "grid", "boundaryCondition", "param", )
+        required_children = ( "grid", )
+        may_params = ( "resolution", "specificArea", "hasBulk", "boundaryLayer", "biofilmDiffusivity", )
+        required_params = (  )
+        if not self.mIDynoMiCS.getWorld().getComputationDomains().addItem( node.get('name') ):
+            sys.exit( "ERROR : couldn't add a computation domain." )
+        node_object = self.mIDynoMiCS.getWorld().getComputationDomains().getLastItem( )
+        parent_object = None # don't need to add this as a child
+        child_methods = {
+            "param": self.scanGenericParamXML,
+            "grid": self.scanWorldComputationDomainGridXML,
+            "boundaryCondition": self.scanWorldComputationDomainBoundaryConditionXML,
+        }
+
+        ok = self.scanNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
+        
+        return ok
+
+    def scanWorldComputationDomainGridXML( self, node, parent_object=None ):
+        may_attributes = ( "nDim", "nI", "nJ", "nK",  )
+        required_attributes = ( "nDim", "nI", "nJ", )
+        may_children = (  )
+        required_children = (  )
+        may_params = (  )
+        required_params = (  )
+        if parent_object is None:
+            node_object = computation_domain.ComputationDomainGrid( )
+        else:
+            node_object = parent_object.getGrid( )
+            parent_object = None # don't need to add this as a child
+            
+        child_methods = {
+        }
+
+        ok = self.scanNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
+        
+        return ok
+
+    def scanWorldComputationDomainBoundaryConditionXML( self, node, parent_object=None ):
+        ok = True
+        print( "world-computationdomain-boundarycondition not scaned yet" )
         return ok
 
     def scanReactionXML( self, node, parent_object=None ):

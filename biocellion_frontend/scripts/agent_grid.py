@@ -11,6 +11,13 @@ class AgentGrid( ParamHolder ):
         self.addParam( Param( "shovingMutual", "bool", True ) )
         self.addParam( Param( "erosionMethod", "bool", True ) )
         self.addParam( Param( "sloughDetachedBiomass", "bool", False ) )
+
+        self.mPrivateNumberHiddenParams = [ "resolution", "shovingFraction", "shovingMaxIter" ]
+        self.mPrivateBoolHiddenParams = [ "shovingMutual", "erosionMethod", "sloughDetachedBiomass" ]
+        self.mPrivateStringHiddenParams = [ "computationDomain" ]
+        self.mPrivateHiddenParams = self.mPrivateNumberHiddenParams + self.mPrivateBoolHiddenParams + self.mPrivateStringHiddenParams
+        self.mHiddenParams = self.mHiddenParams + self.mPrivateHiddenParams
+        
         return
 
     def getBioModelH( self, indent, depth ):
@@ -18,8 +25,23 @@ class AgentGrid( ParamHolder ):
         return lines
 
     def getInitializeBioModel( self, indent, depth ):
-        lines  = "// FIXME: AgentGrid \n"
-        return lines
+        varname = "gAgentGrid"
+        lines = [ ]
+        lines.append( (depth*indent) + "{" )
+        depth += 1
+
+        lines.append( (depth*indent) + "%s = new AgentGrid( );" % (varname, ) )
+        lines.append( ParamHolder.toCpp( self, varname, indent, depth ) )
+        
+        s = self.getInitializeBioModelSetDataMembers( varname, "->", indent, depth,
+                                                      self.mPrivateBoolHiddenParams,
+                                                      self.mPrivateNumberHiddenParams,
+                                                      [] )
+        lines.append( s )
+        
+        depth -= 1;
+        lines.append( (depth*indent) + "}" )
+        return "\n".join( lines )
 
     def getName(self):
         return self.mName

@@ -1,3 +1,11 @@
+/*
+
+Copyright © 2013 Battelle Memorial Institute. All Rights Reserved.
+
+NOTICE:  These data were produced by Battelle Memorial Institute (BATTELLE) under Contract No. DE-AC05-76RL01830 with the U.S. Department of Energy (DOE).  For a five year period from May 28, 2013, the Government is granted for itself and others acting on its behalf a nonexclusive, paid-up, irrevocable worldwide license in this data to reproduce, prepare derivative works, and perform publicly and display publicly, by or on behalf of the Government.  There is provision for the possible extension of the term of this license.  Subsequent to that period or any extension granted, the Government is granted for itself and others acting on its behalf a nonexclusive, paid-up, irrevocable worldwide license in this data to reproduce, prepare derivative works, distribute copies to the public, perform publicly and display publicly, and to permit others to do so.  The specific term of the license can be identified by inquiry made to BATTELLE or DOE.  NEITHER THE UNITED STATES NOR THE UNITED STATES DEPARTMENT OF ENERGY, NOR BATTELLE, NOR ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR USEFULNESS OF ANY DATA, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS.
+
+*/
+
 /* DO NOT USE FUNCTIONS THAT ARE NOT THREAD SAFE (e.g. rand(), use Util::getModelRand() instead) */
 
 #include "biocellion.h"
@@ -14,65 +22,26 @@ using namespace std;
 
 #if HAS_SPAGENT
 void ModelRoutine::updateSpAgentOutput( const VIdx& vIdx, const SpAgent& spAgent, REAL& color, Vector<REAL>& v_extraScalar, Vector<VReal>& v_extraVector ) {
+  /* MODEL START */
 
-   /* MODEL START */
-   if(spAgent.state.getModelReal(CELL_MODEL_REAL_UPTAKE_PCT)>0.0 ){/*live */
-      color = spAgent.state.getType();
-   }
-   else {/* dead */
-      color = NUM_AGENT_TYPES ;
-   }
-   //CHECK( v_extraScalar.size() == 0 );
+  color = spAgent.state.getType();
+  CHECK( v_extraScalar.size() == 0 );
+  CHECK( v_extraVector.size() == 0 );
 
-   v_extraScalar[0] = REAL( spAgent.junctionData.getCurId() )  ;
-   v_extraScalar[1] = spAgent.state.getModelReal( CELL_MODEL_REAL_BIOMAS );
-   v_extraScalar[2] = spAgent.state.getModelReal( CELL_MODEL_REAL_INERT );
+  /* MODEL END */
 
-   // display values of ODEs  
-   for ( S32 i = 3 ; i < NUM_AGENT_OUTPUTS; i++ ) {
-       S32 type = spAgent.state.getType(); 
-       if ( AA_INDEX_ODE_OUTPUT[ type ][i-3] < 0 )
-           v_extraScalar[i] = -1.0 ;  
-       else 
-          v_extraScalar[i] = spAgent.state.getODEVal(0, AA_INDEX_ODE_OUTPUT[ type ][i-3] ) ;
-   }
-
-   /* MODEL END */
-   return;
+  return;
 }
 #endif
 
 void ModelRoutine::updateSummaryVar( const VIdx& vIdx, const NbrUBAgentData& nbrUBAgentData, const NbrUBEnv& nbrUBEnv, Vector<REAL>& v_realVal/* [elemIdx] */, Vector<S32>& v_intVal/* [elemIdx] */ ) {
-   /* MODEL START */
+  /* MODEL START */
 
-    const UBAgentData& ubAgentData = *( nbrUBAgentData.getConstPtr(0,0,0) );
-    REAL rCellVol[ NUM_AGENT_TYPES ] ;
-    for ( S32 type = 0 ; type < NUM_AGENT_TYPES; type++) {
-        rCellVol[ type ] = 0.0 ;
-    }
+  CHECK( v_realVal.size() == 0 );
+  CHECK( v_intVal.size() == 0 );
 
-    //CHECK( v_realVal.size() == NUM_GRID_SUMMARY_REALS );
-    CHECK( v_intVal.size() == 0 );
+  /* MODEL END */
 
-    // This is surely not good practice 
-    for (S32 pdeIdx = 0; pdeIdx < NUM_DIFFUSIBLE_ELEMS; pdeIdx++){
-        v_realVal[pdeIdx] = nbrUBEnv.getPhi(0,0,0,pdeIdx); 
-    }
-
-    for( S32 i = 0 ; i < ( S32 )ubAgentData.v_spAgent.size() ; i++ ) {
-        const SpAgent& spAgent = ubAgentData.v_spAgent[i];
-        S32 type = spAgent.state.getType() ;
- 
-        if(spAgent.state.getModelReal(CELL_MODEL_REAL_UPTAKE_PCT)>0.0) {
-            rCellVol[type] += 1.0 ;
-        }	
-    }
-   
-    // assuming order in summary structure, diffusibles first, agents later
-    for ( S32 type = 0 ; type < NUM_AGENT_TYPES; type++) {
-        v_realVal[type + NUM_DIFFUSIBLE_ELEMS] = rCellVol[type] ;
-    }
-    /* MODEL END */
-    return;
+  return;
 }
 

@@ -21,10 +21,11 @@ INCLUDE += -I $(BIOCELLION_ROOT)/libmodel/include
 
 CXXFLAG += -fPIC
 
-DEP_HEADERS := model_define.h model_mechanisms.h agent_species.h biomodel.h
+DEP_HEADERS := model_define.h model_mechanisms.h agent_species.h biomodel.h particle.h reaction.h simulator.h agent_grid.h
+BIOMODEL_OBJECTS := agent_species.o biomodel.o model_mechanisms.o particle.o reaction.o simulator.o agent_grid.o
 
-libmodel${PRECISION}${SUPPORT_MP}${SUPPORT_SP}.so: interface_config.o interface_agent.o interface_mech_intrct.o interface_grid.o interface_output.o model_routine_config.o model_routine_grid.o model_routine_agent.o model_routine_mech_intrct.o model_routine_output.o interface_check.o model_mechanisms.o agent_species.o biomodel.o
-	$(CXX) -shared $(LINKFLAG) -Wl,-soname,libmodel${PRECISION}${SUPPORT_MP}${SUPPORT_SP}.so -o libmodel${PRECISION}${SUPPORT_MP}${SUPPORT_SP}.so interface_config.o interface_agent.o interface_mech_intrct.o interface_grid.o interface_output.o model_routine_config.o model_routine_grid.o model_routine_agent.o model_routine_mech_intrct.o model_routine_output.o interface_check.o model_mechanisms.o agent_species.o biomodel.o
+libmodel${PRECISION}${SUPPORT_MP}${SUPPORT_SP}.so: interface_config.o interface_agent.o interface_mech_intrct.o interface_grid.o interface_output.o model_routine_config.o model_routine_grid.o model_routine_agent.o model_routine_mech_intrct.o model_routine_output.o interface_check.o $(BIOMODEL_OBJECTS)
+	$(CXX) -shared $(LINKFLAG) -Wl,-soname,libmodel${PRECISION}${SUPPORT_MP}${SUPPORT_SP}.so -o libmodel${PRECISION}${SUPPORT_MP}${SUPPORT_SP}.so interface_config.o interface_agent.o interface_mech_intrct.o interface_grid.o interface_output.o model_routine_config.o model_routine_grid.o model_routine_agent.o model_routine_mech_intrct.o model_routine_output.o interface_check.o $(BIOMODEL_OBJECTS)
 
 interface_config.o: $(BIOCELLION_ROOT)/libmodel/interface/interface_config.cpp
 	$(CXX) $(CXXFLAG) $(INCLUDE) -c $(BIOCELLION_ROOT)/libmodel/interface/interface_config.cpp -o interface_config.o
@@ -59,13 +60,7 @@ model_routine_mech_intrct.o: model_routine_mech_intrct.cpp $(DEP_HEADERS)
 model_routine_output.o: model_routine_output.cpp $(DEP_HEADERS)
 	$(CXX) $(CXXFLAG) $(INCLUDE) -c $< -o $@
 
-model_mechanisms.o: model_mechanisms.cpp $(DEP_HEADERS)
-	$(CXX) $(CXXFLAG) $(INCLUDE) -c $< -o $@
-
-agent_species.o: agent_species.cpp $(DEP_HEADERS)
-	$(CXX) $(CXXFLAG) $(INCLUDE) -c $< -o $@
-
-biomodel.o: biomodel.cpp $(DEP_HEADERS)
+$(BIOMODEL_OBJECTS) : %.o : %.cpp $(DEP_HEADERS)
 	$(CXX) $(CXXFLAG) $(INCLUDE) -c $< -o $@
 
 all:
@@ -75,9 +70,15 @@ clean:
 	$(RM) *.ilo
 	$(RM) *.o
 	$(RM) *.so
+	$(RM) *~
 
 clean_all:
 	$(RM) *.ilo
 	$(RM) *.o
 	$(RM) *.so
+
+run:
+	make all
+	chmod +x ./RUN.bash
+	./RUN.bash "$(BIOCELLION_ROOT)"
 
