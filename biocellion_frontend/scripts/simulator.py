@@ -1,3 +1,4 @@
+import sys
 from agent_species import Param, ParamHolder
 from agent_species import AllAgentSpecies
 from particle import AllParticles
@@ -9,12 +10,12 @@ class Simulator( ParamHolder ):
     def __init__(self):
         self.mName = "simulator"
         ParamHolder.__init__(self)
-        self.addParam( Param( "restartPreviousRun", "bool", False ) )
-        self.addParam( Param( "randomSeed", "int", 75321 ) )
-        self.addParam( Param( "outputPeriod", "hr", 0.01 ) )
-        self.addParam( Param( "chemostat", "bool", False ) )
-        self.addParam( Param( "diffusionReactionOnAgentTime", "bool", False ) )
-        self.addParam( Param( "agentTimeStep", "hr", 0.01 ) )
+        self.addParam( Param( "restartPreviousRun", "bool", False, False ) )
+        self.addParam( Param( "randomSeed", "int", 75321, False ) )
+        self.addParam( Param( "outputPeriod", "hr", 0.01, True ) )
+        self.addParam( Param( "chemostat", "bool", False, False ) )
+        self.addParam( Param( "diffusionReactionOnAgentTime", "bool", False, False ) )
+        self.addParam( Param( "agentTimeStep", "hr", 0.01, True ) )
         self.mPrivateNumberHiddenParams = [ "randomSeed", "outputPeriod", "agentTimeStep" ]
         self.mPrivateBoolHiddenParams = [ "restartPreviousRun", "chemostat", "diffusionReactionOnAgentTime" ]
         self.mPrivateStringHiddenParams = [ ]
@@ -79,11 +80,11 @@ class TimeStep( ParamHolder ):
     def __init__(self):
         self.mName = "timeStep"
         ParamHolder.__init__(self)
-        self.addParam( Param( "adaptive", "bool", False ) )
-        self.addParam( Param( "timeStepIni", "hr", 0.01 ) )
-        self.addParam( Param( "timeStepMin", "hr", 0.01 ) )
-        self.addParam( Param( "timeStepMax", "hr", 0.01 ) )
-        self.addParam( Param( "endOfSimulation", "hr", 0.01 ) )
+        self.addParam( Param( "adaptive", "bool", False, False ) )
+        self.addParam( Param( "timeStepIni", "hr", 0.01, False ) )
+        self.addParam( Param( "timeStepMin", "hr", 0.01, False ) )
+        self.addParam( Param( "timeStepMax", "hr", 0.01, False ) )
+        self.addParam( Param( "endOfSimulation", "hr", 0.01, True ) )
 
         self.mPrivateNumberHiddenParams = [ "timeStepIni", "timeStepMin", "timeStepMax", "endOfSimulation" ]
         self.mPrivateBoolHiddenParams = [ "adaptive" ]
@@ -180,18 +181,23 @@ class IDynoMiCS( ParamHolder ):
     def organizeChildren( self ):
         for t in self.mChildren:
             print( "Still have children of type: " + str( t ) )
-        #     for i in range( len( self.mChildren[ t ] ) ):
-        #         if t == 'Particle':
-        #             c = self.mChildren[ t ][ i ]
-        #             if c.getName() not in self.mParticles.getParticles():
-        #                 self.mParticles.addParticle( c.getName(), c )
-        #             self.mChildren[ t ][ i ] = None
-
-        # t = 'Particle'
-        # if t in self.mChildren:
-        #     print( "Cleaning up " + t + " children." )
-        #     del self.mChildren[ t ]
+            sys.exit( "ERROR: children should not be here." )
                     
+        ## AgentSpeciesParticles need to be connected to Particles
+        for species_key in self.mAgentSpecies.getKeys( ):
+            species = self.mAgentSpecies.getItem( species_key )
+            for species_particle_key in species.getParticles( ).getKeys( ):
+                species_particle = species.getParticles( ).getItem( species_particle_key )
+                particle_key = species_particle.getAttribute( 'name' ).getValue( )
+                if self.mParticles.hasKey( particle_key ):
+                    particle = self.mParticles.getItem( particle_key )
+                    species_particle.setParticle( particle )
+                else:
+                    msg  = "ERROR:"
+                    msg += " species " + species.getAttribute( 'class' ).getValue( ) + "-" + species.getAttribute( 'name' ).getValue( )
+                    msg += " has particle " + species_particle.getAttribute( 'name' ).getValue( )
+                    msg += " but no particle exists.  Particles = " + " ".join( self.mParticles.getKeys( ) )
+                    sys.exit( msg )
         return
 
     def __str__(self):

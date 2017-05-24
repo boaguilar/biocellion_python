@@ -1,5 +1,46 @@
 #include "biocellion.h"
 #include "agent_species.h"
+#include "model_define.h"
+#include <cmath>
+
+/*********************************
+ *  AgentSpeciesParticle
+ *********************************/
+
+AgentSpeciesParticle::AgentSpeciesParticle( const S32& particleIdx, const S32& modelRealIdx, const REAL& initialValue ) 
+  : mParticleIdx( particleIdx ), mModelRealIdx( modelRealIdx ), mInitialValue( initialValue )
+{
+  // empty
+}
+
+S32 AgentSpeciesParticle::getParticleIdx( ) const {
+  return mParticleIdx;
+}
+
+S32 AgentSpeciesParticle::getModelRealIdx( ) const {
+  return mModelRealIdx;
+}
+
+REAL AgentSpeciesParticle::getInitialValue( ) const {
+  return mInitialValue;
+}
+
+void AgentSpeciesParticle::setParticleIdx( const S32& value ) {
+  mParticleIdx = value;
+}
+
+void AgentSpeciesParticle::setModelRealIdx( const S32& value ) {
+  mModelRealIdx = value;
+}
+
+void AgentSpeciesParticle::setInitialValue( const REAL& value ) {
+  mInitialValue = value;
+}
+
+
+/*********************************
+ *  AgentSpecies
+ *********************************/
 
 AgentSpecies::AgentSpecies(const std::string& name, const std::string& speciesName, const S32& species_idx, const S32& num_real_param, const S32& num_int_param, const S32& num_bool_param, const S32& num_string_param)
   : mName(name), mSpeciesName(speciesName), mSpeciesIdx(species_idx),
@@ -228,4 +269,20 @@ void AgentSpecies::setIdxMechForceReals(const S32& idx_x, const S32& idx_y, cons
   mIdxMechForceReals[0] = idx_x;
   mIdxMechForceReals[1] = idx_y;
   mIdxMechForceReals[2] = idx_z;
+}
+
+void AgentSpecies::addParticle( const S32& particleIdx, const S32& modelRealIdx, const REAL& initialValue ) {
+  mParticles.push_back( AgentSpeciesParticle( particleIdx, modelRealIdx, initialValue ) );
+}
+
+void AgentSpecies::setInitialAgentState( SpAgentState& state ) const {
+  state.setType( mSpeciesIdx );
+  S32 i;
+  REAL volume = 0.0;
+  for( i = 0 ; i < (S32)mParticles.size() ; i++ ) {
+    state.setModelReal( mParticles[ i ].getModelRealIdx(), mParticles[ i ].getInitialValue() );
+    volume += mParticles[ i ].getInitialValue() / gParticles[ mParticles[ i ].getParticleIdx() ]->getDensity( );
+  }
+  REAL radius = cbrt( 3.0 * volume / (4.0 * MODEL_PI ) );
+  state.setRadius( radius );
 }

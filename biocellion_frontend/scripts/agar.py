@@ -4,7 +4,7 @@ class Agar( ParamHolder ):
 
     def __init__( self ):
         ParamHolder.__init__(self)
-        self.addAttribute( Param( "name", "str", "" ) )
+        self.addAttribute( Param( "name", "str", "", True ) )
         self.addParam( Param( "depth", "int", 0 ) )
         self.addParam( Param( "width", "int", 0 ) )
         self.addParam( Param( "height", "int", 0 ) )

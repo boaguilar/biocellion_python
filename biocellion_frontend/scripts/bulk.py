@@ -4,7 +4,7 @@ class Bulk( ParamHolder ):
 
     def __init__( self ):
         ParamHolder.__init__(self)
-        self.addAttribute( Param( "name", "str", "" ) )
+        self.addAttribute( Param( "name", "str", "", True ) )
         return
 
     def getBioModelH( self, indent, depth ):

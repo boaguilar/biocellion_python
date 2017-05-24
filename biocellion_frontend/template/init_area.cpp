@@ -258,8 +258,7 @@ void InitArea::addSpAgentsUnfilledBlock( const BOOL init, const VIdx& startVIdx,
       CHECK( vOffset[dim] < gAgentGrid->getResolution( ) * 0.5 );
     }
 
-    state.setType( mAgentSpecies->getSpeciesIdx() );
-    state.setRadius( gAgentGrid->getResolution( ) * 0.7 /* mAgentSpecies-> CELL_RADIUS[i] FIXME: find from mass/density */ );
+    mAgentSpecies->setInitialAgentState( state );
     
     v_spAgentVIdx.push_back( vIdxAgent );
     v_spAgentState.push_back( state );

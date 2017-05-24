@@ -6,6 +6,24 @@ class InitArea;
 #include <string>
 #include <map>
 
+class AgentSpeciesParticle {
+public:
+  AgentSpeciesParticle( const S32& particleIdx, const S32& modelRealIdx, const REAL& initialValue );
+  S32 getParticleIdx( ) const;
+  S32 getModelRealIdx( ) const;
+  REAL getInitialValue( ) const;
+
+  void setParticleIdx( const S32& value );
+  void setModelRealIdx( const S32& value );
+  void setInitialValue( const REAL& value );
+
+protected:
+  S32 mParticleIdx;
+  S32 mModelRealIdx;
+  REAL mInitialValue;
+  
+};
+
 class AgentSpecies {
 
 public:
@@ -51,6 +69,8 @@ public:
   void setNumModelInts(const S32& value);
   void setUseMechForceReals(const BOOL& value);
   void setIdxMechForceReals(const S32& idx_x, const S32& idx_y, const S32& idx_z);
+  void addParticle( const S32& particleIdx, const S32& modelRealIdx, const REAL& initialValue );
+  void setInitialAgentState( SpAgentState& state ) const;
   
 protected:
   std::string mName;
@@ -68,6 +88,7 @@ protected:
   Vector<S32> mIdxMechForceReals;
   Vector<S32> mIdxMechModelInts;
   Vector<InitArea *> mInitAreas;
+  Vector<AgentSpeciesParticle> mParticles;
 };
 
 #endif /* _AGENT_SPECIES_H_ */

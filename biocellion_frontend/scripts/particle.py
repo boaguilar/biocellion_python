@@ -1,4 +1,4 @@
-from agent_species import Param, ParamHolder
+from agent_species import Param, ParamHolder, ItemHolder
 
 class Particle( ParamHolder ):
 
@@ -7,9 +7,9 @@ class Particle( ParamHolder ):
         self.mEnumToken = "PARTICLE_%s" % ( name, )
         
         ParamHolder.__init__(self)
-        self.addAttribute( Param( "name", "str", "" ) )
-        self.addAttribute( Param( "regulator", "bool", False ) )
-        self.addParam( Param( "density", "g.L-1", 0.0 ) )
+        self.addAttribute( Param( "name", "str", "", True ) )
+        self.addAttribute( Param( "regulator", "bool", False, False ) )
+        self.addParam( Param( "density", "g.L-1", 0.0, True ) )
         self.mHiddenParams = self.mHiddenParams + [ "density" ]
         return
 
@@ -42,11 +42,10 @@ class Particle( ParamHolder ):
     def __repr__(self):
         return str(self)
         
-class AllParticles:
+class AllParticles( ItemHolder ):
 
     def __init__(self):
-        self.mParticles = {}
-        self.mOrder = []
+        ItemHolder.__init__( self, Particle )
         return
 
     def getBioModelH( self, indent, depth ):
@@ -59,7 +58,7 @@ class AllParticles:
         lines.append( (depth*indent) + "typedef enum _particle_type_e {" )
         depth += 1
         for name in self.mOrder:
-            s = (depth*indent) + "%s," % (self.mParticles[ name ].getEnumToken(), )
+            s = (depth*indent) + "%s," % (self.mItems[ name ].getEnumToken(), )
             lines.append( s )
         s = (depth*indent) + "NUM_PARTICLES"
         lines.append( s )
@@ -70,37 +69,13 @@ class AllParticles:
     def getInitializeBioModel( self, indent, depth ):
         lines = []
         for name in self.mOrder:
-            lines.append( self.mParticles[ name ].getInitializeBioModel( indent, depth ) )
+            lines.append( self.mItems[ name ].getInitializeBioModel( indent, depth ) )
         return "\n".join( lines )
 
-    def getParticles( self ):
-        return self.mParticles
-
-    def getParticle(self, name):
-        return self.mParticles[ name ]
-
-    def addParticle( self, name, particle=None ):
-        if particle is None:
-            particle = Particle( name )
-        self.mParticles[ name ] = particle
-        self.mOrder.append( name )
-        return True
-
-    def getLastParticle( self ):
-        return self.mParticles[ self.mOrder[ len( self.mOrder ) - 1 ] ]
-
-    def __str__( self ):
-        s = "<ALL_PARTICLES>\n"
-
-        for name in self.mOrder:
-            s += str( self.mParticles[ name ] )
-
-        s += "</ALL_PARTICLES>"
-        return s
-
-    def __repr__( self ):
-        return str( self )
-
+    def addItem( self, name, item=None ):
+        if item is None:
+            item = self.mItemClass( name )
+        return ItemHolder.addItem( self, name, item )
 
 def main():
     all = AllParticles()

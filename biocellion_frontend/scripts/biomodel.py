@@ -50,12 +50,8 @@ class BioModel:
         self.mScanMode = self.SCAN_PARSE_MODE
         self.scanXML( root )
         
-        if True:
-            self.mIDynoMiCS.organizeChildren()
-            # print( str( self ) )
-            # sys.exit( "Early termination" )
-            return
-        
+        ## connect the related elements
+        self.mIDynoMiCS.organizeChildren()
         return
 
     def parseSpeciesXML( self, root ):
@@ -92,10 +88,13 @@ class BioModel:
         
         ok = True
         for (name, value) in node.items():
-            if name in required_attributes:
+            if name in may_attributes or name in required_attributes:
                 found_attributes.add( name )
-            elif name in may_attributes:
-                pass
+                if ( not same_type( param_validator, Param ) ):
+                    node_attr = Param( name, None, value )
+                    if not param_validator.validateAttribute( node_attr ):
+                        ok = False
+                        print( "Attribute ( " + str( node_attr ) + " ) of ( " + node.tag + " ) not known." )
             else:
                 ok = False
                 print( "Attribute ( " + name + " = " + value + " ) of ( " + node.tag + " ) not expected, but found." )
@@ -106,18 +105,23 @@ class BioModel:
                 print( "Attribute ( " + name + " ) of ( " + node.tag + " ) expected, but not found." )
             
         for child in list(node):
-            if child.tag in required_children:
+            if child.tag in required_children or child.tag in may_children:
                 found_children.add( child.tag )
-            elif child.tag in may_children:
-                pass
             else:
                 ok = False
                 print( "Child ( " + child.tag + " ) of ( " + node.tag + " ) not expected, but found." )
 
             if child.tag == "param":
-                found_params.add( child.get('name') )
+                name = child.get('name')
+                if name in may_params or name in required_params:
+                    found_params.add( name )
+                else:
+                    ok = False
+                    print( "Param ( " + name + " = " + child.text + " ) of ( " + node.tag + " ) not expected, but found." )
+                
                 param = Param( child.get('name'), child.get('unit'), child.text )
                 if not param_validator.validateParam( param ):
+                    ok = False
                     print( "Param ( " + str( param ) + " ) of ( " + node.tag + " ) not valid, check name, units, and value." )
 
 
@@ -144,7 +148,7 @@ class BioModel:
         
         ok = True
         for (name, value) in node.items():
-            if name in may_attributes or name in must_attributes:
+            if name in may_attributes or name in required_attributes:
                 found_attributes.add( name )
                 if ( not same_type( node_object, Param ) ):
                     node_attr = Param( name, None, value )
@@ -171,8 +175,14 @@ class BioModel:
                 sys.exit( "ERROR : Child ( " + child.tag + " ) of ( " + node.tag + " ) not expected, but found." )
 
             if child.tag == "param":
-                found_params.add( child.get('name') )
-                child_param = Param( child.get('name'), child.get('unit'), child.text )
+                name = child.get('name')
+                child_param = Param( name, child.get('unit'), child.text )
+                if name in may_params or name in required_params:
+                    found_params.add( name )
+                else:
+                    ok = False
+                    sys.exit( "ERROR : Param ( " + str( child_param ) + " ) of ( " + node.tag + " ) not expected, but found." )
+
                 if not node_object.validateParam( child_param ):
                     ok = False
                     sys.exit( "ERROR : ( " + str( child_param ) + " ) of ( " + node.tag + " ) not valid, check name, unit, and value." )
@@ -225,13 +235,13 @@ class BioModel:
             return False
         
     def scanIdynomicsXML( self, node, parent_object=None ):
-        may_attributes = (  )
-        required_attributes = (  )
         may_children = ( "simulator", "input", "solute", "particle", "world", "reaction", "molecularReactions", "solver", "agentGrid", "species", )
         required_children = ( "simulator", )
-        may_params = (  )
-        required_params = (  )
         node_object = self.mIDynoMiCS = simulator.IDynoMiCS()
+        may_attributes = node_object.getMayAttributes( )
+        required_attributes = node_object.getRequiredAttributes( )
+        may_params = node_object.getMayParams( )
+        required_params = node_object.getRequiredParams( )
         child_methods = {
             "simulator": self.scanSimulatorXML,
             "input": self.scanInputXML,
@@ -250,13 +260,13 @@ class BioModel:
         return ok
 
     def scanSimulatorXML( self, node, parent_object=None ):
-        may_attributes = (  )
-        required_attributes = (  )
         may_children = ( "param", "timeStep", )
         required_children = (  )
-        may_params = ( "restartPreviousRun", "randomSeed", "outputPeriod", "chemostat", "diffusionReactionOnAgentTime", "agentTiemStep", )
-        required_params = (  )
         node_object = self.mIDynoMiCS.getSimulator()
+        may_attributes = node_object.getMayAttributes( )
+        required_attributes = node_object.getRequiredAttributes( )
+        may_params = node_object.getMayParams( )
+        required_params = node_object.getRequiredParams( )
         parent_object = None
         child_methods = {
             "param": self.scanGenericParamXML,
@@ -268,13 +278,13 @@ class BioModel:
         return ok
 
     def scanSimulatorTimeStepXML( self, node, parent_object=None ):
-        may_attributes = (  )
-        required_attributes = (  )
         may_children = ( "param", )
         required_children = (  )
-        may_params = ( "adaptive", "timeStepIni", "timeStepMin", "timeStepMax", "endOfSimulation", )
-        required_params = (  )
         node_object = self.mIDynoMiCS.getSimulator().getTimeStep()
+        may_attributes = node_object.getMayAttributes( )
+        required_attributes = node_object.getRequiredAttributes( )
+        may_params = node_object.getMayParams( )
+        required_params = node_object.getRequiredParams( )
         parent_object = None
         child_methods = {
             "param": self.scanGenericParamXML,
@@ -295,15 +305,15 @@ class BioModel:
         return ok
 
     def scanParticleXML( self, node, parent_object=None ):
-        may_attributes = ( "name", "regulator", )
-        required_attributes = ( "name",  )
         may_children = ( "param", )
         required_children = (  )
-        may_params = ( "density", )
-        required_params = ( "density", )
-        if not self.mIDynoMiCS.getParticles().addParticle( node.get('name') ):
+        if not self.mIDynoMiCS.getParticles().addItem( node.get('name') ):
             sys.exit( "ERROR : couldn't add a particle." )
-        node_object = self.mIDynoMiCS.getParticles().getLastParticle()
+        node_object = self.mIDynoMiCS.getParticles().getLastItem( )
+        may_attributes = node_object.getMayAttributes( )
+        required_attributes = node_object.getRequiredAttributes( )
+        may_params = node_object.getMayParams( )
+        required_params = node_object.getRequiredParams( )
         parent_object = None # don't need to add this as a child
         child_methods = {
             "param": self.scanGenericParamXML,
@@ -314,13 +324,13 @@ class BioModel:
         return ok
 
     def scanWorldXML( self, node, parent_object=None ):
-        may_attributes = (  )
-        required_attributes = (  )
         may_children = ( "bulk", "agar", "computationDomain", )
         required_children = (  )
-        may_params = (  )
-        required_params = (  )
         node_object = self.mIDynoMiCS.getWorld( )
+        may_attributes = node_object.getMayAttributes( )
+        required_attributes = node_object.getRequiredAttributes( )
+        may_params = node_object.getMayParams( )
+        required_params = node_object.getRequiredParams( )
         parent_object = None # don't need to add this as a child
         child_methods = {
             "bulk": self.scanWorldBulkXML,
@@ -343,15 +353,15 @@ class BioModel:
         return ok
 
     def scanWorldComputationDomainXML( self, node, parent_object=None ):
-        may_attributes = ( "name",  )
-        required_attributes = ( "name",  )
         may_children = ( "grid", "boundaryCondition", "param", )
         required_children = ( "grid", )
-        may_params = ( "resolution", "specificArea", "hasBulk", "boundaryLayer", "biofilmDiffusivity", )
-        required_params = (  )
         if not self.mIDynoMiCS.getWorld().getComputationDomains().addItem( node.get('name') ):
             sys.exit( "ERROR : couldn't add a computation domain." )
         node_object = self.mIDynoMiCS.getWorld().getComputationDomains().getLastItem( )
+        may_attributes = node_object.getMayAttributes( )
+        required_attributes = node_object.getRequiredAttributes( )
+        may_params = node_object.getMayParams( )
+        required_params = node_object.getRequiredParams( )
         parent_object = None # don't need to add this as a child
         child_methods = {
             "param": self.scanGenericParamXML,
@@ -364,18 +374,19 @@ class BioModel:
         return ok
 
     def scanWorldComputationDomainGridXML( self, node, parent_object=None ):
-        may_attributes = ( "nDim", "nI", "nJ", "nK",  )
-        required_attributes = ( "nDim", "nI", "nJ", )
         may_children = (  )
         required_children = (  )
-        may_params = (  )
-        required_params = (  )
         if parent_object is None:
             node_object = computation_domain.ComputationDomainGrid( )
         else:
             node_object = parent_object.getGrid( )
             parent_object = None # don't need to add this as a child
             
+        may_attributes = node_object.getMayAttributes( )
+        required_attributes = node_object.getRequiredAttributes( )
+        may_params = node_object.getMayParams( )
+        required_params = node_object.getRequiredParams( )
+        
         child_methods = {
         }
 
@@ -404,13 +415,13 @@ class BioModel:
         return ok
 
     def scanAgentGridXML( self, node, parent_object=None ):
-        may_attributes = (  )
-        required_attributes = (   )
         may_children = ( "param", )
         required_children = ( "param", )
-        may_params = ( "computationDomain", "resolution", "shovingFraction", "shovingMaxIter", "shovingMutual", "erosionMethod", "sloughDetachedBiomass", )
-        required_params = ( "computationDomain", "resolution", "shovingFraction", "shovingMaxIter", "shovingMutual", )
         node_object = self.mIDynoMiCS.getAgentGrid()
+        may_attributes = node_object.getMayAttributes( )
+        required_attributes = node_object.getRequiredAttributes( )
+        may_params = node_object.getMayParams( )
+        required_params = node_object.getRequiredParams( )
         parent_object = None # don't need to add this as a child
 
         child_methods = {
@@ -422,15 +433,15 @@ class BioModel:
         return ok
 
     def scanSpeciesXML( self, node, parent_object=None ):
-        may_attributes = ( "class", "name", )
-        required_attributes = ( "class", "name",  )
         may_children = ( "param", "particle", "reaction", "tightJunctions", "initArea", "entryConditions", "chemotaxis", "switchingLags",  )
         required_children = (  )
-        may_params = ( "density", )
-        required_params = (  )
         if not self.mIDynoMiCS.getAgentSpecies().addSpecies( node.get('class'), node.get('name') ):
             sys.exit( "ERROR : couldn't add a species." )
-        node_object = self.mIDynoMiCS.getAgentSpecies().getLastSpecies()
+        node_object = self.mIDynoMiCS.getAgentSpecies().getLastItem()
+        may_attributes = node_object.getMayAttributes( )
+        required_attributes = node_object.getRequiredAttributes( )
+        may_params = node_object.getMayParams( )
+        required_params = node_object.getRequiredParams( )
         parent_object = None # don't need to add this as a child
         child_methods = {
             "param": self.scanGenericParamXML,
@@ -449,12 +460,8 @@ class BioModel:
         return ok
 
     def scanSpeciesParticleXML( self, node, parent_object=None ):
-        may_attributes = ( "name", )
-        required_attributes = ( "name",  )
         may_children = ( "param", )
         required_children = ( "param", )
-        may_params = ( "mass", )
-        required_params = ( "mass", )
         if parent_object is None:
             node_object = agent_species.AgentSpeciesParticle()
         else:
@@ -462,6 +469,10 @@ class BioModel:
                 sys.exit( "ERROR : couldn't add a species particle." )
             node_object = parent_object.getParticles().getLastItem()
             parent_object = None # don't need to add this as a child
+        may_attributes = node_object.getMayAttributes( )
+        required_attributes = node_object.getRequiredAttributes( )
+        may_params = node_object.getMayParams( )
+        required_params = node_object.getRequiredParams( )
         child_methods = {
             "param": self.scanGenericParamXML,
         }
@@ -481,12 +492,8 @@ class BioModel:
         return ok
 
     def scanSpeciesInitAreaXML( self, node, parent_object=None ):
-        may_attributes = ( "number", "shape", )
-        required_attributes = ( "number",  )
         may_children = ( "param", "coordinates", "blocks", )
         required_children = ( "param", )
-        may_params = ( "birthday", )
-        required_params = ( "birthday", )
         if parent_object is None:
             node_object = agent_species.InitArea()
         else:
@@ -494,6 +501,10 @@ class BioModel:
                 sys.exit( "ERROR : couldn't add a species initArea." )
             node_object = parent_object.getInitAreas().getLastItem()
             parent_object = None # don't need to add this as a child
+        may_attributes = node_object.getMayAttributes( )
+        required_attributes = node_object.getRequiredAttributes( )
+        may_params = node_object.getMayParams( )
+        required_params = node_object.getRequiredParams( )
         child_methods = {
             "param": self.scanGenericParamXML,
             "coordinates": self.scanCoordinatesXML,
@@ -505,12 +516,8 @@ class BioModel:
         return ok
 
     def scanCoordinatesXML( self, node, parent_object=None ):
-        may_attributes = ( "x", "y", "z", "r", )
-        required_attributes = ( "x", "y", )
         may_children = (  )
         required_children = (  )
-        may_params = (  )
-        required_params = (  )
         if parent_object is None:
             node_object = agent_species.Coordinates()
         else:
@@ -518,6 +525,10 @@ class BioModel:
                 sys.exit( "ERROR : couldn't add a coordinates." )
             node_object = parent_object.getCoordinates().getLastItem()
             parent_object = None # don't need to add this as a child
+        may_attributes = node_object.getMayAttributes( )
+        required_attributes = node_object.getRequiredAttributes( )
+        may_params = node_object.getMayParams( )
+        required_params = node_object.getRequiredParams( )
         child_methods = {
         }
         
@@ -526,12 +537,8 @@ class BioModel:
         return ok
 
     def scanBlocksXML( self, node, parent_object=None ):
-        may_attributes = ( "rows", "cols", "bars", )
-        required_attributes = ( "rows", "cols", )
         may_children = (  )
         required_children = (  )
-        may_params = (  )
-        required_params = (  )
         if parent_object is None:
             node_object = agent_species.Blocks()
         else:
@@ -539,6 +546,10 @@ class BioModel:
                 sys.exit( "ERROR : couldn't add a blocks." )
             node_object = parent_object.getBlocks().getLastItem()
             parent_object = None # don't need to add this as a child
+        may_attributes = node_object.getMayAttributes( )
+        required_attributes = node_object.getRequiredAttributes( )
+        may_params = node_object.getMayParams( )
+        required_params = node_object.getRequiredParams( )
         child_methods = {
         }
         

@@ -1,34 +1,149 @@
+import sys
+#####################################################
+# Unit
+#####################################################
+class Unit:
+
+    def __init__( self, standard_unit, conversions={} ):
+        self.mStandardUnit = standard_unit
+        self.mConversions = { }
+        self.mAllUnits = ( )
+        self.addConversion( standard_unit, 1.0 )
+        for name in conversions:
+            self.addConversion( name, conversions[ name ] )
+        return
+
+    def getStandardUnit( self ):
+        return self.mStandardUnit
+
+    def getAllUnits( self ):
+        return self.mAllUnits
+
+    def updateAllUnits( self ):
+        self.mAllUnits = tuple( self.mConversions )
+        return
+    
+    def addConversion( self, unit, factor ):
+        self.mConversions[ unit ] = factor
+        self.updateAllUnits( )
+        return
+
+    def contains( self, unit ):
+        return unit in self.mAllUnits
+
+    def convertToStandard( self, unit, value ):
+        if not self.contains( unit ):
+            sys.exit( "ERROR: unknown unit: " + str( unit ) )
+            return 0.0
+        return value * self.mConversions[ unit ]
+
+class AllUnits:
+
+    def __init__( self ):
+        self.mUnits = [ ]
+        # density
+        self.addUnit( Unit( "pg.um-3", { "pg.um-3": 1.0,
+                                         "g.L-1": 1.0e12 / 1.0e15,
+        } ) )
+        # volume
+        self.addUnit( Unit( "um3", { "um3": 1.0,
+                                     "m3": 1.0e18,
+                                     "L": 1.0e15,
+        } ) )
+        # mass
+        self.addUnit( Unit( "pg", { "pg": 1.0,
+                                    "g": 1.0e12,
+                                    "gram": 1.0e12,
+                                    "mg": 1.0e9,
+                                    "ug": 1.0e6,
+                                    "ng": 1.0e3,
+                                    "fg": 1.0e-3,
+                                    "ag": 1.0e-6,
+        } ) )
+        # time
+        self.addUnit( Unit( "hr", { "h": 1.0,
+                                    "hr": 1.0,
+                                    "hour": 1.0,
+                                    "s": 1.0/(60.*60.),
+                                    "sec": 1.0/(60.*60.),
+                                    "second": 1.0/(60.*60.),
+        } ) )
+        
+        return
+
+    def addUnit( self, unit ):
+        self.mUnits.append( unit )
+        return
+
+    def getUnits( self ):
+        return self.mUnits
+
+    def getUnitStrings( self ):
+        units = ( )
+        for u in self.mUnits:
+            units = units + u.getAllUnits( )
+        return units
+    
+    
 #####################################################
 # Param
 #####################################################
 class Param:
+    
+    mAllUnits = AllUnits()
+    # mDensityConvert = { "pg.um-3": 1.0,
+    #                     "g.L-1": 1.0e12 / 1.0e15,
+    #                   }
+    # mDensityStandardUnit = "pg.um-3"
+    # mDensityUnits = tuple( mDensityConvert )
 
-    mTimeConvert = { "h": 1.0,
-                     "hr": 1.0,
-                     "hour": 1.0,
-                     "s": 1.0/(60.*60.),
-                     "sec": 1.0/(60.*60.),
-                     "second": 1.0/(60.*60.),
-                   }
-    mTimeStandardUnit = "hr"
-    mTimeUnits = tuple( mTimeConvert )
+    # mVolumeConvert = { "um3": 1.0,
+    #                    "m3": 1.0e18,
+    #                    "L": 1.0e15,
+    #                  }
+    # mVolumeStandardUnit = "um3"
+    # mVolumeUnits = tuple( mVolumeConvert )
+
+    # mMassConvert = { "pg": 1.0,
+    #                  "g": 1.0e12,
+    #                  "gram": 1.0e12,
+    #                  "mg": 1.0e9,
+    #                  "ug": 1.0e6,
+    #                  "ng": 1.0e3,
+    #                  "fg": 1.0e-3,
+    #                  "ag": 1.0e-6,
+    #                }
+    # mMassStandardUnit = "pg"
+    # mMassUnits = tuple( mMassConvert )
+
+    # mTimeConvert = { "h": 1.0,
+    #                  "hr": 1.0,
+    #                  "hour": 1.0,
+    #                  "s": 1.0/(60.*60.),
+    #                  "sec": 1.0/(60.*60.),
+    #                  "second": 1.0/(60.*60.),
+    #                }
+    # mTimeStandardUnit = "hr"
+    # mTimeUnits = tuple( mTimeConvert )
     
     mStringUnits = ( "str", "string" )
     mStringStandardUnit = "str"
     
     def toStandardUnit( self ):
-        if self.mUnit in self.mTimeUnits:
-            self.mValue *= self.mTimeConvert[ self.mUnit ]
-            self.mUnit = self.mTimeStandardUnit
+        for u in self.mAllUnits.getUnits( ):
+            if u.contains( self.mUnit ):
+                self.mValue = u.convertToStandard( self.mUnit, self.mValue )
+                self.mUnit = u.getStandardUnit( )
+                
         if self.mUnit in self.mStringUnits:
             self.mUnit = self.mStringStandardUnit
         return
     
-    mRealUnits = ( "float", "um", "hr-1", "g.L-1", "m2.m-3" ) + mTimeUnits
+    mRealUnits = ( "float", "um", "hr-1", "g.L-1", "m2.m-3" ) + mAllUnits.getUnitStrings( )
     mIntUnits = ( "int" )
     mBoolUnits = ( "bool" )
     
-    def __init__(self, name, unit, default_value):
+    def __init__( self, name, unit, default_value, required=False ):
         # infer type from format of default_value
         if unit is None or unit in self.mIntUnits:
             try:
@@ -75,6 +190,7 @@ class Param:
         self.mUnit = str(unit)
         self.mDefaultValue = default_value
         self.mValue = default_value
+        self.mRequired = required
 
         self.toStandardUnit()
         return
@@ -92,6 +208,8 @@ class Param:
         return self.mUnit
     def getDefaultValue(self):
         return self.mDefaultValue
+    def isRequired( self ):
+        return self.mRequired
     def getValue(self):
         return self.mValue
     def setUnit(self, unit):
@@ -164,6 +282,32 @@ class ParamHolder:
         
     def countString(self):
         return self.countUnits( Param.mStringUnits )
+
+    def getMayAttributes( self ):
+        names = [ ]
+        for n in self.mAttributes:
+            names.append( n )
+        return names
+        
+    def getRequiredAttributes( self ):
+        names = [ ]
+        for n in self.mAttributes:
+            if self.mAttributes[ n ].isRequired( ):
+                names.append( n )
+        return names
+        
+    def getMayParams( self ):
+        names = [ ]
+        for n in self.mParams:
+            names.append( n )
+        return names
+        
+    def getRequiredParams( self ):
+        names = [ ]
+        for n in self.mParams:
+            if self.mParams[ n ].isRequired( ):
+                names.append( n )
+        return names
         
     def paramNamesToCpp(self, indent, depth):
         lines = []
@@ -351,7 +495,13 @@ class ItemHolder:
     def getItems( self ):
         return self.mItems
 
-    def getItem(self, name):
+    def getKeys( self ):
+        return self.mOrder
+
+    def hasKey( self, name ):
+        return name in self.mOrder
+
+    def getItem( self, name ):
         return self.mItems[ name ]
 
     def addItem( self, name=None, item=None ):
@@ -392,9 +542,18 @@ class AgentSpeciesParticle(ParamHolder):
 
     def __init__( self ):
         ParamHolder.__init__( self )
-        self.addAttribute( Param( "name", "str", "" ) )
-        self.addParam( Param( "mass", "fg", 0.0 ) )
+        self.addAttribute( Param( "name", "str", "", True ) )
+        self.addParam( Param( "mass", "pg", 0.0, True ) )
+        self.mParticle = None
         return
+
+    def setParticle( self, particle ):
+        self.mParticle = particle
+
+    def getParticleEnumToken( self ):
+        if self.mParticle is None:
+            sys.exit( "ERROR: <species><particle> must be linked to <idynomics><particle>" )
+        return self.mParticle.getEnumToken( )
 
     def __str__(self):
         s  = "<species-particle" + self.formatAttributes() + ">\n"
@@ -412,9 +571,9 @@ class Blocks( ParamHolder ):
 
     def __init__( self ):
         ParamHolder.__init__( self )
-        self.addAttribute( Param( "rows", "int", 0 ) )
-        self.addAttribute( Param( "cols", "int", 0 ) )
-        self.addAttribute( Param( "bars", "int", 0 ) )
+        self.addAttribute( Param( "rows", "int", 0, True ) )
+        self.addAttribute( Param( "cols", "int", 0, True ) )
+        self.addAttribute( Param( "bars", "int", 0, False ) )
         return
 
     def __str__(self):
@@ -431,10 +590,10 @@ class Coordinates( ParamHolder ):
 
     def __init__( self ):
         ParamHolder.__init__( self )
-        self.addAttribute( Param( "x", "um", 0 ) )
-        self.addAttribute( Param( "y", "um", 0 ) )
-        self.addAttribute( Param( "z", "um", 0 ) )
-        self.addAttribute( Param( "r", "um", 0 ) )
+        self.addAttribute( Param( "x", "um", 0, True ) )
+        self.addAttribute( Param( "y", "um", 0, True ) )
+        self.addAttribute( Param( "z", "um", 0, True ) )
+        self.addAttribute( Param( "r", "um", 0, False ) )
         self.mPrivateNumberHiddenParams = [ "x", "y", "z", "r" ]
         self.mPrivateBoolHiddenParams = [  ]
         self.mPrivateStringHiddenParams = [  ]
@@ -475,9 +634,9 @@ class InitArea( ParamHolder ):
 
     def __init__( self ):
         ParamHolder.__init__( self )
-        self.addAttribute( Param( "number", "float", 0 ) )
-        self.addAttribute( Param( "shape", "str", "unfilledBlock" ) )
-        self.addParam( Param( "birthday", "hour", 0.0 ) )
+        self.addAttribute( Param( "number", "float", 0, True ) )
+        self.addAttribute( Param( "shape", "str", "unfilledBlock", False ) )
+        self.addParam( Param( "birthday", "hour", 0.0, True ) )
         self.mCoordinates = ItemHolder( Coordinates )
         self.mBlocks = ItemHolder( Blocks )
 
@@ -549,8 +708,8 @@ class AgentSpecies(ParamHolder):
         self.mMechForceReals = [ ]
         
         ParamHolder.__init__(self)
-        self.addAttribute( Param( "class", "str", "" ) )
-        self.addAttribute( Param( "name", "str", "" ) )
+        self.addAttribute( Param( "class", "str", "", True ) )
+        self.addAttribute( Param( "name", "str", "", True ) )
         
         self.addParam( Param( "initialMassCV", "float", 0.1 ) )
         self.addParam( Param( "color", "str", "white" ) )
@@ -582,11 +741,11 @@ class AgentSpecies(ParamHolder):
 
         s = (depth*indent) + "%s->setDMax( 2.0 /* FIXME: read from AgentGrid */ );" % (varname, )
         lines.append( s )
-        s = (depth*indent) + "%s->setNumModelBools( 0 );" % (varname, )
+        s = (depth*indent) + "%s->setNumModelBools( %s_NUM_BOOLS );" % (varname, self.mEnumToken, )
         lines.append( s )
-        s = (depth*indent) + "%s->setNumModelReals( 0 );" % (varname, )
+        s = (depth*indent) + "%s->setNumModelReals( %s_NUM_REALS );" % (varname, self.mEnumToken, )
         lines.append( s )
-        s = (depth*indent) + "%s->setNumModelInts( 0 );" % (varname, )
+        s = (depth*indent) + "%s->setNumModelInts( %s_NUM_INTS );" % (varname, self.mEnumToken, )
         lines.append( s )
         if self.mUseMechForceReals:
             s = (depth*indent) + "%s->setUseMechForceReals( true );" % (varname, )
@@ -597,12 +756,23 @@ class AgentSpecies(ParamHolder):
             s = (depth*indent) + "%s->setUseMechForceReals( false );" % (varname, )
             lines.append( s )
 
-        lines.append( (depth*indent) + "gAgentSpecies.push_back( %s );" % (varname, ) )
         container_name = "%s->getInitAreas()" % ( varname )
         for i in range( len( self.mInitAreas ) ):
             lines.append( self.mInitAreas[ i ].getInitializeBioModel( varname, container_name, indent, depth ) )
+        s = self.getSpecificInitializeBioModel( varname, indent, depth )
+        if s:
+            lines.append( s )
+        lines.append( (depth*indent) + "gAgentSpecies.push_back( %s );" % (varname, ) )
         depth -= 1;
         lines.append( (depth*indent) + "}" )
+        return "\n".join( lines )
+
+    def getSpecificRealsEnum( self, indent, depth ):
+        line = [ ]
+        return "\n".join( lines )
+        
+    def getSpecificInitializeBioModel( self, varname, indent, depth ):
+        line = [ ]
         return "\n".join( lines )
 
     def getClassName(self):
@@ -620,8 +790,43 @@ class AgentSpecies(ParamHolder):
     def getEnums( self, indent, depth ):
         self.updateUseMechForceReals(  )
         lines = [ ]
-        s = self.getMechForceRealsEnum( indent, depth )
+        lines.append( self.getBoolsEnum( indent, depth ) )
+        lines.append( self.getRealsEnum( indent, depth ) )
+        lines.append( self.getIntsEnum( indent, depth ) )
+        lines.append( self.getMechForceRealsEnum( indent, depth ) )
+        return "\n".join( lines )
+    
+    def getBoolsEnum( self, indent, depth ):
+        lines = []
+        lines.append( (depth*indent) + "typedef enum _%s_bool_type_e {" % ( self.getEnumToken(), ) )
+        depth += 1
+        s = (depth*indent) + "%s_NUM_BOOLS" % ( self.getEnumToken(), )
         lines.append( s )
+        depth -= 1
+        lines.append( (depth*indent) + "} %s_bool_type_e;" % ( self.getEnumToken(), ) )
+        return "\n".join( lines )
+    
+    def getRealsEnum( self, indent, depth ):
+        lines = []
+        lines.append( (depth*indent) + "typedef enum _%s_real_type_e {" % ( self.getEnumToken(), ) )
+        depth += 1
+        s = self.getSpecificRealsEnum( indent, depth )
+        if s:
+            lines.append( s )
+        s = (depth*indent) + "%s_NUM_REALS" % ( self.getEnumToken(), )
+        lines.append( s )
+        depth -= 1
+        lines.append( (depth*indent) + "} %s_real_type_e;" % ( self.getEnumToken(), ) )
+        return "\n".join( lines )
+    
+    def getIntsEnum( self, indent, depth ):
+        lines = []
+        lines.append( (depth*indent) + "typedef enum _%s_int_type_e {" % ( self.getEnumToken(), ) )
+        depth += 1
+        s = (depth*indent) + "%s_NUM_INTS" % ( self.getEnumToken(), )
+        lines.append( s )
+        depth -= 1
+        lines.append( (depth*indent) + "} %s_int_type_e;" % ( self.getEnumToken(), ) )
         return "\n".join( lines )
     
     def getMechForceRealsEnum( self, indent, depth ):
@@ -695,6 +900,32 @@ class AgentSpeciesActive(AgentSpecies):
         print("FIXME: <agentMolecularReactions></agentMolecularReactions> not yet parsed.")
         return
 
+    def getParticleEnumToken( self, particle ):
+        s = "%s_%s" % ( self.getEnumToken(), particle.getAttribute( 'name' ).getValue() )
+        return s
+
+    def getSpecificRealsEnum( self, indent, depth ):
+        lines = [ ]
+        if len( self.mParticles ) > 0:
+            for i in range( len( self.mParticles ) ):
+                p = self.mParticles[ i ]
+                s = "%s," % ( self.getParticleEnumToken( p ), );
+                lines.append( (depth*indent) + s )
+        return "\n".join( lines )
+
+    def getSpecificInitializeBioModel( self, varname, indent, depth ):
+        lines = [ ]
+        if len( self.mParticles ) > 0:
+            lines.append( (depth*indent) + "{" )
+            depth += 1
+            for i in range( len( self.mParticles ) ):
+                p = self.mParticles[ i ]
+                s = "%s->addParticle( %s, %s, %s );" % ( varname, p.getParticleEnumToken( ), self.getParticleEnumToken( p ), p.getParam( 'mass' ).getValue( ), );
+                lines.append( (depth*indent) + s )
+            depth -= 1
+            lines.append( (depth*indent) + "}" )
+        return "\n".join( lines )
+
     def getParticles( self ):
         return self.mParticles
 
@@ -716,6 +947,7 @@ class AgentSpeciesLocated(AgentSpeciesActive):
         self.addParam( Param( "shoveLimit", "um",  0.0) )    # addition to desired radius
         self.addParam( Param( "shoveFactor", "um",  1.15) )  # listed as um/length, but treated as radius scalar
         self.addParam( Param( "shoveScale", "float",  1.0) ) # biocellion-biomodel only
+        self.addParam( Param( "brownianScale", "float",  1.0) ) # biocellion-biomodel only
         self.addParam( Param( "fixed", "bool",  False) )
         self.addParam( Param( "noSkinBottomLayerBoundary", "int", 0 ) )
         print("FIXME: <tightJunctions> not yet parsed <tightJunction withSpecies='name' stiffness='value' />")
@@ -754,15 +986,11 @@ class AgentSpeciesYeast(AgentSpeciesBactEPS):
         return
 
 
-class AllAgentSpecies:
+class AllAgentSpecies( ItemHolder ):
 
     def __init__(self):
-        self.mAgentSpecies = {}
-        self.mOrder = []
+        ItemHolder.__init__( self, AgentSpecies )
         return
-
-    def getSpecies( self, name ):
-        return self.mAgentSpecies[ name ]
 
     def addSpecies( self, class_name, name, species=None ):
         if species is None:
@@ -783,13 +1011,8 @@ class AllAgentSpecies:
                 print("Unknown species class: %s" % (class_name, ))
                 print("Needs to be implemented")
                 return False
-                
-        self.mAgentSpecies[ name ] = species
-        self.mOrder.append( name )
-        return True
-
-    def getLastSpecies( self ):
-        return self.mAgentSpecies[ self.mOrder[ len( self.mOrder ) - 1 ] ]
+            
+        return self.addItem( name, species )
 
     def getBioModelH(self, indent, depth):
         lines = [ ]
@@ -802,12 +1025,15 @@ class AllAgentSpecies:
 
     def getSpeciesParamNames(self, indent, depth):
         all_params = { }
+        all_order = [ ]
         for name in self.mOrder:
-            params = self.mAgentSpecies[ name ].getParams()
+            params = self.mItems[ name ].getParams()
             for param_name in params:
-                all_params[ param_name ] = params[ param_name ]
+                if param_name not in all_params:
+                    all_params[ param_name ] = params[ param_name ]
+                    all_order.append( param_name )
         lines = []
-        for n in all_params:
+        for n in all_order:
             s = (depth*indent) + "const std::string %s = \"%s\";" % (all_params[ n ].getConstName(), n, )
             lines.append( s )
         return "\n".join( lines )
@@ -817,7 +1043,7 @@ class AllAgentSpecies:
         lines.append( (depth*indent) + "typedef enum _agent_species_type_e {" )
         depth += 1
         for name in self.mOrder:
-            s = (depth*indent) + "%s," % (self.mAgentSpecies[ name ].getEnumToken(), )
+            s = (depth*indent) + "%s," % (self.mItems[ name ].getEnumToken(), )
             lines.append( s )
         s = (depth*indent) + "NUM_AGENT_SPECIES"
         lines.append( s )
@@ -828,28 +1054,15 @@ class AllAgentSpecies:
     def getSpeciesBioModelH(self, indent, depth):
         lines = [ ]
         for name in self.mOrder:
-            s = self.mAgentSpecies[ name ].getBioModelH( indent, depth )
+            s = self.mItems[ name ].getBioModelH( indent, depth )
             lines.append( s );
         return "\n".join( lines )
     
     def getInitializeBioModel(self, indent, depth):
         lines = [ ]
         for name in self.mOrder:
-            lines.append( self.mAgentSpecies[ name ].getInitializeBioModel( indent, depth ) )
+            lines.append( self.mItems[ name ].getInitializeBioModel( indent, depth ) )
         return "\n".join( lines )
-
-    def __str__( self ):
-        s = "<ALL_AGENT_SPECIES>\n"
-
-        for name in self.mOrder:
-            s += str( self.mAgentSpecies[ name ] )
-
-        s += "</ALL_AGENT_SPECIES>"
-        return s
-
-    def __repr__( self ):
-        return str( self )
-
 
 def main():
     print( "FIXME: no tester" )

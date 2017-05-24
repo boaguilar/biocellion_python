@@ -16,6 +16,7 @@
 /* define constants to be used inside model functions */
 
 /* MODEL START */
+#define MODEL_PI ( ( REAL )3.141592653589793238462643383279502884 )
 
 typedef enum _model_rng_type_e {
   MODEL_RNG_UNIFORM,

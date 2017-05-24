@@ -4,10 +4,10 @@ class ComputationDomainGrid( ParamHolder ):
 
     def __init__( self ):
         ParamHolder.__init__(self)
-        self.addAttribute( Param( "nDim", "int", 3 ) )
-        self.addAttribute( Param( "nI", "int", 1 ) )
-        self.addAttribute( Param( "nJ", "int", 1 ) )
-        self.addAttribute( Param( "nK", "int", 1 ) )
+        self.addAttribute( Param( "nDim", "int", 3, True ) )
+        self.addAttribute( Param( "nI", "int", 1, True ) )
+        self.addAttribute( Param( "nJ", "int", 1, True ) )
+        self.addAttribute( Param( "nK", "int", 1, False ) )
         return
 
     def __str__(self):
@@ -20,15 +20,15 @@ class ComputationDomainBoundaryCondition( ParamHolder ):
 
     def __init__( self ):
         ParamHolder.__init__(self)
-        self.addAttribute( Param( "class", "str", "" ) )
-        self.addAttribute( Param( "name", "str", "" ) )
+        self.addAttribute( Param( "class", "str", "", True ) )
+        self.addAttribute( Param( "name", "str", "", True ) )
         return
     
 class ComputationDomain( ParamHolder ):
 
     def __init__( self ):
         ParamHolder.__init__(self)
-        self.addAttribute( Param( "name", "str", "" ) )
+        self.addAttribute( Param( "name", "str", "", True ) )
         self.addParam( Param( "resolution", "um", 0 ) )
         self.addParam( Param( "specificArea", "m2.m-3", 0 ) )
         self.addParam( Param( "hasBulk", "bool", False ) )
