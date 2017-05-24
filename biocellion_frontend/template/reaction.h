@@ -3,8 +3,7 @@
 #include "biocellion.h"
 #include <string>
 
-class Reaction
-{
+class Reaction {
 public:
   Reaction(
 		   const std::string& catalyzedBy, const std::string& reactionClass,

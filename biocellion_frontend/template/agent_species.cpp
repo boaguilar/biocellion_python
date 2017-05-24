@@ -14,6 +14,18 @@ AgentSpecies::AgentSpecies(const std::string& name, const std::string& speciesNa
   //empty
 }
 
+AgentSpecies::~AgentSpecies()
+{
+  size_t i;
+  for( i = 0 ; i < mInitAreas.size() ; i++ ) {
+    if( mInitAreas[ i ] ) {
+      delete mInitAreas[ i ];
+      mInitAreas[ i ] = 0;
+    }
+  }
+  mInitAreas.clear();
+}
+
 const std::string& AgentSpecies::getName() const
 {
   return mName;
@@ -97,6 +109,16 @@ S32 AgentSpecies::getIdxMechForceRealZ() const
 S32 AgentSpecies::getNumMechModelInts() const
 {
   return (S32) mIdxMechModelInts.size();
+}
+
+const Vector<InitArea *>& AgentSpecies::getInitAreas( ) const
+{
+  return mInitAreas;
+}
+
+Vector<InitArea *>& AgentSpecies::getInitAreas( )
+{
+  return mInitAreas;
 }
 
 template <class T, class U>

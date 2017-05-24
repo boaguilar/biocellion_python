@@ -2,8 +2,7 @@
 #define _SIMULATOR_H_
 #include "biocellion.h"
 
-class TimeStep
-{
+class TimeStep {
 public:
   TimeStep(const BOOL& adaptive, const REAL& timeStepIni, const REAL& timeStepMin, const REAL& timeStepMax, const REAL& endOfSimulation);
   TimeStep();
@@ -26,8 +25,7 @@ protected:
   REAL mEndOfSimulation;
 };
 
-class Simulator
-{
+class Simulator {
 
 public:
   Simulator(

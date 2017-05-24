@@ -95,7 +95,7 @@
     <particle name="inert">
       <param name="mass" unit="fg">0</param>
     </particle>
-    <param name="shoveScale">1</param> <!-- biocellion only -->
+    <param name="shoveScale">0.25</param> <!-- biocellion only -->
     <param name="shoveFactor" unit="um">1</param> <!-- This is actually dimensionless in use, but cDynoMiCS reads it as a length -->
     <param name="shoveLimit" unit="um">0.0</param>
     <param name="color">red</param>

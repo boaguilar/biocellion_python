@@ -174,7 +174,7 @@ class ParamHolder:
             lines.append( s )
         return "\n".join( lines )
         
-    def toCpp(self, varname, indent, depth):
+    def getInitializeBioModel(self, varname, indent, depth):
         lines = []
         for n in self.mParams:
             if n in self.mHiddenParams:
@@ -197,23 +197,29 @@ class ParamHolder:
                 lines.append( s )
         return "\n".join( lines )
 
+    def getParamOrAttribute( self, name ):
+        if name in self.mParams:
+            return self.mParams[ name ]
+        elif name in self.mAttributes:
+            return self.mAttributes[ name ]
+        return None
 
     def getInitializeBioModelSetDataMembers( self, varname, connector, indent, depth, bools, numbers, strings ):
         lines = [ ]
 
         for name in bools:
             Name = name[ 0 ].upper() + name[ 1 : ]
-            s = (depth*indent) + "%s%sset%s( %s );" % (varname, connector, Name, "true" if self.mParams[ name ].getValue() else "false", )
+            s = (depth*indent) + "%s%sset%s( %s );" % (varname, connector, Name, "true" if self.getParamOrAttribute( name ).getValue() else "false", )
             lines.append( s )
             
         for name in numbers:
             Name = name[ 0 ].upper() + name[ 1 : ]
-            s = (depth*indent) + "%s%sset%s( %s );" % (varname, connector, Name, self.mParams[ name ].getValue(), )
+            s = (depth*indent) + "%s%sset%s( %s );" % (varname, connector, Name, self.getParamOrAttribute( name ).getValue(), )
             lines.append( s )
             
         for name in strings:
             Name = name[ 0 ].upper() + name[ 1 : ]
-            s = (depth*indent) + "%s%sset%s( \"%s\" );" % (varname, connector, Name, self.mParams[ name ].getValue(), )
+            s = (depth*indent) + "%s%sset%s( \"%s\" );" % (varname, connector, Name, self.getParamOrAttribute( name ).getValue(), )
             lines.append( s )
         
         return "\n".join( lines )
@@ -429,8 +435,32 @@ class Coordinates( ParamHolder ):
         self.addAttribute( Param( "y", "um", 0 ) )
         self.addAttribute( Param( "z", "um", 0 ) )
         self.addAttribute( Param( "r", "um", 0 ) )
+        self.mPrivateNumberHiddenParams = [ "x", "y", "z", "r" ]
+        self.mPrivateBoolHiddenParams = [  ]
+        self.mPrivateStringHiddenParams = [  ]
+        self.mPrivateHiddenParams = self.mPrivateNumberHiddenParams + self.mPrivateBoolHiddenParams + self.mPrivateStringHiddenParams
+        self.mHiddenParams = self.mHiddenParams + self.mPrivateHiddenParams
         return
 
+    def getInitializeBioModel( self, container_name, indent, depth ):
+        varname = "coordinates"
+        lines = [ ]
+        lines.append( (depth*indent) + "{" )
+        depth += 1
+
+        lines.append( (depth*indent) + "Coordinates *%s = new Coordinates( );" % (varname, ) )
+        lines.append( ParamHolder.getInitializeBioModel( self, varname, indent, depth ) )
+        s = self.getInitializeBioModelSetDataMembers( varname, "->", indent, depth,
+                                                      self.mPrivateBoolHiddenParams,
+                                                      self.mPrivateNumberHiddenParams,
+                                                      self.mPrivateStringHiddenParams )
+        lines.append( s )
+        
+        lines.append( (depth*indent) + "%s.push_back( %s );" % (container_name, varname, ) )
+        depth -= 1;
+        lines.append( (depth*indent) + "}" )
+        return "\n".join( lines )
+    
     def __str__(self):
         s  = "<coordinates" + self.formatAttributes() + "/>\n"
         return s
@@ -450,6 +480,13 @@ class InitArea( ParamHolder ):
         self.addParam( Param( "birthday", "hour", 0.0 ) )
         self.mCoordinates = ItemHolder( Coordinates )
         self.mBlocks = ItemHolder( Blocks )
+
+
+        self.mPrivateNumberHiddenParams = [ "number", "birthday" ]
+        self.mPrivateBoolHiddenParams = [  ]
+        self.mPrivateStringHiddenParams = [ "shape" ]
+        self.mPrivateHiddenParams = self.mPrivateNumberHiddenParams + self.mPrivateBoolHiddenParams + self.mPrivateStringHiddenParams
+        self.mHiddenParams = self.mHiddenParams + self.mPrivateHiddenParams
         return
 
     def getCoordinates( self ):
@@ -458,6 +495,36 @@ class InitArea( ParamHolder ):
     def getBlocks( self ):
         return self.mBlocks
 
+    def getBioModelH( self, indent, depth ):
+        lines = [ ]
+        return "\n".join( lines )
+
+    def getInitializeBioModel( self, parent_varname, container_name, indent, depth ):
+        varname = "init_area"
+        lines = [ ]
+        lines.append( (depth*indent) + "{" )
+        depth += 1
+
+        lines.append( (depth*indent) + "InitArea *%s = new InitArea( );" % (varname, ) )
+        lines.append( ParamHolder.getInitializeBioModel( self, varname, indent, depth ) )
+        s = self.getInitializeBioModelSetDataMembers( varname, "->", indent, depth,
+                                                      self.mPrivateBoolHiddenParams,
+                                                      self.mPrivateNumberHiddenParams,
+                                                      self.mPrivateStringHiddenParams )
+        lines.append( s )
+        
+        s = (depth*indent) + "%s%sset%s( %s );" % (varname, "->", "AgentSpecies", parent_varname, )
+        lines.append( s )
+            
+        coordinate_container_name = "%s->getCoordinates()" % ( varname, )
+        for i in range( len( self.mCoordinates ) ):
+            lines.append( self.mCoordinates[ i ].getInitializeBioModel( coordinate_container_name, indent, depth ) )
+        
+        lines.append( (depth*indent) + "%s.push_back( %s );" % (container_name, varname, ) )
+        depth -= 1;
+        lines.append( (depth*indent) + "}" )
+        return "\n".join( lines )
+    
     def __str__(self):
         s  = "<initArea" + self.formatAttributes() + ">\n"
         s += ParamHolder.__str__( self )
@@ -499,14 +566,19 @@ class AgentSpecies(ParamHolder):
         self.mInitAreas = ItemHolder( InitArea )
         return
 
-    def toCpp(self, indent, depth):
+    def getBioModelH( self, indent, depth ):
+        lines = [ ]
+        lines.append( self.getEnums( indent, depth ) )
+        return "\n".join( lines )
+
+    def getInitializeBioModel( self, indent, depth ):
         self.updateUseMechForceReals(  )
         varname = "species"
         lines = []
         lines.append( (depth*indent) + "{" )
         depth += 1
         lines.append( (depth*indent) + "AgentSpecies *%s = new AgentSpecies( \"%s\", \"%s\", %s, %d, %d, %d, %d );" % (varname, self.mName, self.mClassName, self.mEnumToken, self.countReal(), self.countInt(), self.countBool(), self.countString()) )
-        lines.append( ParamHolder.toCpp( self, varname, indent, depth ) )
+        lines.append( ParamHolder.getInitializeBioModel( self, varname, indent, depth ) )
 
         s = (depth*indent) + "%s->setDMax( 2.0 /* FIXME: read from AgentGrid */ );" % (varname, )
         lines.append( s )
@@ -526,6 +598,9 @@ class AgentSpecies(ParamHolder):
             lines.append( s )
 
         lines.append( (depth*indent) + "gAgentSpecies.push_back( %s );" % (varname, ) )
+        container_name = "%s->getInitAreas()" % ( varname )
+        for i in range( len( self.mInitAreas ) ):
+            lines.append( self.mInitAreas[ i ].getInitializeBioModel( varname, container_name, indent, depth ) )
         depth -= 1;
         lines.append( (depth*indent) + "}" )
         return "\n".join( lines )
@@ -717,16 +792,13 @@ class AllAgentSpecies:
         return self.mAgentSpecies[ self.mOrder[ len( self.mOrder ) - 1 ] ]
 
     def getBioModelH(self, indent, depth):
-        s = ""
-        s += self.getSpeciesParamNames(indent, depth)
-        s += "\n"
-        s += "\n"
-        s += self.getSpeciesEnum(indent, depth)
-        s += "\n"
-        s += "\n"
-        s += self.getSpeciesSpecificEnums(indent, depth)
-        s += "\n"
-        return s
+        lines = [ ]
+        lines.append( self.getSpeciesParamNames( indent, depth ) )
+        lines.append( "" )
+        lines.append( self.getSpeciesEnum( indent, depth ) )
+        lines.append( "" )
+        lines.append( self.getSpeciesBioModelH( indent, depth ) )
+        return "\n".join( lines )
 
     def getSpeciesParamNames(self, indent, depth):
         all_params = { }
@@ -753,18 +825,18 @@ class AllAgentSpecies:
         lines.append( (depth*indent) + "} agent_species_type_e;" )
         return "\n".join( lines )
 
-    def getSpeciesSpecificEnums(self, indent, depth):
+    def getSpeciesBioModelH(self, indent, depth):
         lines = [ ]
         for name in self.mOrder:
-            s = self.mAgentSpecies[ name ].getEnums( indent, depth )
+            s = self.mAgentSpecies[ name ].getBioModelH( indent, depth )
             lines.append( s );
         return "\n".join( lines )
     
     def getInitializeBioModel(self, indent, depth):
-        s = ""
+        lines = [ ]
         for name in self.mOrder:
-            s += self.mAgentSpecies[ name ].toCpp( indent, depth )
-        return s
+            lines.append( self.mAgentSpecies[ name ].getInitializeBioModel( indent, depth ) )
+        return "\n".join( lines )
 
     def __str__( self ):
         s = "<ALL_AGENT_SPECIES>\n"

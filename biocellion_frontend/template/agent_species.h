@@ -1,6 +1,8 @@
 #ifndef _AGENT_SPECIES_H_
 #define _AGENT_SPECIES_H_
 #include "biocellion.h"
+#include "init_area.h"
+class InitArea;
 #include <string>
 #include <map>
 
@@ -8,7 +10,7 @@ class AgentSpecies {
 
 public:
   AgentSpecies(const std::string& name, const std::string& speciesName, const S32& species_idx, const S32& num_real_param, const S32& num_int_param, const S32& num_bool_param, const S32& num_string_param);
-  
+  ~AgentSpecies();
   const std::string& getName() const;
   const std::string& getSpeciesName() const;
   S32 getSpeciesIdx() const;
@@ -26,6 +28,8 @@ public:
   S32 getIdxMechForceRealY() const;
   S32 getIdxMechForceRealZ() const;
   S32 getNumMechModelInts() const;
+  const Vector<InitArea *>& getInitAreas( ) const;
+  Vector<InitArea *>& getInitAreas( );
 
   // these routines make an index, if there isn't one.
   // they are not efficient for inside tight loops
@@ -63,6 +67,7 @@ protected:
   BOOL        mUseMechForceReals;
   Vector<S32> mIdxMechForceReals;
   Vector<S32> mIdxMechModelInts;
+  Vector<InitArea *> mInitAreas;
 };
 
 #endif /* _AGENT_SPECIES_H_ */

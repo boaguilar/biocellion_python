@@ -3,8 +3,7 @@
 #include "biocellion.h"
 #include <string>
 
-class Particle
-{
+class Particle {
 public:
   Particle(const S32& id, const std::string& name, const REAL& density); 
   S32 getId() const;

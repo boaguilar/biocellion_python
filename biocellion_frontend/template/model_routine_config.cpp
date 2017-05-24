@@ -74,7 +74,7 @@ void ModelRoutine::updateTimeStepInfo( TimeStepInfo& timeStepInfo ) {
   /* MODEL START */
 
   initializeBioModel();
-  timeStepInfo.durationBaselineTimeStep = gSimulator->getTimeStep().getTimeStepMin();
+  timeStepInfo.durationBaselineTimeStep = gSimulator->getAgentTimeStep();
   
   // FIXME: Not controlled by XML yet
   timeStepInfo.numStateAndGridTimeStepsPerBaseline = NUM_STATE_AND_GRID_TIME_STEPS_PER_BASELINE;

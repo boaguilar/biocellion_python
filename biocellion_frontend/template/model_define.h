@@ -23,7 +23,6 @@ typedef enum _model_rng_type_e {
   NUM_MODEL_RNGS
 } model_rng_type_e;
 
-const REAL BASELINE_TIME_STEP_DURATION = 1.0;
 const S32 NUM_STATE_AND_GRID_TIME_STEPS_PER_BASELINE = 1;
 
 /* MODEL END */

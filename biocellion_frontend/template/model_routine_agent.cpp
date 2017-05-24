@@ -15,6 +15,7 @@ NOTICE:  These data were produced by Battelle Memorial Institute (BATTELLE) unde
 /* MODEL START */
 
 #include "model_define.h"
+#include <cmath>
 
 /* MODEL END */
 
@@ -85,9 +86,21 @@ static inline void placeUniformRandomAgents(const VIdx& startVIdx, const VIdx& r
 }
 #endif
 
+
 void ModelRoutine::addSpAgents( const BOOL init, const VIdx& startVIdx, const VIdx& regionSize, const IfGridBoxData<BOOL>& ifGridHabitableBoxData, Vector<VIdx>& v_spAgentVIdx, Vector<SpAgentState>& v_spAgentState, Vector<VReal>& v_spAgentOffset ) {/* initialization */
   /* MODEL START */
-
+  REAL current_time = gSimulator->getAgentTimeStep() * Info::getCurBaselineTimeStep();
+  size_t i, j;
+  for( i = 0 ; i < gAgentSpecies.size() ; i++ ) {
+    for( j = 0 ; j < gAgentSpecies[ i ]->getInitAreas( ).size() ; j++ ) {
+      REAL birth_time = gAgentSpecies[ i ]->getInitAreas( )[ j ]->getBirthday( );
+      REAL dt = std::abs( birth_time - current_time );
+      if(( init && birth_time < gSimulator->getAgentTimeStep() / 2.0 ) ||
+         ( !init && birth_time > gSimulator->getAgentTimeStep() / 2.0 && dt < gSimulator->getAgentTimeStep() / 2.0 ) ) {
+        gAgentSpecies[ i ]->getInitAreas( )[ j ]->addSpAgents( init, startVIdx, regionSize, ifGridHabitableBoxData, v_spAgentVIdx, v_spAgentState, v_spAgentOffset );
+      }
+    }
+  }
   if( init == true ) {
 #if PLACE_UNIFORM_RANDOM_AGENTS
     placeUniformRandomAgents(startVIdx, regionSize, v_spAgentVIdx, v_spAgentState, v_spAgentOffset);

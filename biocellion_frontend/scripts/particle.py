@@ -20,12 +20,12 @@ class Particle( ParamHolder ):
         return self.mEnumToken
 
 
-    def toCpp(self, indent, depth):
+    def getInitializeBioModel(self, indent, depth):
         lines = []
         lines.append( (depth*indent) + "{" )
         depth += 1
         lines.append( (depth*indent) + "Particle *particle = new Particle( %s, \"%s\", %s );" % (self.mEnumToken, self.mName, self.getParams()[ "density" ].getValue(), ) )
-        s = ParamHolder.toCpp( self, "particle", indent, depth )
+        s = ParamHolder.getInitializeBioModel( self, "particle", indent, depth )
         if s:
             lines.append( s )
         lines.append( (depth*indent) + "gParticles.push_back( particle );" )
@@ -50,10 +50,9 @@ class AllParticles:
         return
 
     def getBioModelH( self, indent, depth ):
-        s = ""
-        s += self.getParticlesEnum(indent, depth)
-        s += "\n"
-        return s
+        lines = [ ]
+        lines.append( self.getParticlesEnum( indent, depth ) )
+        return "\n".join( lines )
 
     def getParticlesEnum(self, indent, depth):
         lines = []
@@ -69,10 +68,10 @@ class AllParticles:
         return "\n".join( lines )
 
     def getInitializeBioModel( self, indent, depth ):
-        s = ""
+        lines = []
         for name in self.mOrder:
-            s += self.mParticles[ name ].toCpp( indent, depth ) + "\n"
-        return s
+            lines.append( self.mParticles[ name ].getInitializeBioModel( indent, depth ) )
+        return "\n".join( lines )
 
     def getParticles( self ):
         return self.mParticles

@@ -17,7 +17,8 @@ class Simulator( ParamHolder ):
         self.addParam( Param( "agentTimeStep", "hr", 0.01 ) )
         self.mPrivateNumberHiddenParams = [ "randomSeed", "outputPeriod", "agentTimeStep" ]
         self.mPrivateBoolHiddenParams = [ "restartPreviousRun", "chemostat", "diffusionReactionOnAgentTime" ]
-        self.mPrivateHiddenParams = self.mPrivateNumberHiddenParams + self.mPrivateBoolHiddenParams
+        self.mPrivateStringHiddenParams = [ ]
+        self.mPrivateHiddenParams = self.mPrivateNumberHiddenParams + self.mPrivateBoolHiddenParams + self.mPrivateStringHiddenParams
         self.mHiddenParams = self.mHiddenParams + self.mPrivateHiddenParams
 
         self.mTimeStep = TimeStep()
@@ -43,12 +44,12 @@ class Simulator( ParamHolder ):
         lines.append( (depth*indent) + "{" )
         depth += 1
         lines.append( (depth*indent) + "%s = new Simulator( %s, %s, %s, %s, %s, %s );" % (varname, "false", "false", "true", "75321", "0.01", "0.01", ) )
-        lines.append( ParamHolder.toCpp( self, varname, indent, depth ) )
+        lines.append( ParamHolder.getInitializeBioModel( self, varname, indent, depth ) )
 
         s = self.getInitializeBioModelSetDataMembers( varname, "->", indent, depth,
                                                       self.mPrivateBoolHiddenParams,
                                                       self.mPrivateNumberHiddenParams,
-                                                      [] )
+                                                      self.mPrivateStringHiddenParams )
         lines.append( s )
         
         s = self.mTimeStep.getInitializeBioModel( "%s->getTimeStep()" % ( varname, ), indent, depth )
@@ -86,7 +87,8 @@ class TimeStep( ParamHolder ):
 
         self.mPrivateNumberHiddenParams = [ "timeStepIni", "timeStepMin", "timeStepMax", "endOfSimulation" ]
         self.mPrivateBoolHiddenParams = [ "adaptive" ]
-        self.mPrivateHiddenParams = self.mPrivateNumberHiddenParams + self.mPrivateBoolHiddenParams
+        self.mPrivateStringHiddenParams = [ ]
+        self.mPrivateHiddenParams = self.mPrivateNumberHiddenParams + self.mPrivateBoolHiddenParams + self.mPrivateStringHiddenParams
         self.mHiddenParams = self.mHiddenParams + self.mPrivateHiddenParams
 
         return
@@ -95,12 +97,12 @@ class TimeStep( ParamHolder ):
         lines = []
         lines.append( (depth*indent) + "{" )
         depth += 1
-        lines.append( ParamHolder.toCpp( self, varname, indent, depth ) )
+        lines.append( ParamHolder.getInitializeBioModel( self, varname, indent, depth ) )
 
         s = self.getInitializeBioModelSetDataMembers( varname, ".", indent, depth,
                                                       self.mPrivateBoolHiddenParams,
                                                       self.mPrivateNumberHiddenParams,
-                                                      [] )
+                                                      self.mPrivateStringHiddenParams )
         lines.append( s )
         
         depth -= 1;
@@ -138,9 +140,13 @@ class IDynoMiCS( ParamHolder ):
     def getBioModelH( self, indent, depth ):
         lines = [ ]
         lines.append( self.mSimulator.getBioModelH( indent, depth ) )
+        lines.append( "" )
         lines.append( self.mWorld.getBioModelH( indent, depth ) )
+        lines.append( "" )
         lines.append( self.mAgentGrid.getBioModelH( indent, depth ) )
+        lines.append( "" )
         lines.append( self.mAgentSpecies.getBioModelH( indent, depth ) )
+        lines.append( "" )
         lines.append( self.mParticles.getBioModelH( indent, depth ) )
         return "\n".join( lines )
 

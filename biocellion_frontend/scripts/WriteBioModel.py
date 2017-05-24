@@ -230,6 +230,7 @@ def copy_file( directory, source_directory, filename ):
 def write_biomodel_files( biomodel, directory, source_directory ):
     names = [ 'agent_grid.cpp', 'agent_grid.h',
               'agent_species.cpp', 'agent_species.h',
+              'init_area.cpp', 'init_area.h',
               'model_define.h',
               'model_mechanisms.cpp', 'model_mechanisms.h',
               'model_routine_agent.cpp', 
@@ -240,6 +241,7 @@ def write_biomodel_files( biomodel, directory, source_directory ):
               'particle.cpp', 'particle.h',
               'reaction.cpp', 'reaction.h',
               'simulator.cpp', 'simulator.h',
+              'tight_junction.cpp', 'tight_junction.h',
               'Makefile', 
               'RUN.bash', 
               ]

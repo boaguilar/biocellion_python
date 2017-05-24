@@ -31,12 +31,12 @@ class AgentGrid( ParamHolder ):
         depth += 1
 
         lines.append( (depth*indent) + "%s = new AgentGrid( );" % (varname, ) )
-        lines.append( ParamHolder.toCpp( self, varname, indent, depth ) )
+        lines.append( ParamHolder.getInitializeBioModel( self, varname, indent, depth ) )
         
         s = self.getInitializeBioModelSetDataMembers( varname, "->", indent, depth,
                                                       self.mPrivateBoolHiddenParams,
                                                       self.mPrivateNumberHiddenParams,
-                                                      [] )
+                                                      self.mPrivateStringHiddenParams )
         lines.append( s )
         
         depth -= 1;
