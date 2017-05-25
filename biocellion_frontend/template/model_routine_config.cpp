@@ -226,7 +226,7 @@ void ModelRoutine::updatePhiPDEInfo( Vector<PDEInfo>& v_phiPDEInfo ) {
   v_phiPDEInfo.resize( NUM_GRID_PHIS );
   setPhiPDEChemoattractant(v_phiPDEInfo, GRID_PHI_ONE_TYPE );
 #else
-  CHECK( NUM_GRID_PHIS == 0 );
+  //CHECK( NUM_GRID_PHIS == 0 );
 
   v_phiPDEInfo.clear();
 #endif

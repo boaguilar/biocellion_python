@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?><!--
+
+#########################################################################
+ iDynoMiCS: individual-based Dynamics of Microbial Communities Simulator
+#########################################################################
+
+-->
+<idynomics>
+  <!--#####################################################################
+		SIMULATOR SECTION
+	######################################################################-->
+  <simulator>
+    <param name="restartPreviousRun">false</param>
+    <param name="randomSeed">5515</param>
+    <param name="outputPeriod" unit="hour">0.01</param>
+
+    <timeStep>
+      <param name="adaptive">false</param>
+      <param name="timeStepIni" unit="hour">0.01</param>
+      <param name="timeStepMin" unit="hour">0.01</param>
+      <param name="timeStepMax" unit="hour">0.01</param>
+      <param name="endOfSimulation" unit="hour">10.00</param>
+    </timeStep>
+    <!-- The AGENTTIMESTEP which should always be EQUAL or LOWER than the global time step -->
+    <param name="agentTimeStep" unit="hour">0.01</param>
+  </simulator>
+  <!--#####################################################################
+		INPUT SECTION
+	######################################################################-->
+  <input>
+    <param name="useAgentFile">false</param>
+    <param name="inputAgentFileURL">agent_State(last).xml</param>
+    <param name="useBulkFile">false</param>
+    <param name="inputBulkFileURL">env_Sum(last).xml</param>
+  </input>
+  <!--#####################################################################
+		SOLUTES AND BIOMASS TYPES SECTION
+	######################################################################-->
+  <particle name="biomass">
+    <param name="density" unit="g.L-1">150</param>
+  </particle>
+  <particle name="inert">
+    <param name="density" unit="g.L-1">150</param>
+  </particle>
+  <particle name="capsule">
+    <param name="density" unit="g.L-1">75</param>
+  </particle>
+  <!--#####################################################################
+		WORLD SECTION
+	######################################################################-->
+  <world>
+    <bulk name="MyTank">
+      <param name="isConstant">true</param>  
+      <param name="D" unit="h-1">0.6</param>      
+    </bulk>
+    <bulk name="MySecondTank"> 
+    </bulk>
+    <computationDomain name="MyYeastColony">
+      <!-- this is the grid size, counts of UBs -->
+      <grid nDim="2" nI="32" nJ="32" nK="1"/>
+      <!-- this is the UB size -->
+      <param name="resolution" unit="um">4</param>
+      <param name="boundaryLayer" unit="um">1</param>
+      <param name="biofilmDiffusivity">0.8</param>
+      <param name="specificArea" unit="m2.m-3">80</param>
+    </computationDomain>
+  </world>
+  <!--#####################################################################
+		REACTION SECTION
+	######################################################################-->
+  
+  <!--#####################################################################
+		SOLVER SECTION
+	######################################################################-->
+
+  <!--#####################################################################
+		AGENT GRID SECTION
+	######################################################################-->
+   <agentGrid>
+    <param name="computationDomain">MyYeastColony</param>
+    <param name="resolution" unit="um">4</param>
+    <param name="shovingFraction">0.0025</param> <!-- use to determine how long to keep shoving per time step, fraction of agents that need to move to require another loop -->
+    <param name="shovingMaxIter">1000</param> <!-- use to determine how long to keep shoving per time step -->
+    <param name="shovingMutual">true</param> <!-- true to split shoving between pairs -->
+  </agentGrid>
+
+  <!--#####################################################################
+		SPECIES SECTION
+	######################################################################-->
+
+  <species class="Yeast" name="StickyCells">
+    <particle name="biomass">
+      <param name="mass" unit="fg">500</param>
+    </particle>
+    <particle name="inert">
+      <param name="mass" unit="fg">0</param>
+    </particle>
+    <param name="brownianScale">0.2</param> <!-- biocellion only -->
+    <param name="shoveScale">0.3</param> <!-- biocellion only -->
+    <param name="shoveFactor" unit="um">1</param> <!-- This is actually dimensionless in use, but cDynoMiCS reads it as a length -->
+    <param name="shoveLimit" unit="um">0.0</param>
+    <param name="computationDomain">MyYeastColony</param>
+    <adhesions>
+      <!-- scale is a gain factor, only used by biocellion
+	   strength is the divisor in the exponent argument
+      -->
+      <adhesion strength="0.3" withSpecies="StickyCells" scale="0.2"/>
+      <adhesion strength="0.3" withSpecies="MediumCells" scale="0.15"/>
+    </adhesions>
+    <initArea number="1000">
+      <param name="birthday" unit="hour">0</param>
+      <coordinates x="1" y="1" z="0"/>
+      <coordinates x="121" y="121" z="0"/>
+    </initArea>
+  </species>
+
+  <species class="Yeast" name="MediumCells">
+    <particle name="biomass">
+      <param name="mass" unit="fg">300</param>
+    </particle>
+    <particle name="inert">
+      <param name="mass" unit="fg">0</param>
+    </particle>
+    <param name="brownianScale">0.2</param> <!-- biocellion only -->
+    <param name="shoveScale">0.3</param> <!-- biocellion only -->
+    <param name="shoveFactor" unit="um">1</param> <!-- This is actually dimensionless in use, but cDynoMiCS reads it as a length -->
+    <param name="shoveLimit" unit="um">0.0</param>
+    <param name="computationDomain">MyYeastColony</param>
+    <adhesions>
+      <!-- scale is a gain factor, only used by biocellion
+	   strength is the divisor in the exponent argument
+      -->
+      <adhesion strength="0.3" withSpecies="MediumCells" scale="0.1"/>
+    </adhesions>
+    <initArea number="1000">
+      <param name="birthday" unit="hour">0</param>
+      <coordinates x="1" y="1" z="0"/>
+      <coordinates x="121" y="121" z="0"/>
+    </initArea>
+  </species>
+  
+  <species class="Yeast" name="SlipperyCells">
+    <particle name="biomass">
+      <param name="mass" unit="fg">1000</param>
+    </particle>
+    <particle name="inert">
+      <param name="mass" unit="fg">0</param>
+    </particle>
+    <param name="brownianScale">0.2</param> <!-- biocellion only -->
+    <param name="shoveScale">0.3</param> <!-- biocellion only -->
+    <param name="shoveFactor" unit="um">1</param> <!-- This is actually dimensionless in use, but cDynoMiCS reads it as a length -->
+    <param name="shoveLimit" unit="um">0.0</param>
+    <param name="computationDomain">MyYeastColony</param>
+    <initArea number="1000">
+      <param name="birthday" unit="hour">0</param>
+      <coordinates x="1" y="1" z="0"/>
+      <coordinates x="121" y="121" z="0"/>
+    </initArea>
+  </species>
+  
+</idynomics>

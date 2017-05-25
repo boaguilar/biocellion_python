@@ -89,7 +89,12 @@ static inline void placeUniformRandomAgents(const VIdx& startVIdx, const VIdx& r
 
 void ModelRoutine::addSpAgents( const BOOL init, const VIdx& startVIdx, const VIdx& regionSize, const IfGridBoxData<BOOL>& ifGridHabitableBoxData, Vector<VIdx>& v_spAgentVIdx, Vector<SpAgentState>& v_spAgentState, Vector<VReal>& v_spAgentOffset ) {/* initialization */
   /* MODEL START */
-  REAL current_time = gSimulator->getAgentTimeStep() * Info::getCurBaselineTimeStep();
+  REAL current_time;
+  if( init ) {
+    current_time = 0;
+  } else {
+    current_time = gSimulator->getAgentTimeStep() * Info::getCurBaselineTimeStep();
+  }
   size_t i, j;
   for( i = 0 ; i < gAgentSpecies.size() ; i++ ) {
     for( j = 0 ; j < gAgentSpecies[ i ]->getInitAreas( ).size() ; j++ ) {

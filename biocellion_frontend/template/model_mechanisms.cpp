@@ -130,6 +130,14 @@ MechIntrctSpAgent* MechIntrctSpAgentAdhesion::create()
   MechIntrctSpAgentAdhesion* intrct = new MechIntrctSpAgentAdhesion();
 
   S32 i, j;
+  /* default values for all slots, makes sure all slots exist */
+  for( i = 0 ; i < NUM_AGENT_SPECIES ; i++ ) {
+    for( j = 0 ; j < NUM_AGENT_SPECIES ; j++ ) {
+      intrct->setScale( i, j, 0.0 );
+      intrct->setDistanceScale( i, j, 0.0 );
+    }
+  }
+  /* values based on configuration information */
   for( i = 0 ; i < NUM_AGENT_SPECIES ; i++ ) {
     const Vector< Adhesion * >& adhesions = gAgentSpecies[ i ]->getAdhesions( );
     for( j = 0 ; j < (S32)adhesions.size( ) ; j++ ) {

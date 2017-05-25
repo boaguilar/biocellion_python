@@ -223,6 +223,17 @@ void InitArea::addSpAgentsUnfilledBlock( const BOOL init, const VIdx& startVIdx,
   OUTPUT( 10, "intersect_volume = " << intersect_volume );
   OUTPUT( 10, "agent_number = " << agent_number );
 
+  if( 0 ) {
+    OUTPUT( 0, "INTERSECTION:"
+            << "  startIdx: " << startVIdx[ 0 ] << "," << startVIdx[ 1 ] << ","<< startVIdx[ 2 ]
+            << "  regionSize: " << regionSize[ 0 ] << "," << regionSize[ 1 ] << ","<< regionSize[ 2 ]
+            << "  intersectStartVIdx: " << intersectStartVIdx[ 0 ] << "," << intersectStartVIdx[ 1 ] << "," << intersectStartVIdx[ 2 ]
+            << "  intersectRegionSize: " << intersectRegionSize[ 0 ] << "," << intersectRegionSize[ 1 ] << "," << intersectRegionSize[ 2 ]
+            << "  intersectStartVOffset: " << intersectStartVOffset[ 0 ] << "," << intersectStartVOffset[ 1 ] << "," << intersectStartVOffset[ 2 ]
+            << "  intersectEndVOffset: " << intersectEndVOffset[ 0 ] << "," << intersectEndVOffset[ 1 ] << "," << intersectEndVOffset[ 2 ]
+            << "  intersectLen: " << intersectLen[ 0 ] << "," << intersectLen[ 1 ] << "," << intersectLen[ 2 ]
+          );
+  }
   /**** create the agents now ****/
   S64 j;
   for( j = 0 ; j < ( S64 ) agent_number ; j ++ ) {
@@ -241,7 +252,7 @@ void InitArea::addSpAgentsUnfilledBlock( const BOOL init, const VIdx& startVIdx,
       CHECK( randScale < 1.0 );
 
       if( intersectRegionSize[ dim ] > 0 ) {
-        vPosAgent[ dim ] = ( ( ( REAL )intersectStartVIdx[ dim ] - 0.5 ) * gAgentGrid->getResolution( ) - intersectStartVOffset[ dim ]
+        vPosAgent[ dim ] = ( ( intersectStartVIdx[ dim ] + 0.5 ) * gAgentGrid->getResolution( ) + intersectStartVOffset[ dim ]
                              + intersectLen[ dim ] * randScale );
       } else {
         vPosAgent[ dim ] = ( REAL )intersectStartVIdx[ dim ] * gAgentGrid->getResolution( );
@@ -249,17 +260,37 @@ void InitArea::addSpAgentsUnfilledBlock( const BOOL init, const VIdx& startVIdx,
 
     }
     Util::changePosFormat1LvTo2Lv( vPosAgent, vIdxAgent, vOffsetAgent );
-    
-    for( dim = 0 ; dim < 3 ; dim++ ) {
-      CHECK( vIdx[dim] >= startVIdx[dim] );
-      CHECK( vIdx[dim] < startVIdx[dim] + regionSize[dim] );
+    mAgentSpecies->setInitialAgentState( state );
 
-      CHECK( vOffset[dim] >= gAgentGrid->getResolution( ) * -0.5 );
-      CHECK( vOffset[dim] < gAgentGrid->getResolution( ) * 0.5 );
+    if( false && ( vIdxAgent[0] < startVIdx[0] || vIdxAgent[1] < startVIdx[1] || vIdxAgent[2] < startVIdx[2] ) ) {
+      OUTPUT( 0, "INTERSECTION:"
+              << "  startIdx: " << startVIdx[ 0 ] << "," << startVIdx[ 1 ] << ","<< startVIdx[ 2 ]
+              << "  regionSize: " << regionSize[ 0 ] << "," << regionSize[ 1 ] << ","<< regionSize[ 2 ]
+              << "  intersectStartVIdx: " << intersectStartVIdx[ 0 ] << "," << intersectStartVIdx[ 1 ] << "," << intersectStartVIdx[ 2 ]
+              << "  intersectRegionSize: " << intersectRegionSize[ 0 ] << "," << intersectRegionSize[ 1 ] << "," << intersectRegionSize[ 2 ]
+              << "  intersectStartVOffset: " << intersectStartVOffset[ 0 ] << "," << intersectStartVOffset[ 1 ] << "," << intersectStartVOffset[ 2 ]
+              << "  intersectEndVOffset: " << intersectEndVOffset[ 0 ] << "," << intersectEndVOffset[ 1 ] << "," << intersectEndVOffset[ 2 ]
+              << "  intersectLen: " << intersectLen[ 0 ] << "," << intersectLen[ 1 ] << "," << intersectLen[ 2 ]
+              );
+      OUTPUT( 0, "NEW AGENT"
+              << "  idx: " << vIdxAgent[ 0 ] << "," << vIdxAgent[ 1 ] << ","<< vIdxAgent[ 2 ]
+              << "  offset: " << vOffsetAgent[ 0 ] << "," << vOffsetAgent[ 1 ] << "," << vOffsetAgent[ 2 ]
+              << "  state: r: " << state.getRadius() << " t: " << state.getType( )
+              << "  pos: " << vPosAgent[ 0 ] << "," << vPosAgent[ 1 ] << ","<< vPosAgent[ 2 ]
+              );
+    }
+    
+    CHECK( vIdxAgent[0] >= startVIdx[0] );
+    CHECK( vIdxAgent[1] >= startVIdx[1] );
+    CHECK( vIdxAgent[2] >= startVIdx[2] );
+    for( dim = 0 ; dim < 3 ; dim++ ) {
+      CHECK( vIdxAgent[dim] >= startVIdx[dim] );
+      CHECK( vIdxAgent[dim] < startVIdx[dim] + regionSize[dim] );
+
+      CHECK( vOffsetAgent[dim] >= gAgentGrid->getResolution( ) * -0.5 );
+      CHECK( vOffsetAgent[dim] < gAgentGrid->getResolution( ) * 0.5 );
     }
 
-    mAgentSpecies->setInitialAgentState( state );
-    
     v_spAgentVIdx.push_back( vIdxAgent );
     v_spAgentState.push_back( state );
     v_spAgentOffset.push_back( vOffsetAgent );

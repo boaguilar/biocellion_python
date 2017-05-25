@@ -80,5 +80,5 @@ clean_all:
 run:
 	make all
 	chmod +x ./RUN.bash
-	./RUN.bash "$(BIOCELLION_ROOT)"
+	./RUN.bash "$(BIOCELLION_ROOT)" "$(DEBUG)"
 
