@@ -263,11 +263,7 @@ void ModelRoutine::updateIfGridModelVarInfo( Vector<IfGridModelVarInfo>& v_ifGri
 void ModelRoutine::updateRNGInfo( Vector<RNGInfo>& v_rngInfo ) {
   /* MODEL START */
 
-#if BROWNIAN_MOTION_ON
   CHECK( NUM_MODEL_RNGS == 2 );
-#else
-  CHECK( NUM_MODEL_RNGS == 1 );
-#endif
 
   RNGInfo rngInfo;
 
@@ -278,14 +274,12 @@ void ModelRoutine::updateRNGInfo( Vector<RNGInfo>& v_rngInfo ) {
 
   v_rngInfo.push_back( rngInfo );
 
-#if BROWNIAN_MOTION_ON
   rngInfo.type = RNG_TYPE_GAUSSIAN;
   rngInfo.param0 = 0.0;
   rngInfo.param1 = 1.0;
   rngInfo.param2 = 0.0;/* dummy */
 
   v_rngInfo.push_back( rngInfo );
-#endif
   
   /* MODEL END */
 

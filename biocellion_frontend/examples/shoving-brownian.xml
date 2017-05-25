@@ -19,7 +19,7 @@
       <param name="timeStepIni" unit="hour">0.01</param>
       <param name="timeStepMin" unit="hour">0.01</param>
       <param name="timeStepMax" unit="hour">0.01</param>
-      <param name="endOfSimulation" unit="hour">0.20</param>
+      <param name="endOfSimulation" unit="hour">1.00</param>
     </timeStep>
     <!-- The AGENTTIMESTEP which should always be EQUAL or LOWER than the global time step -->
     <param name="agentTimeStep" unit="hour">0.01</param>
@@ -95,8 +95,8 @@
     <particle name="inert">
       <param name="mass" unit="fg">0</param>
     </particle>
-    <param name="brownianScale">0.25</param> <!-- biocellion only -->
-    <param name="shoveScale">0.25</param> <!-- biocellion only -->
+    <param name="brownianScale">0.50</param> <!-- biocellion only -->
+    <param name="shoveScale">1.00</param> <!-- biocellion only -->
     <param name="shoveFactor" unit="um">1</param> <!-- This is actually dimensionless in use, but cDynoMiCS reads it as a length -->
     <param name="shoveLimit" unit="um">0.0</param>
     <param name="color">red</param>
@@ -110,8 +110,14 @@
     <initArea number="1500">
       <param name="birthday" unit="hour">0</param>
       <!-- These are in um -->
-      <coordinates x="20" y="20" z="0"/>
-      <coordinates x="220" y="220" z="0"/>
+      <coordinates x="67" y="125" z="0"/>
+      <coordinates x="120" y="175" z="0"/>
+    </initArea>
+    <initArea number="1500">
+      <param name="birthday" unit="hour">0</param>
+      <!-- These are in um -->
+      <coordinates x="15" y="15" z="0"/>
+      <coordinates x="45" y="45" z="0"/>
     </initArea>
   </species>
 </idynomics>

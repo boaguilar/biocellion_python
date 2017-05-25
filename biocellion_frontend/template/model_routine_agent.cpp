@@ -154,19 +154,14 @@ void ModelRoutine::updateSpAgentBirthDeath( const VIdx& vIdx, const SpAgent& spA
 }
 
 
-#if BROWNIAN_MOTION_ON
-static inline void brownianMotion(const SpAgentState& state, VReal& disp) {
-  for( S32 dim = 0 ; dim < DIMENSION ; dim++ ) {
-#if TWO_DIMENSION
-    if(dim == DIMENSION-1) { continue; }
-#endif
-    disp[dim] += CELL_RADIUS[state.getType()] * ( Util::getModelRand( MODEL_RNG_GAUSSIAN ) ) * RANDOM_VIBRATION_SCALE[state.getType()];
+static inline void brownianMotion( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, const SpAgentState& state, VReal& disp ) {
+  for( S32 dim = 0 ; dim < 3 ; dim++ ) { // FIXME:  Use computation domain grid for dimension
+    if( dim == 3-1 ) { 
+      continue; 
+    }
+    disp[dim] += state.getRadius() * ( Util::getModelRand( MODEL_RNG_GAUSSIAN ) ) * gAgentSpecies[ state.getType() ]->getParamReal( gAgentSpecies[ state.getType() ]->getIdxReal( SP_brownianScale ) );
   }
 }
-#else
-static inline void brownianMotion(const SpAgentState& state, VReal& disp) {
-}
-#endif
 
 static inline void limitMotion(VReal& disp) {
   for( S32 dim = 0 ; dim < DIMENSION ; dim++ ) {/* limit the maximum displacement within a single time step */
@@ -313,8 +308,8 @@ void ModelRoutine::adjustSpAgent( const VIdx& vIdx, const JunctionData& junction
   disp[2] = mechIntrctData.getModelReal( gAgentSpecies[ agentType ]->getIdxMechForceRealZ() );
 #endif
   
+  brownianMotion( vIdx, junctionData, vOffset, mechIntrctData, nbrUBEnv, state, disp );
   /*
-  brownianMotion(state, disp);
   allChemoTaxisMotion(vIdx, junctionData, vOffset, nbrUBEnv, state, disp);
   */
   limitMotion(disp);
