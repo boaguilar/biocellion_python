@@ -1,7 +1,12 @@
-#include "biocellion.h"
 #include "tight_junction.h"
 
-TightJunction::TightJunction(const REAL& stiffness, const std::string& withSpecies)
+TightJunction::TightJunction( )
+  :mStiffness(0), mWithSpecies(0)
+{
+  //empty
+}
+
+TightJunction::TightJunction(const REAL& stiffness, const S32& withSpecies)
   :mStiffness(stiffness), mWithSpecies(withSpecies)
 {
   //empty
@@ -12,7 +17,7 @@ void TightJunction::setStiffness(const REAL& stiffness)
   mStiffness = stiffness;
 }
 
-void TightJunction::setWithSpecies(const std::string& withSpecies)
+void TightJunction::setWithSpecies(const S32& withSpecies)
 {
   mWithSpecies = withSpecies;
 }

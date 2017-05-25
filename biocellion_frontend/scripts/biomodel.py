@@ -433,7 +433,7 @@ class BioModel:
         return ok
 
     def scanSpeciesXML( self, node, parent_object=None ):
-        may_children = ( "param", "particle", "reaction", "tightJunctions", "initArea", "entryConditions", "chemotaxis", "switchingLags",  )
+        may_children = ( "param", "particle", "reaction", "tightJunctions", "adhesions", "initArea", "entryConditions", "chemotaxis", "switchingLags",  )
         required_children = (  )
         if not self.mIDynoMiCS.getAgentSpecies().addSpecies( node.get('class'), node.get('name') ):
             sys.exit( "ERROR : couldn't add a species." )
@@ -448,6 +448,7 @@ class BioModel:
             "particle": self.scanSpeciesParticleXML,
             "reaction": self.scanSpeciesReactionXML,
             "tightJunctions": self.scanSpeciesTightJunctionsXML,
+            "adhesions": self.scanSpeciesAdhesionsXML,
             "initArea": self.scanSpeciesInitAreaXML,
             "entryConditions": self.scanSpeciesEntryConditionsXML,
             "chemotaxis": self.scanSpeciesChemotaxisXML,
@@ -490,6 +491,48 @@ class BioModel:
         ok = True
         print( "species::tightJunctions not scaned yet" )
         return ok
+
+    def scanSpeciesAdhesionsXML( self, node, parent_object=None ):
+        may_children = ( "adhesion", )
+        required_children = ( "adhesion", )
+        if parent_object is None:
+            node_object = agent_species.ItemHolder( agent_species.Adhesion )
+        else:
+            node_object = parent_object.getAdhesions( )
+            parent_object = None # don't need to add this as a child
+        may_attributes = ( )
+        required_attributes = ( )
+        may_params = ( )
+        required_params = ( )
+        child_methods = {
+            "adhesion": self.scanSpeciesAdhesionXML,
+        }
+        
+        ok = self.scanNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
+        
+        return ok
+
+    def scanSpeciesAdhesionXML( self, node, parent_object=None ):
+        may_children = (  )
+        required_children = (  )
+        if parent_object is None:
+            node_object = agent_species.Adhesion( )
+        else:
+            if not parent_object.addItem(  ):
+                sys.exit( "ERROR : couldn't add a species adhesion." )
+            node_object = parent_object.getLastItem( )
+            parent_object = None # don't need to add this as a child
+        may_attributes = node_object.getMayAttributes( )
+        required_attributes = node_object.getRequiredAttributes( )
+        may_params = node_object.getMayParams( )
+        required_params = node_object.getRequiredParams( )
+        child_methods = {
+        }
+        
+        ok = self.scanNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
+        
+        return ok
+    
 
     def scanSpeciesInitAreaXML( self, node, parent_object=None ):
         may_children = ( "param", "coordinates", "blocks", )

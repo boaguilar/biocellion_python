@@ -1,18 +1,18 @@
 #ifndef _TIGHT_JUNCTION_H
 #define _TIGHT_JUNCTION_H
 #include "biocellion.h"
-#include <string>
 
 class TightJunction {
 public:
-  TightJunction(const REAL& stiffness, const std::string& withSpecies);
+  TightJunction( );
+  TightJunction(const REAL& stiffness, const S32& withSpecies);
   REAL getStiffness() const { return mStiffness; };
-  std::string getWithSpecies() const { return mWithSpecies; };
+  S32 getWithSpecies() const { return mWithSpecies; };
   void setStiffness(const REAL& stiffness);
-  void setWithSpecies(const std::string& withSpecies);
+  void setWithSpecies(const S32& withSpecies);
 protected:
   REAL mStiffness;
-  std::string mWithSpecies;
+  S32 mWithSpecies;
 };
 
 #endif /*_TIGHT_JUNCTION_H*/

@@ -696,13 +696,65 @@ class InitArea( ParamHolder ):
         return str(self)
 
 #####################################################
+# Adhesion
+#####################################################
+class Adhesion( ParamHolder ):
+
+    def __init__( self ):
+        ParamHolder.__init__( self )
+        self.addAttribute( Param( "strength", "float", 0, True ) )
+        self.addAttribute( Param( "withSpecies", "str", "", True ) )
+        self.addAttribute( Param( "scale", "float", 1.0, False ) )
+
+        self.mPrivateNumberHiddenParams = [ "strength", "withSpecies", "scale" ]
+        self.mPrivateBoolHiddenParams = [  ]
+        self.mPrivateStringHiddenParams = [  ]
+        self.mPrivateHiddenParams = self.mPrivateNumberHiddenParams + self.mPrivateBoolHiddenParams + self.mPrivateStringHiddenParams
+        self.mHiddenParams = self.mHiddenParams + self.mPrivateHiddenParams
+        return
+
+    def getBioModelH( self, indent, depth ):
+        lines = [ ]
+        return "\n".join( lines )
+
+    def getInitializeBioModel( self, parent_varname, container_name, species_token, indent, depth ):
+        self.getAttribute( "withSpecies" ).setValue( species_token )
+        varname = "adhesion"
+        lines = [ ]
+        lines.append( (depth*indent) + "{" )
+        depth += 1
+
+        lines.append( (depth*indent) + "Adhesion *%s = new Adhesion( );" % (varname, ) )
+        lines.append( ParamHolder.getInitializeBioModel( self, varname, indent, depth ) )
+        s = self.getInitializeBioModelSetDataMembers( varname, "->", indent, depth,
+                                                      self.mPrivateBoolHiddenParams,
+                                                      self.mPrivateNumberHiddenParams,
+                                                      self.mPrivateStringHiddenParams )
+        lines.append( s )
+        
+        lines.append( (depth*indent) + "%s.push_back( %s );" % (container_name, varname, ) )
+        depth -= 1;
+        lines.append( (depth*indent) + "}" )
+        return "\n".join( lines )
+    
+    def __str__(self):
+        s  = "<adhesion" + self.formatAttributes() + ">\n"
+        s += ParamHolder.__str__( self )
+        s += "</adhesion>\n"
+        return s
+
+    def __repr__(self):
+        return str(self)
+
+#####################################################
 # AgentSpecies
 #####################################################
 class AgentSpecies(ParamHolder):
 
-    def __init__(self, class_name, name):
+    def __init__(self, class_name, name, model):
         self.mClassName = class_name
         self.mName = name
+        self.mModel = model
         self.mEnumToken = "AGENT_SPECIES_%s_%s" % (class_name, name)
         self.mUseMechForceReals = False
         self.mMechForceReals = [ ]
@@ -723,6 +775,7 @@ class AgentSpecies(ParamHolder):
         self.addParam( Param( "computationDomain", "str", "" ) )
 
         self.mInitAreas = ItemHolder( InitArea )
+        self.mAdhesions = ItemHolder( Adhesion )
         return
 
     def getBioModelH( self, indent, depth ):
@@ -739,7 +792,7 @@ class AgentSpecies(ParamHolder):
         lines.append( (depth*indent) + "AgentSpecies *%s = new AgentSpecies( \"%s\", \"%s\", %s, %d, %d, %d, %d );" % (varname, self.mName, self.mClassName, self.mEnumToken, self.countReal(), self.countInt(), self.countBool(), self.countString()) )
         lines.append( ParamHolder.getInitializeBioModel( self, varname, indent, depth ) )
 
-        s = (depth*indent) + "%s->setDMax( 2.0 /* FIXME: read from AgentGrid */ );" % (varname, )
+        s = (depth*indent) + "%s->setDMax( %s );" % (varname, self.mModel.getAgentGrid( ).getParam( 'resolution' ).getValue(), )
         lines.append( s )
         s = (depth*indent) + "%s->setNumModelBools( %s_NUM_BOOLS );" % (varname, self.mEnumToken, )
         lines.append( s )
@@ -759,6 +812,9 @@ class AgentSpecies(ParamHolder):
         container_name = "%s->getInitAreas()" % ( varname )
         for i in range( len( self.mInitAreas ) ):
             lines.append( self.mInitAreas[ i ].getInitializeBioModel( varname, container_name, indent, depth ) )
+        container_name = "%s->getAdhesions()" % ( varname )
+        for i in range( len( self.mAdhesions ) ):
+            lines.append( self.mAdhesions[ i ].getInitializeBioModel( varname, container_name, self.getEnumToken(), indent, depth ) )
         s = self.getSpecificInitializeBioModel( varname, indent, depth )
         if s:
             lines.append( s )
@@ -786,6 +842,9 @@ class AgentSpecies(ParamHolder):
 
     def getInitAreas( self ):
         return self.mInitAreas
+
+    def getAdhesions( self ):
+        return self.mAdhesions
 
     def getEnums( self, indent, depth ):
         self.updateUseMechForceReals(  )
@@ -876,6 +935,7 @@ class AgentSpecies(ParamHolder):
         s  = "<species" + self.formatAttributes() + " enumToken=\"" + self.mEnumToken + "\">\n"
         s += ParamHolder.__str__( self )
         s += str( self.mInitAreas )
+        s += str( self.mAdhesions )
         s += additional
         s += "</species>"
         return s
@@ -890,9 +950,9 @@ class AgentSpecies(ParamHolder):
 
 class AgentSpeciesActive(AgentSpecies):
     
-    def __init__(self, class_name="", name=""):
+    def __init__(self, class_name="", name="", model=None):
         if not class_name: class_name = "Active"
-        AgentSpecies.__init__(self, class_name, name)
+        AgentSpecies.__init__(self, class_name, name, model)
         
         self.mParticles = ItemHolder( AgentSpeciesParticle )
         print("FIXME: <reaction name='name' status='active' /> not yet parsed.")
@@ -935,9 +995,9 @@ class AgentSpeciesActive(AgentSpecies):
 
 class AgentSpeciesLocated(AgentSpeciesActive):
     
-    def __init__(self, class_name="", name=""):
+    def __init__(self, class_name="", name="", model=None):
         if not class_name: class_name = "Located"
-        AgentSpeciesActive.__init__(self, class_name, name)
+        AgentSpeciesActive.__init__(self, class_name, name, model)
         self.addParam( Param( "divRadius", "um",  0.97) )
         self.addParam( Param( "divRadiusCV", "float",  0.1) )
         self.addParam( Param( "deathRadius", "um",  0.2) )
@@ -956,9 +1016,9 @@ class AgentSpeciesLocated(AgentSpeciesActive):
 
 class AgentSpeciesBacterium(AgentSpeciesLocated):
     
-    def __init__(self, class_name="", name=""):
+    def __init__(self, class_name="", name="", model=None):
         if not class_name: class_name = "Bacterium"
-        AgentSpeciesLocated.__init__(self, class_name, name)
+        AgentSpeciesLocated.__init__(self, class_name, name, model)
         self.addParam( Param( "epsMax", "float", 0.15 ) )
         self.addParam( Param( "epsColor", "str", "lightGray" ) )
         print("FIXME: <particle name='capsule'> <particle name='inert'> special names not parsed for Bacterium.")
@@ -966,17 +1026,17 @@ class AgentSpeciesBacterium(AgentSpeciesLocated):
 
 class AgentSpeciesBactEPS(AgentSpeciesBacterium):
     
-    def __init__(self, class_name="", name=""):
+    def __init__(self, class_name="", name="", model=None):
         if not class_name: class_name = "BactEPS"
-        AgentSpeciesBacterium.__init__(self, class_name, name)
+        AgentSpeciesBacterium.__init__(self, class_name, name, model)
         self.addParam( Param( "kHyd", "hr-1", 0.007 ) )
         return
 
 class AgentSpeciesYeast(AgentSpeciesBactEPS):
     
-    def __init__(self, class_name="", name=""):
+    def __init__(self, class_name="", name="", model=None):
         if not class_name: class_name = "Yeast"
-        AgentSpeciesBactEPS.__init__(self, class_name, name)
+        AgentSpeciesBactEPS.__init__(self, class_name, name, model)
         self.addParam( Param( "useActivationInhibition", "bool", False ) )
         self.addParam( Param( "neighborhoodRadiusCoefficient", "float", 2.5 ) )
         self.addParam( Param( "startingTimeActivationInhibition", "int", 0 ) )
@@ -988,30 +1048,31 @@ class AgentSpeciesYeast(AgentSpeciesBactEPS):
 
 class AllAgentSpecies( ItemHolder ):
 
-    def __init__(self):
+    def __init__( self, model ):
         ItemHolder.__init__( self, AgentSpecies )
+        self.mModel = model
         return
 
     def addSpecies( self, class_name, name, species=None ):
         if species is None:
             if class_name == "Species":
-                species = AgentSpecies(class_name, name)
+                species = AgentSpecies(class_name, name, self.mModel)
             elif class_name == "Active":
-                species = AgentSpeciesActive(class_name, name)
+                species = AgentSpeciesActive(class_name, name, self.mModel)
             elif class_name == "Located":
-                species = AgentSpeciesLocated(class_name, name)
+                species = AgentSpeciesLocated(class_name, name, self.mModel)
             elif class_name == "Bacterium":
-                species = AgentSpeciesBacterium(class_name, name)
+                species = AgentSpeciesBacterium(class_name, name, self.mModel)
             elif class_name == "BactEPS":
-                species = AgentSpeciesBactEPS(class_name, name)
+                species = AgentSpeciesBactEPS(class_name, name, self.mModel)
             elif class_name == "Yeast":
-                species = AgentSpeciesYeast(class_name, name)
+                species = AgentSpeciesYeast(class_name, name, self.mModel)
             else:
                 species = None
                 print("Unknown species class: %s" % (class_name, ))
                 print("Needs to be implemented")
                 return False
-            
+
         return self.addItem( name, species )
 
     def getBioModelH(self, indent, depth):

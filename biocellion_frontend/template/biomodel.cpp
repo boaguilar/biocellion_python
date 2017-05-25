@@ -25,6 +25,7 @@ void initializeBioModel() {
     }
   }
   gMechIntrctSpAgent.push_back( MechIntrctSpAgentShove::create() );
+  gMechIntrctSpAgent.push_back( MechIntrctSpAgentAdhesion::create() );
 
   gBioModelInitialized = true;
 }

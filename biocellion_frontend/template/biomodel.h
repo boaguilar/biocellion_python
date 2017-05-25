@@ -7,6 +7,8 @@
 #include "agent_species.h"
 #include "particle.h"
 #include "model_mechanisms.h"
+#include "adhesion.h"
+#include "tight_junction.h"
 
 extern Simulator *gSimulator;
 extern AgentGrid *gAgentGrid;

@@ -133,7 +133,7 @@ class IDynoMiCS( ParamHolder ):
         self.mSimulator = Simulator( )
         self.mWorld = World( )
         self.mAgentGrid = AgentGrid()
-        self.mAgentSpecies = AllAgentSpecies()
+        self.mAgentSpecies = AllAgentSpecies( self )
         self.mParticles = AllParticles()
         
         return

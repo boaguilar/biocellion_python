@@ -65,6 +65,15 @@ AgentSpecies::~AgentSpecies()
     }
   }
   mInitAreas.clear();
+
+  for( i = 0 ; i < mAdhesions.size() ; i++ ) {
+    if( mAdhesions[ i ] ) {
+      delete mAdhesions[ i ];
+      mAdhesions[ i ] = 0;
+    }
+  }
+  mAdhesions.clear();
+
 }
 
 const std::string& AgentSpecies::getName() const
@@ -160,6 +169,16 @@ const Vector<InitArea *>& AgentSpecies::getInitAreas( ) const
 Vector<InitArea *>& AgentSpecies::getInitAreas( )
 {
   return mInitAreas;
+}
+
+const Vector<Adhesion *>& AgentSpecies::getAdhesions( ) const
+{
+  return mAdhesions;
+}
+
+Vector<Adhesion *>& AgentSpecies::getAdhesions( )
+{
+  return mAdhesions;
 }
 
 template <class T, class U>
@@ -284,5 +303,9 @@ void AgentSpecies::setInitialAgentState( SpAgentState& state ) const {
     volume += mParticles[ i ].getInitialValue() / gParticles[ mParticles[ i ].getParticleIdx() ]->getDensity( );
   }
   REAL radius = cbrt( 3.0 * volume / (4.0 * MODEL_PI ) );
+
+  // if radius is too big, then agent-agent interactions will be missed.
+  CHECK( radius <= mDMax / 3.0 );
+
   state.setRadius( radius );
 }

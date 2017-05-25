@@ -1,6 +1,7 @@
 #include "model_define.h"
 #include "model_mechanisms.h"
 #include <iomanip>
+#include <cmath>
 
 MechIntrctSpAgent* MechIntrctSpAgent::create()
 {
@@ -11,6 +12,8 @@ MechIntrctSpAgent::~MechIntrctSpAgent()
 {
   // empty
 }
+
+// SHOVE
 
 MechIntrctSpAgent* MechIntrctSpAgentShove::create()
 {
@@ -118,6 +121,141 @@ void MechIntrctSpAgentShove::setLimit(const S32& agent_type, const REAL& value)
 void MechIntrctSpAgentShove::setDimensions(const S32& dimensions)
 {
   mDimensions = dimensions;
+}
+
+// ADHESION
+
+MechIntrctSpAgent* MechIntrctSpAgentAdhesion::create()
+{
+  MechIntrctSpAgentAdhesion* intrct = new MechIntrctSpAgentAdhesion();
+
+  S32 i, j;
+  for( i = 0 ; i < NUM_AGENT_SPECIES ; i++ ) {
+    const Vector< Adhesion * >& adhesions = gAgentSpecies[ i ]->getAdhesions( );
+    for( j = 0 ; j < (S32)adhesions.size( ) ; j++ ) {
+      intrct->setScale( i, adhesions[ j ]->getWithSpecies( ), adhesions[ j ]->getScale( ) );
+      intrct->setDistanceScale( i, adhesions[ j ]->getWithSpecies( ), adhesions[ j ]->getStrength( ) );
+    }
+  }
+
+  return intrct;
+}
+
+MechIntrctSpAgentAdhesion::MechIntrctSpAgentAdhesion()
+{
+  // empty
+}
+
+MechIntrctSpAgentAdhesion::~MechIntrctSpAgentAdhesion()
+{
+  // empty
+}
+
+void MechIntrctSpAgentAdhesion::compute( const S32 iter, const VIdx& vIdx0, const SpAgent& spAgent0, const UBEnv& ubEnv0, const VIdx& vIdx1, const SpAgent& spAgent1, const UBEnv& ubEnv1, const VReal& dir/* unit direction vector from spAgent1 to spAgent0 */, const REAL& dist, MechIntrctData& mechIntrctData0, MechIntrctData& mechIntrctData1, BOOL& link, JunctionEnd& end0/* dummy if link == false */, JunctionEnd& end1/* dummy if link == false */, BOOL& unlink )
+{
+  S32 agentType0 = spAgent0.state.getType();
+  S32 agentType1 = spAgent1.state.getType();
+
+  if( mScales[ agentType0 ][ agentType1 ] <= 0.0 || mDistanceScales[ agentType0 ][ agentType1 ] <= 0.0 ) {
+    return;
+  }
+
+  REAL R = spAgent0.state.getRadius() + spAgent1.state.getRadius();
+  if( dist > R ) {
+    REAL x = dist / R;
+    REAL a = 0.5 * mScales[ agentType0 ][ agentType1 ]; // 0.5 to share between the agents
+    REAL d = mDistanceScales[ agentType0 ][ agentType1 ];
+    REAL mag = -a * ( dist - R ) * exp( -1.0 * ( x - 1.0 ) * ( x - 1.0 ) / d );
+    
+    mechIntrctData0.setModelReal( gAgentSpecies[ agentType0 ]->getIdxMechForceRealX(), dir[0] * mag );
+    mechIntrctData0.setModelReal( gAgentSpecies[ agentType0 ]->getIdxMechForceRealY(), dir[1] * mag );
+    mechIntrctData0.setModelReal( gAgentSpecies[ agentType0 ]->getIdxMechForceRealZ(), dir[2] * mag );
+
+    mechIntrctData1.setModelReal( gAgentSpecies[ agentType1 ]->getIdxMechForceRealX(), -dir[0] * mag );
+    mechIntrctData1.setModelReal( gAgentSpecies[ agentType1 ]->getIdxMechForceRealY(), -dir[1] * mag );
+    mechIntrctData1.setModelReal( gAgentSpecies[ agentType1 ]->getIdxMechForceRealZ(), -dir[2] * mag );
+  }
+}
+
+void MechIntrctSpAgentAdhesion::setScale(const S32& agent_type0, const S32& agent_type1, const REAL& value)
+{
+  if(( S32 )mScales.size() <= agent_type0) {
+    S32 old_size = ( S32 )mScales.size();
+    mScales.resize(agent_type0 + 1);
+    S32 i;
+    for(i = old_size; i < ( S32 )mScales.size(); i++) {
+      mScales[i] = Vector< REAL >();
+    }
+  }
+  if(( S32 )mScales[ agent_type0 ].size() <= agent_type1) {
+    S32 old_size = ( S32 )mScales[ agent_type0 ].size();
+    mScales[ agent_type0 ].resize(agent_type1 + 1);
+    S32 i;
+    for(i = old_size; i < ( S32 )mScales[ agent_type0 ].size(); i++) {
+      mScales[ agent_type0 ][ i ] = 0.0;
+    }
+  }
+
+  if(( S32 )mScales.size() <= agent_type1) {
+    S32 old_size = ( S32 )mScales.size();
+    mScales.resize(agent_type1 + 1);
+    S32 i;
+    for(i = old_size; i < ( S32 )mScales.size(); i++) {
+      mScales[i] = Vector< REAL >();
+    }
+  }
+  if(( S32 )mScales[ agent_type1 ].size() <= agent_type0) {
+    S32 old_size = ( S32 )mScales[ agent_type1 ].size();
+    mScales[ agent_type1 ].resize(agent_type0 + 1);
+    S32 i;
+    for(i = old_size; i < ( S32 )mScales[ agent_type1 ].size(); i++) {
+      mScales[ agent_type1 ][ i ] = 0.0;
+    }
+  }
+
+  mScales[ agent_type0 ][ agent_type1 ] = value;
+  mScales[ agent_type1 ][ agent_type0 ] = value;
+}
+
+
+void MechIntrctSpAgentAdhesion::setDistanceScale(const S32& agent_type0, const S32& agent_type1, const REAL& value)
+{
+  if(( S32 )mDistanceScales.size() <= agent_type0) {
+    S32 old_size = ( S32 )mDistanceScales.size();
+    mDistanceScales.resize(agent_type0 + 1);
+    S32 i;
+    for(i = old_size; i < ( S32 )mDistanceScales.size(); i++) {
+      mDistanceScales[i] = Vector< REAL >();
+    }
+  }
+  if(( S32 )mDistanceScales[ agent_type0 ].size() <= agent_type1) {
+    S32 old_size = ( S32 )mDistanceScales[ agent_type0 ].size();
+    mDistanceScales[ agent_type0 ].resize(agent_type1 + 1);
+    S32 i;
+    for(i = old_size; i < ( S32 )mDistanceScales[ agent_type0 ].size(); i++) {
+      mDistanceScales[ agent_type0 ][ i ] = 0.0;
+    }
+  }
+
+  if(( S32 )mDistanceScales.size() <= agent_type1) {
+    S32 old_size = ( S32 )mDistanceScales.size();
+    mDistanceScales.resize(agent_type1 + 1);
+    S32 i;
+    for(i = old_size; i < ( S32 )mDistanceScales.size(); i++) {
+      mDistanceScales[i] = Vector< REAL >();
+    }
+  }
+  if(( S32 )mDistanceScales[ agent_type1 ].size() <= agent_type0) {
+    S32 old_size = ( S32 )mDistanceScales[ agent_type1 ].size();
+    mDistanceScales[ agent_type1 ].resize(agent_type0 + 1);
+    S32 i;
+    for(i = old_size; i < ( S32 )mDistanceScales[ agent_type1 ].size(); i++) {
+      mDistanceScales[ agent_type1 ][ i ] = 0.0;
+    }
+  }
+
+  mDistanceScales[ agent_type0 ][ agent_type1 ] = value;
+  mDistanceScales[ agent_type1 ][ agent_type0 ] = value;
 }
 
 /////////////////////////////////////////////////////////////////

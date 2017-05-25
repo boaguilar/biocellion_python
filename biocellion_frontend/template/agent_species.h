@@ -2,7 +2,9 @@
 #define _AGENT_SPECIES_H_
 #include "biocellion.h"
 #include "init_area.h"
+#include "adhesion.h"
 class InitArea;
+class Adhesion;
 #include <string>
 #include <map>
 
@@ -48,6 +50,8 @@ public:
   S32 getNumMechModelInts() const;
   const Vector<InitArea *>& getInitAreas( ) const;
   Vector<InitArea *>& getInitAreas( );
+  const Vector<Adhesion *>& getAdhesions( ) const;
+  Vector<Adhesion *>& getAdhesions( );
 
   // these routines make an index, if there isn't one.
   // they are not efficient for inside tight loops
@@ -88,6 +92,7 @@ protected:
   Vector<S32> mIdxMechForceReals;
   Vector<S32> mIdxMechModelInts;
   Vector<InitArea *> mInitAreas;
+  Vector<Adhesion *> mAdhesions;
   Vector<AgentSpeciesParticle> mParticles;
 };
 
