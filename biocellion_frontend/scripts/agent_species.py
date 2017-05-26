@@ -717,8 +717,7 @@ class Adhesion( ParamHolder ):
         lines = [ ]
         return "\n".join( lines )
 
-    def getInitializeBioModel( self, parent_varname, container_name, species_token, indent, depth ):
-        self.getAttribute( "withSpecies" ).setValue( species_token )
+    def getInitializeBioModel( self, parent_varname, container_name, indent, depth ):
         varname = "adhesion"
         lines = [ ]
         lines.append( (depth*indent) + "{" )
@@ -814,7 +813,7 @@ class AgentSpecies(ParamHolder):
             lines.append( self.mInitAreas[ i ].getInitializeBioModel( varname, container_name, indent, depth ) )
         container_name = "%s->getAdhesions()" % ( varname )
         for i in range( len( self.mAdhesions ) ):
-            lines.append( self.mAdhesions[ i ].getInitializeBioModel( varname, container_name, self.getEnumToken(), indent, depth ) )
+            lines.append( self.mAdhesions[ i ].getInitializeBioModel( varname, container_name, indent, depth ) )
         s = self.getSpecificInitializeBioModel( varname, indent, depth )
         if s:
             lines.append( s )
@@ -1011,7 +1010,6 @@ class AgentSpeciesLocated(AgentSpeciesActive):
         self.addParam( Param( "fixed", "bool",  False) )
         self.addParam( Param( "noSkinBottomLayerBoundary", "int", 0 ) )
         print("FIXME: <tightJunctions> not yet parsed <tightJunction withSpecies='name' stiffness='value' />")
-        print("FIXME: <adhesions> not yet parsed <adhesion withSpecies='name' strength='value' />")
         return
 
 class AgentSpeciesBacterium(AgentSpeciesLocated):

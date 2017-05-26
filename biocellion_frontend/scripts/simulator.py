@@ -183,9 +183,9 @@ class IDynoMiCS( ParamHolder ):
             print( "Still have children of type: " + str( t ) )
             sys.exit( "ERROR: children should not be here." )
                     
-        ## AgentSpeciesParticles need to be connected to Particles
         for species_key in self.mAgentSpecies.getKeys( ):
             species = self.mAgentSpecies.getItem( species_key )
+            ## AgentSpeciesParticles need to be connected to Particles
             for species_particle_key in species.getParticles( ).getKeys( ):
                 species_particle = species.getParticles( ).getItem( species_particle_key )
                 particle_key = species_particle.getAttribute( 'name' ).getValue( )
@@ -198,6 +198,14 @@ class IDynoMiCS( ParamHolder ):
                     msg += " has particle " + species_particle.getAttribute( 'name' ).getValue( )
                     msg += " but no particle exists.  Particles = " + " ".join( self.mParticles.getKeys( ) )
                     sys.exit( msg )
+            ## AgentSpecies.Adhesions need to be connected to AgentSpecies
+            for adhesion_key in species.getAdhesions( ).getKeys( ):
+                adhesion = species.getAdhesions( ).getItem( adhesion_key )
+                target_species_key = adhesion.getAttribute( "withSpecies" ).getValue( )
+                target_species = self.mAgentSpecies.getItem( target_species_key )
+                target_species_token = target_species.getEnumToken( )
+                adhesion.getAttribute( "withSpecies" ).setValue( target_species_token )
+                    
         return
 
     def __str__(self):
