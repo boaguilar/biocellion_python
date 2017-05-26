@@ -231,6 +231,7 @@ def write_biomodel_files( biomodel, directory, source_directory ):
     names = [ 'adhesion.cpp', 'adhesion.h',
               'agent_grid.cpp', 'agent_grid.h',
               'agent_species.cpp', 'agent_species.h',
+              'distance_junction.cpp', 'distance_junction.h',
               'init_area.cpp', 'init_area.h',
               'model_define.h',
               'model_mechanisms.cpp', 'model_mechanisms.h',

@@ -23,7 +23,8 @@ def same_type( a, b ):
 class BioModel:
 
     def __init__( self ):
-        self.mIDynoMiCS = simulator.IDynoMiCS()
+        self.mIDynoMiCS = simulator.IDynoMiCS( self )
+        self.mDistanceJunctionsEnabled = False
         self.SCAN_VALIDATE_MODE = 1
         self.SCAN_PARSE_MODE = 2
         return
@@ -31,11 +32,28 @@ class BioModel:
     def getIDynoMiCS( self ):
         return self.mIDynoMiCS
 
+    def getDistanceJunctionsEnabled( self ):
+        return self.mDistanceJunctionsEnabled
+
+    def setDistanceJunctionsEnabled( self, value ):
+        self.mDistanceJunctionsEnabled = value
+        return
+
     def getBioModelH( self, indent, depth ):
         return self.mIDynoMiCS.getBioModelH( indent, depth )
 
     def getInitializeBioModel( self, indent, depth ):
-        return self.mIDynoMiCS.getInitializeBioModel( indent, depth )
+        varname = "gBioModel"
+        lines = []
+        lines.append( (depth*indent) + "{" )
+        depth += 1
+        lines.append( (depth*indent) + "%s = new BioModel( );" % (varname, ) )
+        lines.append( (depth*indent) + "%s->setDistanceJunctionsEnabled( %s );" % ( varname, "true" if self.mDistanceJunctionsEnabled else "false", ) )
+        depth -= 1;
+        lines.append( (depth*indent) + "}" )
+
+        lines.append( self.mIDynoMiCS.getInitializeBioModel( indent, depth ) )
+        return "\n".join( lines )
 
     def parseXML( self, xmlfilename ):
         ## read parameters from input file.
@@ -237,7 +255,7 @@ class BioModel:
     def scanIdynomicsXML( self, node, parent_object=None ):
         may_children = ( "simulator", "input", "solute", "particle", "world", "reaction", "molecularReactions", "solver", "agentGrid", "species", )
         required_children = ( "simulator", )
-        node_object = self.mIDynoMiCS = simulator.IDynoMiCS()
+        node_object = self.mIDynoMiCS = simulator.IDynoMiCS( self )
         may_attributes = node_object.getMayAttributes( )
         required_attributes = node_object.getRequiredAttributes( )
         may_params = node_object.getMayParams( )

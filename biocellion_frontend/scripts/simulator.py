@@ -126,8 +126,9 @@ class TimeStep( ParamHolder ):
 
 class IDynoMiCS( ParamHolder ):
 
-    def __init__( self ):
+    def __init__( self, biomodel ):
         self.mName = "idynomics"
+        self.mBioModel = biomodel
         ParamHolder.__init__(self)
 
         self.mSimulator = Simulator( )
@@ -198,6 +199,7 @@ class IDynoMiCS( ParamHolder ):
                     msg += " has particle " + species_particle.getAttribute( 'name' ).getValue( )
                     msg += " but no particle exists.  Particles = " + " ".join( self.mParticles.getKeys( ) )
                     sys.exit( msg )
+                    
             ## AgentSpecies.Adhesions need to be connected to AgentSpecies
             for adhesion_key in species.getAdhesions( ).getKeys( ):
                 adhesion = species.getAdhesions( ).getItem( adhesion_key )
@@ -205,6 +207,20 @@ class IDynoMiCS( ParamHolder ):
                 target_species = self.mAgentSpecies.getItem( target_species_key )
                 target_species_token = target_species.getEnumToken( )
                 adhesion.getAttribute( "withSpecies" ).setValue( target_species_token )
+                
+            ## AgentSpecies.DistanaceJuctions need to be created
+            species.createDistanceJunctions( )
+            if len( species.getDistanceJunctions( ) ) > 0:
+                self.mBioModel.setDistanceJunctionsEnabled( True )
+            # THIS SECTION SHOULD NOT BE NECESSARY, as long as adhesions and tight junctions, etc. are updated before creation
+            # ## AgentSpecies.DistanaceJuctions need to be connected to AgentSpecies
+            # for junction_key in species.getDistanceJunctions( ).getKeys( ):
+            #     junction = species.getDistanceJunctions( ).getItem( junction_key )
+            #     target_species_key = junction.getAttribute( "withSpecies" ).getValue( )
+            #     target_species = self.mAgentSpecies.getItem( target_species_key )
+            #     target_species_token = target_species.getEnumToken( )
+            #     junction.getAttribute( "withSpecies" ).setValue( target_species_token )
+                    
                     
         return
 

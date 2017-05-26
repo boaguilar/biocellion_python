@@ -746,6 +746,56 @@ class Adhesion( ParamHolder ):
         return str(self)
 
 #####################################################
+# DistanceJunction
+#####################################################
+class DistanceJunction( ParamHolder ):
+
+    def __init__( self ):
+        ParamHolder.__init__( self )
+        self.addAttribute( Param( "enabled", "bool", False, True ) )
+        self.addAttribute( Param( "withSpecies", "str", "", True ) )
+
+        self.mPrivateNumberHiddenParams = [ "withSpecies", ]
+        self.mPrivateBoolHiddenParams = [ "enabled", ]
+        self.mPrivateStringHiddenParams = [  ]
+        self.mPrivateHiddenParams = self.mPrivateNumberHiddenParams + self.mPrivateBoolHiddenParams + self.mPrivateStringHiddenParams
+        self.mHiddenParams = self.mHiddenParams + self.mPrivateHiddenParams
+        return
+
+    def getBioModelH( self, indent, depth ):
+        lines = [ ]
+        return "\n".join( lines )
+
+    def getInitializeBioModel( self, parent_varname, container_name, indent, depth ):
+        varname = "junction"
+        lines = [ ]
+        lines.append( (depth*indent) + "{" )
+        depth += 1
+
+        lines.append( (depth*indent) + "DistanceJunction *%s = new DistanceJunction( );" % (varname, ) )
+        lines.append( ParamHolder.getInitializeBioModel( self, varname, indent, depth ) )
+        s = self.getInitializeBioModelSetDataMembers( varname, "->", indent, depth,
+                                                      self.mPrivateBoolHiddenParams,
+                                                      self.mPrivateNumberHiddenParams,
+                                                      self.mPrivateStringHiddenParams )
+        lines.append( s )
+
+        lines.append( (depth*indent) + "%s.push_back( %s );" % (container_name, varname, ) )
+        depth -= 1;
+        lines.append( (depth*indent) + "}" )
+        return "\n".join( lines )
+
+    def __str__(self):
+        s  = "<distanceJunction" + self.formatAttributes() + ">\n"
+        s += ParamHolder.__str__( self )
+        s += "</distanceJunction>\n"
+        return s
+
+    def __repr__(self):
+        return str(self)
+
+
+#####################################################
 # AgentSpecies
 #####################################################
 class AgentSpecies(ParamHolder):
@@ -775,6 +825,7 @@ class AgentSpecies(ParamHolder):
 
         self.mInitAreas = ItemHolder( InitArea )
         self.mAdhesions = ItemHolder( Adhesion )
+        self.mDistanceJunctions = ItemHolder( DistanceJunction )
         return
 
     def getBioModelH( self, indent, depth ):
@@ -814,6 +865,9 @@ class AgentSpecies(ParamHolder):
         container_name = "%s->getAdhesions()" % ( varname )
         for i in range( len( self.mAdhesions ) ):
             lines.append( self.mAdhesions[ i ].getInitializeBioModel( varname, container_name, indent, depth ) )
+        container_name = "%s->getDistanceJunctions()" % ( varname )
+        for i in range( len( self.mDistanceJunctions ) ):
+            lines.append( self.mDistanceJunctions[ i ].getInitializeBioModel( varname, container_name, indent, depth ) )
         s = self.getSpecificInitializeBioModel( varname, indent, depth )
         if s:
             lines.append( s )
@@ -844,6 +898,32 @@ class AgentSpecies(ParamHolder):
 
     def getAdhesions( self ):
         return self.mAdhesions
+
+    def getDistanceJunctions( self ):
+        return self.mDistanceJunctions
+
+    def createDistanceJunctions( self ):
+        # Create all necessary distance junctions
+        # If adhesion is in play, contact inhibition may be needed, so create distance junctions
+        for key in self.mAdhesions.getKeys( ):
+            item = self.getAdhesions( ).getItem( key )
+
+            junction = DistanceJunction( )
+            node_attr = Param( "enabled", None, "true" )
+            if not junction.validateAttribute( node_attr ):
+                sys.exit( "ERROR : Failed to create DistanceJunction" )
+            if not junction.updateAttribute( node_attr ):
+                sys.exit( "ERROR : Failed to create DistanceJunction" )
+
+            node_attr = Param( "withSpecies", None, item.getAttribute( "withSpecies" ).getValue( ) )
+            if not junction.validateAttribute( node_attr ):
+                sys.exit( "ERROR : Failed to create DistanceJunction" )
+            if not junction.updateAttribute( node_attr ):
+                sys.exit( "ERROR : Failed to create DistanceJunction" )
+
+            self.mDistanceJunctions.addItem( None, junction )
+
+        return
 
     def getEnums( self, indent, depth ):
         self.updateUseMechForceReals(  )
@@ -901,9 +981,16 @@ class AgentSpecies(ParamHolder):
         return "\n".join( lines )
     
     def updateUseMechForceReals( self ):
-        if( ( self.paramExists( "shoveLimit" ) and self.getParam( "shoveLimit" ).getValue() > 0.0 ) or
-            ( self.paramExists( "shoveFactor" ) and self.getParam( "shoveFactor" ).getValue() > 0.0 ) or          
-            ( self.paramExists( "shoveScale" ) and self.getParam( "shoveScale" ).getValue() > 0.0 ) ):
+        # Mech Forces used by shove, adhesion, tightJunction
+        trigger_names = [ "shoveLimit", "shoveFactor", "shoveScale" ]
+        update = False
+        for name in trigger_names:
+            if self.paramExists( name ) and self.getParam( name ).getValue() > 0.0:
+                update = True
+                break
+        if len( self.mAdhesions ) > 0:
+            update = True
+        if update:
             self.setUseMechForceReals( True )
         else:          
             self.setUseMechForceReals( False )
@@ -935,6 +1022,7 @@ class AgentSpecies(ParamHolder):
         s += ParamHolder.__str__( self )
         s += str( self.mInitAreas )
         s += str( self.mAdhesions )
+        s += str( self.mDistanceJunctions )
         s += additional
         s += "</species>"
         return s
@@ -1007,6 +1095,8 @@ class AgentSpeciesLocated(AgentSpeciesActive):
         self.addParam( Param( "shoveFactor", "um",  1.15) )  # listed as um/length, but treated as radius scalar
         self.addParam( Param( "shoveScale", "float",  1.0) ) # biocellion-biomodel only
         self.addParam( Param( "brownianScale", "float",  1.0) ) # biocellion-biomodel only
+        self.addParam( Param( "junctionLinkScale", "float",  0.0) ) # biocellion-biomodel only
+        self.addParam( Param( "junctionUnlinkScale", "float",  0.0) ) # biocellion-biomodel only
         self.addParam( Param( "fixed", "bool",  False) )
         self.addParam( Param( "noSkinBottomLayerBoundary", "int", 0 ) )
         print("FIXME: <tightJunctions> not yet parsed <tightJunction withSpecies='name' stiffness='value' />")

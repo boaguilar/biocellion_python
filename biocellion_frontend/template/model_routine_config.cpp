@@ -140,14 +140,14 @@ void ModelRoutine::updateSpAgentInfo( Vector<SpAgentInfo>& v_spAgentInfo ) {/* s
 void ModelRoutine::updateJunctionEndInfo( Vector<JunctionEndInfo>& v_junctionEndInfo ) {/* set the numbers of model specific variables */
   /* MODEL START */
 
-  // FIXME: junction info not controlled from XML yet
-  v_junctionEndInfo.clear(  );
-  //v_junctionEndInfo.resize( NUM_JUNCTION_TYPES );
-  
-#if USE_DISTANCE_JUNCTIONS
-  v_junctionEndInfo[JUNCTION_TYPE_DISTANCE].numModelReals = 0;
-  v_junctionEndInfo[JUNCTION_TYPE_DISTANCE].numModelInts = 0;
-#endif
+  initializeBioModel();
+  if( gBioModel->getDistanceJunctionsEnabled( ) ) {
+    v_junctionEndInfo.resize( NUM_JUNCTION_TYPES );
+    v_junctionEndInfo[JUNCTION_TYPE_DISTANCE].numModelReals = NUM_JUNCTION_REAL_TYPES;
+    v_junctionEndInfo[JUNCTION_TYPE_DISTANCE].numModelInts = NUM_JUNCTION_INT_TYPES;
+  } else {
+    v_junctionEndInfo.clear(  );
+  }
 
   /* MODEL END */
 

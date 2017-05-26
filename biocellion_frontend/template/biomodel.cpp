@@ -1,12 +1,27 @@
 #include "biomodel.h"
 
 static bool gBioModelInitialized = false;
+BioModel *gBioModel = 0;
 Simulator *gSimulator = 0;
 AgentGrid *gAgentGrid = 0;
 Vector<AgentSpecies *> gAgentSpecies;
 Vector<Particle *> gParticles;
 Vector<MechIntrctSpAgent *> gMechIntrctSpAgent;
 Vector< Vector<BOOL> > gMechIntrctShoveEnabled;
+
+BioModel::BioModel( )
+  : mDistanceJunctionsEnabled( false )
+{
+}
+
+BOOL BioModel::getDistanceJunctionsEnabled( ) const {
+  return mDistanceJunctionsEnabled;
+}
+
+void BioModel::setDistanceJunctionsEnabled( const BOOL& value ) {
+  mDistanceJunctionsEnabled = value;
+}
+
 
 void initializeBioModel() {
   if( gBioModelInitialized ) {
@@ -26,6 +41,9 @@ void initializeBioModel() {
   }
   gMechIntrctSpAgent.push_back( MechIntrctSpAgentShove::create() );
   gMechIntrctSpAgent.push_back( MechIntrctSpAgentAdhesion::create() );
+  if( gBioModel->getDistanceJunctionsEnabled( ) ) {
+    gMechIntrctSpAgent.push_back( MechIntrctSpAgentDistanceJunction::create() );
+  }
 
   gBioModelInitialized = true;
 }
@@ -70,6 +88,11 @@ void terminateBioModel() {
     }
   }
   gMechIntrctSpAgent.clear();
+
+  if( gBioModel ) {
+    delete gBioModel;
+    gBioModel = 0;
+  }
 
   gBioModelInitialized = false;
 }

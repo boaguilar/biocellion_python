@@ -48,6 +48,30 @@ protected:
 };
 
 
+class MechIntrctSpAgentDistanceJunction : public MechIntrctSpAgent {
+
+public:
+  static MechIntrctSpAgent* create();
+  MechIntrctSpAgentDistanceJunction();
+  virtual ~MechIntrctSpAgentDistanceJunction();
+  virtual void compute( const S32 iter, const VIdx& vIdx0, const SpAgent& spAgent0, const UBEnv& ubEnv0, const VIdx& vIdx1, const SpAgent& spAgent1, const UBEnv& ubEnv1, const VReal& dir/* unit direction vector from spAgent1 to spAgent0 */, const REAL& dist, MechIntrctData& mechIntrctData0, MechIntrctData& mechIntrctData1, BOOL& link, JunctionEnd& end0/* dummy if link == false */, JunctionEnd& end1/* dummy if link == false */, BOOL& unlink );
+  void setEnabled(const S32& agent_type0, const S32& agent_type1, const BOOL& value);
+  void setLinkScale(const S32& agent_type, const REAL& value);
+  void setUnlinkScale(const S32& agent_type, const REAL& value);
+  void setJunctionIdx(const S32& value);
+  void setRealDistanceIdx(const S32& value);
+  void setIntTouchedIdx(const S32& value);
+
+protected:
+  Vector< Vector< BOOL > > mEnabled;
+  Vector< REAL > mLinkScales;
+  Vector< REAL > mUnlinkScales;
+  S32 mJunctionIdx;
+  S32 mRealDistanceIdx;
+  S32 mIntTouchedIdx;
+};
+
+
 class MolecularSpecies {
 
 public:

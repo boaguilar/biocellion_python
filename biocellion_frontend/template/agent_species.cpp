@@ -74,6 +74,14 @@ AgentSpecies::~AgentSpecies()
   }
   mAdhesions.clear();
 
+  for( i = 0 ; i < mDistanceJunctions.size() ; i++ ) {
+    if( mDistanceJunctions[ i ] ) {
+      delete mDistanceJunctions[ i ];
+      mDistanceJunctions[ i ] = 0;
+    }
+  }
+  mDistanceJunctions.clear();
+
 }
 
 const std::string& AgentSpecies::getName() const
@@ -179,6 +187,16 @@ const Vector<Adhesion *>& AgentSpecies::getAdhesions( ) const
 Vector<Adhesion *>& AgentSpecies::getAdhesions( )
 {
   return mAdhesions;
+}
+
+const Vector<DistanceJunction *>& AgentSpecies::getDistanceJunctions( ) const
+{
+  return mDistanceJunctions;
+}
+
+Vector<DistanceJunction *>& AgentSpecies::getDistanceJunctions( )
+{
+  return mDistanceJunctions;
 }
 
 template <class T, class U>

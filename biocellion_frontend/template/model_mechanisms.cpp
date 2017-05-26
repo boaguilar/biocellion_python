@@ -266,6 +266,196 @@ void MechIntrctSpAgentAdhesion::setDistanceScale(const S32& agent_type0, const S
   mDistanceScales[ agent_type1 ][ agent_type0 ] = value;
 }
 
+// DISTANCE JUNCTIONS
+
+MechIntrctSpAgent* MechIntrctSpAgentDistanceJunction::create()
+{
+  MechIntrctSpAgentDistanceJunction* intrct = new MechIntrctSpAgentDistanceJunction();
+
+  S32 i, j;
+  /* default values for all slots, makes sure all slots exist */
+  for( i = 0 ; i < NUM_AGENT_SPECIES ; i++ ) {
+    for( j = 0 ; j < NUM_AGENT_SPECIES ; j++ ) {
+      intrct->setEnabled( i, j, false );
+    }
+    intrct->setLinkScale( i, 0.0 );
+    intrct->setUnlinkScale( i, 0.0 );
+  }
+
+  /* values based on configuration information */
+  for( i = 0 ; i < NUM_AGENT_SPECIES ; i++ ) {
+    const Vector< DistanceJunction * >& junctions = gAgentSpecies[ i ]->getDistanceJunctions( );
+    for( j = 0 ; j < (S32)junctions.size( ) ; j++ ) {
+      intrct->setEnabled( i, junctions[ j ]->getWithSpecies( ), junctions[ j ]->getEnabled( ) );
+    }
+    intrct->setLinkScale( i,  gAgentSpecies[ i ]->getParamReal( gAgentSpecies[ i ]->getIdxReal( SP_junctionLinkScale ) ) );
+    intrct->setUnlinkScale( i,  gAgentSpecies[ i ]->getParamReal( gAgentSpecies[ i ]->getIdxReal( SP_junctionUnlinkScale ) ) );
+  }
+  intrct->setJunctionIdx( JUNCTION_TYPE_DISTANCE );
+  intrct->setRealDistanceIdx( JUNCTION_REAL_DISTANCE );
+  intrct->setIntTouchedIdx( JUNCTION_INT_TOUCHED );
+
+  return intrct;
+}
+
+MechIntrctSpAgentDistanceJunction::MechIntrctSpAgentDistanceJunction()
+{
+  // empty
+}
+
+MechIntrctSpAgentDistanceJunction::~MechIntrctSpAgentDistanceJunction()
+{
+  // empty
+}
+
+void MechIntrctSpAgentDistanceJunction::compute( const S32 iter, const VIdx& vIdx0, const SpAgent& spAgent0, const UBEnv& ubEnv0, const VIdx& vIdx1, const SpAgent& spAgent1, const UBEnv& ubEnv1, const VReal& dir/* unit direction vector from spAgent1 to spAgent0 */, const REAL& dist, MechIntrctData& mechIntrctData0, MechIntrctData& mechIntrctData1, BOOL& link, JunctionEnd& end0/* dummy if link == false */, JunctionEnd& end1/* dummy if link == false */, BOOL& unlink )
+{
+  link = false;
+  unlink = false;
+
+  S32 agentType0 = spAgent0.state.getType();
+  S32 agentType1 = spAgent1.state.getType();
+
+  if( !mEnabled[ agentType0 ][ agentType1 ] ) {
+    return;
+  }
+
+  REAL agentRadius0 = spAgent0.state.getRadius();
+  REAL agentRadius1 = spAgent1.state.getRadius();
+
+  REAL link_dist = mLinkScales[ agentType0 ] * agentRadius0 + mLinkScales[ agentType1 ] * agentRadius1;
+  REAL unlink_dist = mUnlinkScales[ agentType0 ] * agentRadius0 + mUnlinkScales[ agentType1 ] * agentRadius1;
+
+  if(dist <= link_dist) {
+    // close enough to form the link, careful, they may already be linked...
+    link = true;
+
+    // set type
+    end0.setType( mJunctionIdx );
+    end1.setType( mJunctionIdx );
+
+    // set distance
+    end0.setModelReal( mRealDistanceIdx, dist );
+    end1.setModelReal( mRealDistanceIdx, dist );
+
+    // set/update touched status
+    REAL R = agentRadius0 + agentRadius1;
+    S32 idx0, idx1;
+    if( dist <= R ) {
+      // currently touching, mark as touched
+      end0.setModelInt( mIntTouchedIdx, 1 );
+      end1.setModelInt( mIntTouchedIdx, 1 );
+    } else if( spAgent0.junctionData.isLinked( spAgent1.junctionData, idx0, idx1 ) ) {
+      // not touching, have linked, preserve touch status
+      end0.setModelInt( mIntTouchedIdx, spAgent0.junctionData.getJunctionEndRef( idx0 ).getModelInt( mIntTouchedIdx ) );
+      end1.setModelInt( mIntTouchedIdx, spAgent1.junctionData.getJunctionEndRef( idx1 ).getModelInt( mIntTouchedIdx ) );
+    } else {
+      // not touching, newly linked
+      end0.setModelInt( mIntTouchedIdx, 0 );
+      end1.setModelInt( mIntTouchedIdx, 0 );
+    }
+  } else if(dist > unlink_dist) {
+    // far enough to break link
+    if( spAgent0.junctionData.isLinked( spAgent1.junctionData ) ) {
+      unlink = true;
+    }
+  } else {
+    // dist in between forming and breaking junction
+    // if already linked, update the junction
+    S32 idx0, idx1;
+    if( spAgent0.junctionData.isLinked( spAgent1.junctionData, idx0, idx1 ) ) {
+      link = true;
+
+      // set type
+      end0.setType( mJunctionIdx );
+      end1.setType( mJunctionIdx );
+
+      // update distance
+      end0.setModelReal( mRealDistanceIdx, dist );
+      end1.setModelReal( mRealDistanceIdx, dist );
+
+      // preserve touch status
+      end0.setModelInt( mIntTouchedIdx, spAgent0.junctionData.getJunctionEndRef( idx0 ).getModelInt( mIntTouchedIdx ) );
+      end1.setModelInt( mIntTouchedIdx, spAgent1.junctionData.getJunctionEndRef( idx1 ).getModelInt( mIntTouchedIdx ) );
+    }
+  }
+}
+
+void MechIntrctSpAgentDistanceJunction::setEnabled(const S32& agent_type0, const S32& agent_type1, const BOOL& value) {
+  if(( S32 )mEnabled.size() <= agent_type0) {
+    S32 old_size = ( S32 )mEnabled.size();
+    mEnabled.resize(agent_type0 + 1);
+    S32 i;
+    for(i = old_size; i < ( S32 )mEnabled.size(); i++) {
+      mEnabled[i] = Vector< BOOL >();
+    }
+  }
+  if(( S32 )mEnabled[ agent_type0 ].size() <= agent_type1) {
+    S32 old_size = ( S32 )mEnabled[ agent_type0 ].size();
+    mEnabled[ agent_type0 ].resize(agent_type1 + 1);
+    S32 i;
+    for(i = old_size; i < ( S32 )mEnabled[ agent_type0 ].size(); i++) {
+      mEnabled[ agent_type0 ][ i ] = false;
+    }
+  }
+
+  if(( S32 )mEnabled.size() <= agent_type1) {
+    S32 old_size = ( S32 )mEnabled.size();
+    mEnabled.resize(agent_type1 + 1);
+    S32 i;
+    for(i = old_size; i < ( S32 )mEnabled.size(); i++) {
+      mEnabled[i] = Vector< BOOL >();
+    }
+  }
+  if(( S32 )mEnabled[ agent_type1 ].size() <= agent_type0) {
+    S32 old_size = ( S32 )mEnabled[ agent_type1 ].size();
+    mEnabled[ agent_type1 ].resize(agent_type0 + 1);
+    S32 i;
+    for(i = old_size; i < ( S32 )mEnabled[ agent_type1 ].size(); i++) {
+      mEnabled[ agent_type1 ][ i ] = false;
+    }
+  }
+
+  mEnabled[ agent_type0 ][ agent_type1 ] = value;
+  mEnabled[ agent_type1 ][ agent_type0 ] = value;
+}
+
+
+void MechIntrctSpAgentDistanceJunction::setLinkScale(const S32& agent_type, const REAL& value) {
+  if(( S32 )mLinkScales.size() <= agent_type) {
+    S32 old_size = ( S32 )mLinkScales.size();
+    mLinkScales.resize(agent_type + 1);
+    S32 i;
+    for(i = old_size; i < ( S32 )mLinkScales.size(); i++) {
+      mLinkScales[i] = 0.0;
+    }
+  }
+  mLinkScales[agent_type] = value;
+}
+
+void MechIntrctSpAgentDistanceJunction::setUnlinkScale(const S32& agent_type, const REAL& value) {
+  if(( S32 )mUnlinkScales.size() <= agent_type) {
+    S32 old_size = ( S32 )mUnlinkScales.size();
+    mUnlinkScales.resize(agent_type + 1);
+    S32 i;
+    for(i = old_size; i < ( S32 )mUnlinkScales.size(); i++) {
+      mUnlinkScales[i] = 0.0;
+    }
+  }
+  mUnlinkScales[agent_type] = value;
+}
+
+void MechIntrctSpAgentDistanceJunction::setJunctionIdx( const S32& idx ) {
+  mJunctionIdx = idx;
+}
+
+void MechIntrctSpAgentDistanceJunction::setRealDistanceIdx( const S32& idx ) {
+  mRealDistanceIdx = idx;
+}
+void MechIntrctSpAgentDistanceJunction::setIntTouchedIdx( const S32& idx ) {
+  mIntTouchedIdx = idx;
+}
+
 /////////////////////////////////////////////////////////////////
 MolecularSpecies* MolecularSpecies::create(const S32& idx, const std::string& name)
 {
