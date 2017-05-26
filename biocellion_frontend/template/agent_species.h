@@ -4,9 +4,11 @@
 #include "init_area.h"
 #include "adhesion.h"
 #include "distance_junction.h"
+#include "tight_junction.h"
 class InitArea;
 class Adhesion;
 class DistanceJunction;
+class TightJunction;
 #include <string>
 #include <map>
 
@@ -56,6 +58,8 @@ public:
   Vector<Adhesion *>& getAdhesions( );
   const Vector<DistanceJunction *>& getDistanceJunctions( ) const;
   Vector<DistanceJunction *>& getDistanceJunctions( );
+  const Vector<TightJunction *>& getTightJunctions( ) const;
+  Vector<TightJunction *>& getTightJunctions( );
 
   // these routines make an index, if there isn't one.
   // they are not efficient for inside tight loops
@@ -98,6 +102,7 @@ protected:
   Vector<InitArea *> mInitAreas;
   Vector<Adhesion *> mAdhesions;
   Vector<DistanceJunction *> mDistanceJunctions;
+  Vector<TightJunction *> mTightJunctions;
   Vector<AgentSpeciesParticle> mParticles;
 };
 

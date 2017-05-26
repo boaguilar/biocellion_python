@@ -82,6 +82,13 @@ AgentSpecies::~AgentSpecies()
   }
   mDistanceJunctions.clear();
 
+  for( i = 0 ; i < mTightJunctions.size() ; i++ ) {
+    if( mTightJunctions[ i ] ) {
+      delete mTightJunctions[ i ];
+      mTightJunctions[ i ] = 0;
+    }
+  }
+  mTightJunctions.clear();
 }
 
 const std::string& AgentSpecies::getName() const
@@ -187,6 +194,10 @@ const Vector<Adhesion *>& AgentSpecies::getAdhesions( ) const
 Vector<Adhesion *>& AgentSpecies::getAdhesions( )
 {
   return mAdhesions;
+}
+Vector<TightJunction *>& AgentSpecies::getTightJunctions( )
+{
+  return mTightJunctions;
 }
 
 const Vector<DistanceJunction *>& AgentSpecies::getDistanceJunctions( ) const

@@ -506,10 +506,47 @@ class BioModel:
         return ok
 
     def scanSpeciesTightJunctionsXML( self, node, parent_object=None ):
-        ok = True
-        print( "species::tightJunctions not scaned yet" )
+        may_children = ( "tightJunction", )
+        required_children = ( "tightJunction", )
+        if parent_object is None:
+            node_object = agent_species.ItemHolder( agent_species.TightJunction )
+        else:
+            node_object = parent_object.getTightJunctions( )
+            parent_object = None # don't need to add this as a child
+        may_attributes = ( )
+        required_attributes = ( )
+        may_params = ( )
+        required_params = ( )
+        child_methods = {
+            "tightJunction": self.scanSpeciesTightJunctionXML,
+        }
+        
+        ok = self.scanNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
+        
         return ok
 
+    def scanSpeciesTightJunctionXML( self, node, parent_object=None ):
+        may_children = (  )
+        required_children = (  )
+        if parent_object is None:
+            node_object = agent_species.TightJunction( )
+        else:
+            if not parent_object.addItem(  ):
+                sys.exit( "ERROR : couldn't add a species tight junction." )
+            node_object = parent_object.getLastItem( )
+            parent_object = None # don't need to add this as a child
+        may_attributes = node_object.getMayAttributes( )
+        required_attributes = node_object.getRequiredAttributes( )
+        may_params = node_object.getMayParams( )
+        required_params = node_object.getRequiredParams( )
+        child_methods = {
+        }
+        
+        ok = self.scanNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
+        
+        return ok
+
+    
     def scanSpeciesAdhesionsXML( self, node, parent_object=None ):
         may_children = ( "adhesion", )
         required_children = ( "adhesion", )

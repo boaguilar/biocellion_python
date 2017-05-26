@@ -456,6 +456,170 @@ void MechIntrctSpAgentDistanceJunction::setIntTouchedIdx( const S32& idx ) {
   mIntTouchedIdx = idx;
 }
 
+// TIGHT JUNCTIONS
+
+MechIntrctSpAgent* MechIntrctSpAgentTightJunction::create()
+{
+  MechIntrctSpAgentTightJunction* intrct = new MechIntrctSpAgentTightJunction();
+
+  S32 i, j;
+  /* default values for all slots, makes sure all slots exist */
+  for( i = 0 ; i < NUM_AGENT_SPECIES ; i++ ) {
+    for( j = 0 ; j < NUM_AGENT_SPECIES ; j++ ) {
+      intrct->setScale( i, j, 0.0 );
+      intrct->setStiffness( i, j, 0.0 );
+    }
+  }
+  /* values based on configuration information */
+  for( i = 0 ; i < NUM_AGENT_SPECIES ; i++ ) {
+    const Vector< TightJunction * >& tjunctions = gAgentSpecies[ i ]->getTightJunctions( );
+    for( j = 0 ; j < (S32)tjunctions.size( ) ; j++ ) {
+      intrct->setScale( i, tjunctions[ j ]->getWithSpecies( ), tjunctions[ j ]->getScale( ) );
+      intrct->setStiffness( i, tjunctions[ j ]->getWithSpecies( ), tjunctions[ j ]->getStiffness( ) );
+    }
+  }
+  intrct->setIntTouchedIdx( JUNCTION_INT_TOUCHED );
+
+  return intrct;
+}
+
+MechIntrctSpAgentTightJunction::MechIntrctSpAgentTightJunction()
+{
+  // empty
+}
+
+MechIntrctSpAgentTightJunction::~MechIntrctSpAgentTightJunction()
+{
+  // empty
+}
+
+void MechIntrctSpAgentTightJunction::compute( const S32 iter, const VIdx& vIdx0, const SpAgent& spAgent0, const UBEnv& ubEnv0, const VIdx& vIdx1, const SpAgent& spAgent1, const UBEnv& ubEnv1, const VReal& dir/* unit direction vector from spAgent1 to spAgent0 */, const REAL& dist, MechIntrctData& mechIntrctData0, MechIntrctData& mechIntrctData1, BOOL& link, JunctionEnd& end0/* dummy if link == false */, JunctionEnd& end1/* dummy if link == false */, BOOL& unlink )
+{
+  S32 agentType0 = spAgent0.state.getType();
+  S32 agentType1 = spAgent1.state.getType();
+
+  if( mScales[ agentType0 ][ agentType1 ] <= 0.0 || mStiffnesses[ agentType0 ][ agentType1 ] <= 0.0 ) {
+    return;
+  }
+
+  S32 idx0, idx1;
+  if( !spAgent0.junctionData.isLinked( spAgent1.junctionData, idx0, idx1 ) ) {
+    // these two agents do not have a link, not close enough for tight junction
+    return;
+  }
+  // Tight Junctions only occur if the agents have touched
+  if( !spAgent0.junctionData.getJunctionEndRef( idx0 ).getModelInt( mIntTouchedIdx ) ) {
+    return;
+  }
+
+  REAL R = spAgent0.state.getRadius() + spAgent1.state.getRadius();
+  REAL difference = (dist - R) / R;
+  REAL stiffness = mStiffnesses[ agentType0 ][ agentType1 ];
+  // If two agents are separated by part of another agent,
+  // we don't want them pulling through the sandwiched agent.
+  // reducing max difference from 1.0 to 0.6
+  if( difference > 0.6 || stiffness == 0.0 ) { // too far apart
+    return;
+  }
+  REAL scale = mScales[ agentType0 ][ agentType1 ];
+  REAL hyper = tanh( difference * stiffness );
+  REAL mag = - 0.5 * scale * fabs( difference ) * hyper; // 0.5 to share between the agents
+  
+  mechIntrctData0.setModelReal( gAgentSpecies[ agentType0 ]->getIdxMechForceRealX(), dir[0] * mag );
+  mechIntrctData0.setModelReal( gAgentSpecies[ agentType0 ]->getIdxMechForceRealY(), dir[1] * mag );
+  mechIntrctData0.setModelReal( gAgentSpecies[ agentType0 ]->getIdxMechForceRealZ(), dir[2] * mag );
+
+  mechIntrctData1.setModelReal( gAgentSpecies[ agentType1 ]->getIdxMechForceRealX(), -dir[0] * mag );
+  mechIntrctData1.setModelReal( gAgentSpecies[ agentType1 ]->getIdxMechForceRealY(), -dir[1] * mag );
+  mechIntrctData1.setModelReal( gAgentSpecies[ agentType1 ]->getIdxMechForceRealZ(), -dir[2] * mag );
+}
+
+void MechIntrctSpAgentTightJunction::setScale(const S32& agent_type0, const S32& agent_type1, const REAL& value)
+{
+  if(( S32 )mScales.size() <= agent_type0) {
+    S32 old_size = ( S32 )mScales.size();
+    mScales.resize(agent_type0 + 1);
+    S32 i;
+    for(i = old_size; i < ( S32 )mScales.size(); i++) {
+      mScales[i] = Vector< REAL >();
+    }
+  }
+  if(( S32 )mScales[ agent_type0 ].size() <= agent_type1) {
+    S32 old_size = ( S32 )mScales[ agent_type0 ].size();
+    mScales[ agent_type0 ].resize(agent_type1 + 1);
+    S32 i;
+    for(i = old_size; i < ( S32 )mScales[ agent_type0 ].size(); i++) {
+      mScales[ agent_type0 ][ i ] = 0.0;
+    }
+  }
+
+  if(( S32 )mScales.size() <= agent_type1) {
+    S32 old_size = ( S32 )mScales.size();
+    mScales.resize(agent_type1 + 1);
+    S32 i;
+    for(i = old_size; i < ( S32 )mScales.size(); i++) {
+      mScales[i] = Vector< REAL >();
+    }
+  }
+  if(( S32 )mScales[ agent_type1 ].size() <= agent_type0) {
+    S32 old_size = ( S32 )mScales[ agent_type1 ].size();
+    mScales[ agent_type1 ].resize(agent_type0 + 1);
+    S32 i;
+    for(i = old_size; i < ( S32 )mScales[ agent_type1 ].size(); i++) {
+      mScales[ agent_type1 ][ i ] = 0.0;
+    }
+  }
+
+  mScales[ agent_type0 ][ agent_type1 ] = value;
+  mScales[ agent_type1 ][ agent_type0 ] = value;
+}
+
+
+void MechIntrctSpAgentTightJunction::setStiffness(const S32& agent_type0, const S32& agent_type1, const REAL& value)
+{
+  if(( S32 )mStiffnesses.size() <= agent_type0) {
+    S32 old_size = ( S32 )mStiffnesses.size();
+    mStiffnesses.resize(agent_type0 + 1);
+    S32 i;
+    for(i = old_size; i < ( S32 )mStiffnesses.size(); i++) {
+      mStiffnesses[i] = Vector< REAL >();
+    }
+  }
+  if(( S32 )mStiffnesses[ agent_type0 ].size() <= agent_type1) {
+    S32 old_size = ( S32 )mStiffnesses[ agent_type0 ].size();
+    mStiffnesses[ agent_type0 ].resize(agent_type1 + 1);
+    S32 i;
+    for(i = old_size; i < ( S32 )mStiffnesses[ agent_type0 ].size(); i++) {
+      mStiffnesses[ agent_type0 ][ i ] = 0.0;
+    }
+  }
+
+  if(( S32 )mStiffnesses.size() <= agent_type1) {
+    S32 old_size = ( S32 )mStiffnesses.size();
+    mStiffnesses.resize(agent_type1 + 1);
+    S32 i;
+    for(i = old_size; i < ( S32 )mStiffnesses.size(); i++) {
+      mStiffnesses[i] = Vector< REAL >();
+    }
+  }
+  if(( S32 )mStiffnesses[ agent_type1 ].size() <= agent_type0) {
+    S32 old_size = ( S32 )mStiffnesses[ agent_type1 ].size();
+    mStiffnesses[ agent_type1 ].resize(agent_type0 + 1);
+    S32 i;
+    for(i = old_size; i < ( S32 )mStiffnesses[ agent_type1 ].size(); i++) {
+      mStiffnesses[ agent_type1 ][ i ] = 0.0;
+    }
+  }
+
+  mStiffnesses[ agent_type0 ][ agent_type1 ] = value;
+  mStiffnesses[ agent_type1 ][ agent_type0 ] = value;
+}
+
+void MechIntrctSpAgentTightJunction::setIntTouchedIdx( const S32& idx ) {
+  mIntTouchedIdx = idx;
+}
+
+
 /////////////////////////////////////////////////////////////////
 MolecularSpecies* MolecularSpecies::create(const S32& idx, const std::string& name)
 {

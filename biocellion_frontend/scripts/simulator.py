@@ -208,6 +208,14 @@ class IDynoMiCS( ParamHolder ):
                 target_species_token = target_species.getEnumToken( )
                 adhesion.getAttribute( "withSpecies" ).setValue( target_species_token )
                 
+            ## AgentSpecies.TightJunctions need to be connected to AgentSpecies
+            for tjunction_key in species.getTightJunctions( ).getKeys( ):
+                tjunction = species.getTightJunctions( ).getItem( tjunction_key )
+                target_species_key = tjunction.getAttribute( "withSpecies" ).getValue( )
+                target_species = self.mAgentSpecies.getItem( target_species_key )
+                target_species_token = target_species.getEnumToken( )
+                tjunction.getAttribute( "withSpecies" ).setValue( target_species_token )
+                
             ## AgentSpecies.DistanaceJuctions need to be created
             species.createDistanceJunctions( )
             if len( species.getDistanceJunctions( ) ) > 0:

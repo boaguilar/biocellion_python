@@ -8,8 +8,9 @@
 #include "particle.h"
 #include "model_mechanisms.h"
 #include "adhesion.h"
-#include "tight_junction.h"
 #include "distance_junction.h"
+#include "tight_junction.h"
+#include "solute.h"
 
 class BioModel {
 public:
@@ -24,6 +25,7 @@ extern BioModel *gBioModel;
 extern Simulator *gSimulator;
 extern AgentGrid *gAgentGrid;
 extern Vector<AgentSpecies *> gAgentSpecies;
+extern Vector<Solute *> gSolutes;
 extern Vector<Particle *> gParticles;
 extern Vector<MechIntrctSpAgent *> gMechIntrctSpAgent;
 extern Vector< Vector<BOOL> > gMechIntrctShoveEnabled;

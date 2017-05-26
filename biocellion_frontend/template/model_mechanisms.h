@@ -71,6 +71,24 @@ protected:
   S32 mIntTouchedIdx;
 };
 
+class MechIntrctSpAgentTightJunction : public MechIntrctSpAgent {
+
+public:
+  static MechIntrctSpAgent* create();
+  MechIntrctSpAgentTightJunction();
+  virtual ~MechIntrctSpAgentTightJunction();
+  virtual void compute( const S32 iter, const VIdx& vIdx0, const SpAgent& spAgent0, const UBEnv& ubEnv0, const VIdx& vIdx1, const SpAgent& spAgent1, const UBEnv& ubEnv1, const VReal& dir/* unit direction vector from spAgent1 to spAgent0 */, const REAL& dist, MechIntrctData& mechIntrctData0, MechIntrctData& mechIntrctData1, BOOL& link, JunctionEnd& end0/* dummy if link == false */, JunctionEnd& end1/* dummy if link == false */, BOOL& unlink );
+  void setScale(const S32& agent_type0, const S32& agent_type1, const REAL& value);
+  void setStiffness(const S32& agent_type0, const S32& agent_type1, const REAL& value);
+  void setIntTouchedIdx(const S32& value);
+
+protected:
+  Vector< Vector< REAL > > mScales;
+  Vector< Vector< REAL > > mStiffnesses;
+  S32 mIntTouchedIdx;
+};
+
+
 
 class MolecularSpecies {
 

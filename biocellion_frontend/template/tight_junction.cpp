@@ -21,3 +21,8 @@ void TightJunction::setWithSpecies(const S32& withSpecies)
 {
   mWithSpecies = withSpecies;
 }
+
+void TightJunction::setScale(const REAL& scale)
+{
+  mScale = scale;
+}

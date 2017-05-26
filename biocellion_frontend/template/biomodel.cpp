@@ -5,6 +5,7 @@ BioModel *gBioModel = 0;
 Simulator *gSimulator = 0;
 AgentGrid *gAgentGrid = 0;
 Vector<AgentSpecies *> gAgentSpecies;
+Vector<Solute *> gSolutes;
 Vector<Particle *> gParticles;
 Vector<MechIntrctSpAgent *> gMechIntrctSpAgent;
 Vector< Vector<BOOL> > gMechIntrctShoveEnabled;
@@ -72,6 +73,14 @@ void terminateBioModel() {
     }
   }
   gAgentSpecies.clear();
+
+  for( i = 0; i < (S32) gSolutes.size(); i++ ) {
+    if( gSolutes[i] ) {
+      delete gSolutes[i];
+      gSolutes[i] = 0;
+    }
+  }
+  gSolutes.clear();
   
   for( i = 0; i < (S32) gParticles.size(); i++ ) {
     if( gParticles[i] ) {
@@ -80,7 +89,7 @@ void terminateBioModel() {
     }
   }
   gParticles.clear();
-  
+
   for( i = 0; i < (S32) gMechIntrctSpAgent.size(); i++ ) {
     if( gMechIntrctSpAgent[i] ) {
       delete gMechIntrctSpAgent[i];
