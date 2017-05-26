@@ -96,8 +96,8 @@
       <param name="mass" unit="fg">0</param>
     </particle>
     <param name="brownianScale">0.2</param> <!-- biocellion only -->
-    <param name="junctionLinkScale">1.1</param> <!-- biocellion only -->
-    <param name="junctionUnlinkScale">1.5</param> <!-- biocellion only -->
+    <param name="attachCreateFactor">1.1</param>
+    <param name="attachDestroyFactor">1.5</param>
     <param name="shoveScale">0.3</param> <!-- biocellion only -->
     <param name="shoveFactor" unit="um">1</param> <!-- This is actually dimensionless in use, but cDynoMiCS reads it as a length -->
     <param name="shoveLimit" unit="um">0.0</param>

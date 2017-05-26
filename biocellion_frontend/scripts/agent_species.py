@@ -1095,8 +1095,6 @@ class AgentSpeciesLocated(AgentSpeciesActive):
         self.addParam( Param( "shoveFactor", "um",  1.15) )  # listed as um/length, but treated as radius scalar
         self.addParam( Param( "shoveScale", "float",  1.0) ) # biocellion-biomodel only
         self.addParam( Param( "brownianScale", "float",  1.0) ) # biocellion-biomodel only
-        self.addParam( Param( "junctionLinkScale", "float",  0.0) ) # biocellion-biomodel only
-        self.addParam( Param( "junctionUnlinkScale", "float",  0.0) ) # biocellion-biomodel only
         self.addParam( Param( "fixed", "bool",  False) )
         self.addParam( Param( "noSkinBottomLayerBoundary", "int", 0 ) )
         print("FIXME: <tightJunctions> not yet parsed <tightJunction withSpecies='name' stiffness='value' />")
