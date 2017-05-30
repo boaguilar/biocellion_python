@@ -41,6 +41,13 @@ class AllUnits:
 
     def __init__( self ):
         self.mUnits = [ ]
+        # yield mass/mass
+        self.addUnit( Unit( "g.g-1", { "g.g-1": 1.0,
+        } ) )
+        # diffusion area/time
+        self.addUnit( Unit( "um2.hr-1", { "um2.hr-1": 1.0,
+                                          "m2.day-1": 1.0e6*1.0e6/24.0,
+        } ) )
         # density
         self.addUnit( Unit( "pg.um-3", { "pg.um-3": 1.0,
                                          "g.L-1": 1.0e12 / 1.0e15,
@@ -60,6 +67,14 @@ class AllUnits:
                                     "fg": 1.0e-3,
                                     "ag": 1.0e-6,
         } ) )
+        # length
+        self.addUnit( Unit( "um", { "um": 1.0,
+                                    "pm": 1e6,
+                                    "nm": 1e3,
+                                    "mm": 1e-3,
+                                    "cm": 1e-4,
+                                    "m": 1e-6,
+        } ) )
         # time
         self.addUnit( Unit( "hr", { "h": 1.0,
                                     "hr": 1.0,
@@ -67,6 +82,14 @@ class AllUnits:
                                     "s": 1.0/(60.*60.),
                                     "sec": 1.0/(60.*60.),
                                     "second": 1.0/(60.*60.),
+        } ) )
+        # rate
+        self.addUnit( Unit( "hr-1", { "h-1": 1.0,
+                                      "hr-1": 1.0,
+                                      "hour-1": 1.0,
+                                      "s-1": (60.*60.),
+                                      "sec-1": (60.*60.),
+                                      "second-1": (60.*60.),
         } ) )
         
         return
@@ -91,41 +114,6 @@ class AllUnits:
 class Param:
     
     mAllUnits = AllUnits()
-    # mDensityConvert = { "pg.um-3": 1.0,
-    #                     "g.L-1": 1.0e12 / 1.0e15,
-    #                   }
-    # mDensityStandardUnit = "pg.um-3"
-    # mDensityUnits = tuple( mDensityConvert )
-
-    # mVolumeConvert = { "um3": 1.0,
-    #                    "m3": 1.0e18,
-    #                    "L": 1.0e15,
-    #                  }
-    # mVolumeStandardUnit = "um3"
-    # mVolumeUnits = tuple( mVolumeConvert )
-
-    # mMassConvert = { "pg": 1.0,
-    #                  "g": 1.0e12,
-    #                  "gram": 1.0e12,
-    #                  "mg": 1.0e9,
-    #                  "ug": 1.0e6,
-    #                  "ng": 1.0e3,
-    #                  "fg": 1.0e-3,
-    #                  "ag": 1.0e-6,
-    #                }
-    # mMassStandardUnit = "pg"
-    # mMassUnits = tuple( mMassConvert )
-
-    # mTimeConvert = { "h": 1.0,
-    #                  "hr": 1.0,
-    #                  "hour": 1.0,
-    #                  "s": 1.0/(60.*60.),
-    #                  "sec": 1.0/(60.*60.),
-    #                  "second": 1.0/(60.*60.),
-    #                }
-    # mTimeStandardUnit = "hr"
-    # mTimeUnits = tuple( mTimeConvert )
-    
     mStringUnits = ( "str", "string" )
     mStringStandardUnit = "str"
     
@@ -139,11 +127,11 @@ class Param:
             self.mUnit = self.mStringStandardUnit
         return
     
-    mRealUnits = ( "float", "um", "hr-1", "g.L-1", "m2.m-3" ) + mAllUnits.getUnitStrings( )
+    mRealUnits = ( "float", "m2.m-3" ) + mAllUnits.getUnitStrings( )
     mIntUnits = ( "int" )
     mBoolUnits = ( "bool" )
     
-    def __init__( self, name, unit, default_value, required=False ):
+    def __init__( self, name, unit, default_value, required=False, prefix="" ):
         # infer type from format of default_value
         if unit is None or unit in self.mIntUnits:
             try:
@@ -185,9 +173,9 @@ class Param:
             except:
                 pass
 
-        self.mName = str(name)
-        self.mConstName = "SP_%s" % (name, )
-        self.mUnit = str(unit)
+        self.mName = str( name )
+        self.mPrefix = str( prefix )
+        self.mUnit = str( unit )
         self.mDefaultValue = default_value
         self.mValue = default_value
         self.mRequired = required
@@ -196,14 +184,23 @@ class Param:
         return
 
     def copy(self):
-        p = Param(self.mName, self.mUnit, self.mDefaultValue)
-        p.setValue( self.mValue )
+        p = Param( self.mName, self.mUnit, self.mDefaultValue, self.mRequired )
+        p.setValueFromParam( self )
+        p.setPrefix( self.mPrefix )
         return p
 
     def getName(self):
         return self.mName
-    def getConstName(self):
-        return self.mConstName
+    def setName( self, name ):
+        self.mName = name
+        return
+    def getPrefix( self ):
+        return self.mPrefix
+    def setPrefix( self, prefix ):
+        self.mPrefix = prefix
+        return
+    def getConstName( self ):
+        return "%s_%s" % ( self.mPrefix, self.mName )
     def getUnit(self):
         return self.mUnit
     def getDefaultValue(self):
@@ -227,6 +224,10 @@ class Param:
 
     def validateParam(self, other):
         if self.getUnit() != other.getUnit():
+            ##
+            ## This occurs naturally while scanning XML files, due to unit detection on attributes and unit-less params
+            ## print( "Param ( " + str( self.getName( ) ) + " ) unit ( " + str( self.getUnit( ) ) + " ) does not match expected units ( " + str( other.getUnit( ) ) + " )" )
+            ##
             return False
         return True
 
@@ -254,6 +255,18 @@ class ParamHolder:
         self.mParams = {  }
         self.mChildren = {  }
         self.mHiddenParams = [ ]
+        self.mPrefix = ""
+        return
+
+    def getPrefix( self ):
+        return self.mPrefix
+
+    def setPrefix( self, prefix ):
+        self.mPrefix = prefix
+        for n in self.mAttributes:
+            self.mAttributes[ n ].setPrefix( prefix )
+        for n in self.mParams:
+            self.mParams[ n ].setPrefix( prefix )
         return
 
     def addChild( self, child ):
@@ -314,7 +327,7 @@ class ParamHolder:
         for n in self.mParams:
             if n in self.mHiddenParams:
                 continue
-            s = (depth*indent) + "const std::string %s = \"%s\";" % (self.mParams[ n ].getConstName(), n, )
+            s = (depth*indent) + "const std::string %s = \"%s\";" % (self.mParams[ n ].getConstName( ), n, )
             lines.append( s )
         return "\n".join( lines )
         
@@ -325,20 +338,21 @@ class ParamHolder:
                 continue
             param = self.mParams[ n ]
             if param.getUnit() in Param.mStringUnits:
-                s = (depth*indent) + "%s->setParamString( %s->getIdxString( %s ), \"%s\" );" % (varname, varname, param.getConstName(), param.getValue(), )
+                s = (depth*indent) + "%s->setParamString( %s->getIdxString( %s ), \"%s\" );" % (varname, varname, param.getConstName( ), param.getValue( ), )
                 lines.append( s )
             elif param.getUnit() in Param.mBoolUnits:
-                s = (depth*indent) + "%s->setParamBool( %s->getIdxBool( %s ), %s );" % (varname, varname, param.getConstName(), "true" if param.getValue() else "false", )
+                s = (depth*indent) + "%s->setParamBool( %s->getIdxBool( %s ), %s );" % (varname, varname, param.getConstName( ), "true" if param.getValue( ) else "false", )
                 lines.append( s )
             elif param.getUnit() in Param.mIntUnits:
-                s = (depth*indent) + "%s->setParamInt( %s->getIdxInt( %s ), %s );" % (varname, varname, param.getConstName(), param.getValue(), )
+                s = (depth*indent) + "%s->setParamInt( %s->getIdxInt( %s ), %s );" % (varname, varname, param.getConstName( ), param.getValue( ), )
                 lines.append( s )
             elif param.getUnit() in Param.mRealUnits:
-                s = (depth*indent) + "%s->setParamReal( %s->getIdxReal( %s ), %s );" % (varname, varname, param.getConstName(), param.getValue(), )
+                s = (depth*indent) + "%s->setParamReal( %s->getIdxReal( %s ), %s );" % (varname, varname, param.getConstName( ), param.getValue( ), )
                 lines.append( s )
             else:
-                s = "FIXME: Unknown unit: " + str(param.getUnit())
+                s = "FIXME: Unknown unit: " + str( param.getUnit( ) )
                 lines.append( s )
+                sys.exit( "ERROR: " + s )
         return "\n".join( lines )
 
     def getParamOrAttribute( self, name ):
@@ -380,6 +394,8 @@ class ParamHolder:
             return False
         else:
             self.mAttributes[ n ] = attr.copy()
+            self.mAttributes[ n ].setPrefix( self.getPrefix( ) )
+        return
 
     def updateAttribute(self, attr):
         n = attr.getName()
@@ -414,6 +430,9 @@ class ParamHolder:
     def getParams(self):
         return self.mParams
 
+    def getParamKeys( self ):
+        return list( self.mParams )
+
     def paramExists( self, name ):
         return name in self.mParams
     
@@ -426,17 +445,25 @@ class ParamHolder:
             return False
         else:
             self.mParams[n] = param.copy()
+            self.mParams[ n ].setPrefix( self.getPrefix( ) )
+        return
 
     def updateParam(self, param):
         n = param.getName()
+        
+        if ( n not in self.mParams ) and ( '*' in self.mParams ):
+            p = self.mParams[ '*' ].copy( )
+            p.setName( param.getName( ) )
+            self.addParam( p )
+
         if n in self.mParams:
-            if self.mParams[n].setValueFromParam(param):
+            if self.mParams[ n ].setValueFromParam( param ):
                 return True
-            if (self.mParams[n].getUnit() in Param.mRealUnits) and (param.getUnit() in Param.mIntUnits):
+            if ( self.mParams[ n ].getUnit() in Param.mRealUnits ) and ( param.getUnit() in Param.mIntUnits ):
                 # maybe mis-classified a float type as an int type due to value. Try it as a float type.
                 param = param.copy()
-                param.setUnit( self.mParams[n].getUnit() )
-                return self.mParams[n].setValueFromParam(param)
+                param.setUnit( self.mParams[ n ].getUnit() )
+                return self.mParams[ n ].setValueFromParam( param )
             else:
                 return False
         else:
@@ -444,6 +471,12 @@ class ParamHolder:
 
     def validateParam( self, param ):
         n = param.getName()
+        
+        if ( n not in self.mParams ) and ( '*' in self.mParams ):
+            p = self.mParams[ '*' ].copy( )
+            p.setName( param.getName( ) )
+            self.addParam( p )
+
         if n in self.mParams:
             if self.mParams[n].validateParam( param ):
                 return True
@@ -514,6 +547,14 @@ class ItemHolder:
         self.mOrder.append( name )
         return True
 
+    def getInitializeBioModel( self, container_name, indent, depth ):
+        lines = [ ]
+        for idx in self.mOrder:
+            s = self.mItems[ idx ].getInitializeBioModel( container_name, indent, depth )
+            if s:
+                lines.append( s )
+        return "\n".join( lines )
+
     def getLastItem( self ):
         return self.mItems[ self.mOrder[ len( self.mOrder ) - 1 ] ]
 
@@ -541,7 +582,7 @@ class ItemHolder:
 class AgentSpeciesParticle(ParamHolder):
 
     def __init__( self ):
-        ParamHolder.__init__( self )
+        ParamHolder.__init__( self )        
         self.addAttribute( Param( "name", "str", "", True ) )
         self.addParam( Param( "mass", "pg", 0.0, True ) )
         self.mParticle = None
@@ -616,7 +657,7 @@ class Coordinates( ParamHolder ):
         lines.append( s )
         
         lines.append( (depth*indent) + "%s.push_back( %s );" % (container_name, varname, ) )
-        depth -= 1;
+        depth -= 1
         lines.append( (depth*indent) + "}" )
         return "\n".join( lines )
     
@@ -859,6 +900,8 @@ class AgentSpecies(ParamHolder):
         self.mMechForceReals = [ ]
         
         ParamHolder.__init__(self)
+        self.setPrefix( "SPECIES" )
+        
         self.addAttribute( Param( "class", "str", "", True ) )
         self.addAttribute( Param( "name", "str", "", True ) )
         
@@ -1123,9 +1166,9 @@ class AgentSpeciesActive(AgentSpecies):
         AgentSpecies.__init__(self, class_name, name, model)
         
         self.mParticles = ItemHolder( AgentSpeciesParticle )
-        print("FIXME: <reaction name='name' status='active' /> not yet parsed.")
-        print("FIXME: <molecules></molecules> not yet parsed.")
-        print("FIXME: <agentMolecularReactions></agentMolecularReactions> not yet parsed.")
+        print("FIXME: <species><reaction name='name' status='active'/></species> not yet parsed.")
+        print("FIXME: <species><molecules></molecules></species> not yet parsed.")
+        print("FIXME: <species><agentMolecularReactions></agentMolecularReactions></species> not yet parsed.")
         return
 
     def getParticleEnumToken( self, particle ):
@@ -1175,7 +1218,7 @@ class AgentSpeciesLocated(AgentSpeciesActive):
         self.addParam( Param( "shoveLimit", "um",  0.0) )    # addition to desired radius
         self.addParam( Param( "shoveFactor", "um",  1.15) )  # listed as um/length, but treated as radius scalar
         self.addParam( Param( "shoveScale", "float",  1.0) ) # biocellion-biomodel only
-        self.addParam( Param( "brownianScale", "float",  1.0) ) # biocellion-biomodel only
+        self.addParam( Param( "brownianScale", "float",  0.0) ) # biocellion-biomodel only
         self.addParam( Param( "fixed", "bool",  False) )
         self.addParam( Param( "noSkinBottomLayerBoundary", "int", 0 ) )
         return
@@ -1206,9 +1249,9 @@ class AgentSpeciesYeast(AgentSpeciesBactEPS):
         self.addParam( Param( "useActivationInhibition", "bool", False ) )
         self.addParam( Param( "neighborhoodRadiusCoefficient", "float", 2.5 ) )
         self.addParam( Param( "startingTimeActivationInhibition", "int", 0 ) )
-        print("FIXME: <entryConditions> not yet parsed <entryCondition type='type' name='name'><switch/><fromSpecies/> </entryCondition>")
-        print("FIXME: <switchingLags> not yet parsed")
-        print("FIXME: <chemotaxis> not yet parsed")
+        print("FIXME: <species><entryConditions></species> not yet parsed <entryCondition type='type' name='name'><switch/><fromSpecies/> </entryCondition>")
+        print("FIXME: <species><switchingLags></species> not yet parsed")
+        print("FIXME: <species><chemotaxis></species> not yet parsed")
         return
 
 
@@ -1261,7 +1304,7 @@ class AllAgentSpecies( ItemHolder ):
                     all_order.append( param_name )
         lines = []
         for n in all_order:
-            s = (depth*indent) + "const std::string %s = \"%s\";" % (all_params[ n ].getConstName(), n, )
+            s = (depth*indent) + "const std::string %s = \"%s\";" % (all_params[ n ].getConstName( ), n, )
             lines.append( s )
         return "\n".join( lines )
         

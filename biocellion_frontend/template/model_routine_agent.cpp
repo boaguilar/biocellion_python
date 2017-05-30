@@ -23,70 +23,6 @@ using namespace std;
 
 #if HAS_SPAGENT
 
-#if PLACE_UNIFORM_RANDOM_AGENTS
-static inline void placeUniformRandomAgents(const VIdx& startVIdx, const VIdx& regionSize, Vector<VIdx>& v_spAgentVIdx, Vector<SpAgentState>& v_spAgentState, Vector<VReal>& v_spAgentOffset) {
-
-#if TWO_DIMENSION
-  // Bail out if not in center z dimension
-  S32 dim = DIMENSION-1;
-  idx_t z_mid_idx = Info::getDomainSize(dim)/2;
-  if(z_mid_idx < startVIdx[dim] || z_mid_idx >= startVIdx[dim] + regionSize[dim]) {
-    // doesn't contain the middle plane, don't add cells here.
-    return;
-  }
-  const S64 numUBs = regionSize[0] * regionSize[1];
-#else
-  const S64 numUBs = regionSize[0] * regionSize[1] * regionSize[2];
-#endif
-  
-  for( S32 i = 0 ; i < NUM_CELL_TYPES ; i++ ) {
-    S64 numCells = ( S64 )( ( REAL )numUBs * CELL_DENSITY_PER_UB[i] );
-    
-    for( S64 j = 0 ; j < numCells ; j++ ) {
-      VReal vPos;
-      VIdx vIdx;
-      VReal vOffset;
-      SpAgentState state;
-      
-      for( S32 dim = 0 ; dim < DIMENSION ; dim++ ) {
-#if TWO_DIMENSION
-        // put z in middle of domain
-        if(dim == DIMENSION-1) {
-          vPos[dim] = ( REAL )z_mid_idx * IF_GRID_SPACING;
-          continue;
-        }
-#endif
-        REAL randScale = Util::getModelRand( MODEL_RNG_UNIFORM );/* [0.0,1.0) */
-        if( randScale >= 1.0 ) {
-          randScale = 1.0 - EPSILON;
-        }
-        CHECK( randScale >= 0.0 );
-        CHECK( randScale < 1.0 );
-        vPos[dim] = ( REAL )startVIdx[dim] * IF_GRID_SPACING + ( REAL )regionSize[dim] * IF_GRID_SPACING * randScale;
-      }
-
-      Util::changePosFormat1LvTo2Lv( vPos, vIdx, vOffset );
-
-      for( S32 dim = 0 ; dim < DIMENSION ; dim++ ) {
-        CHECK( vIdx[dim] >= startVIdx[dim] );
-        CHECK( vIdx[dim] < startVIdx[dim] + regionSize[dim] );
-
-        CHECK( vOffset[dim] >= IF_GRID_SPACING * -0.5 );
-        CHECK( vOffset[dim] < IF_GRID_SPACING * 0.5 );
-      }
-
-      state.setType( i );
-      state.setRadius( CELL_RADIUS[i] );
-
-      v_spAgentVIdx.push_back( vIdx );
-      v_spAgentState.push_back( state );
-      v_spAgentOffset.push_back( vOffset );
-    }
-  }
-}
-#endif
-
-
 void ModelRoutine::addSpAgents( const BOOL init, const VIdx& startVIdx, const VIdx& regionSize, const IfGridBoxData<BOOL>& ifGridHabitableBoxData, Vector<VIdx>& v_spAgentVIdx, Vector<SpAgentState>& v_spAgentState, Vector<VReal>& v_spAgentOffset ) {/* initialization */
   /* MODEL START */
   REAL current_time;
@@ -105,11 +41,6 @@ void ModelRoutine::addSpAgents( const BOOL init, const VIdx& startVIdx, const VI
         gAgentSpecies[ i ]->getInitAreas( )[ j ]->addSpAgents( init, startVIdx, regionSize, ifGridHabitableBoxData, v_spAgentVIdx, v_spAgentState, v_spAgentOffset );
       }
     }
-  }
-  if( init == true ) {
-#if PLACE_UNIFORM_RANDOM_AGENTS
-    placeUniformRandomAgents(startVIdx, regionSize, v_spAgentVIdx, v_spAgentState, v_spAgentOffset);
-#endif
   }
 
   /* MODEL END */
@@ -164,7 +95,7 @@ static inline void brownianMotion( const VIdx& vIdx, const JunctionData& junctio
     if( dim == 3-1 ) { 
       continue; 
     }
-    disp[dim] += state.getRadius() * ( Util::getModelRand( MODEL_RNG_GAUSSIAN ) ) * gAgentSpecies[ state.getType() ]->getParamReal( gAgentSpecies[ state.getType() ]->getIdxReal( SP_brownianScale ) );
+    disp[dim] += state.getRadius() * ( Util::getModelRand( MODEL_RNG_GAUSSIAN ) ) * gAgentSpecies[ state.getType() ]->getParamReal( gAgentSpecies[ state.getType() ]->getIdxReal( SPECIES_brownianScale ) );
   }
 }
 

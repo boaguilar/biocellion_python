@@ -240,6 +240,7 @@ def write_biomodel_files( biomodel, directory, source_directory ):
               'model_routine_grid.cpp', 
               'model_routine_mech_intrct.cpp', 
               'model_routine_output.cpp', 
+              'param_holder.cpp', 'param_holder.h',
               'particle.cpp', 'particle.h',
               'reaction.cpp', 'reaction.h',
               'simulator.cpp', 'simulator.h',

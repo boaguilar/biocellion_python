@@ -7,6 +7,7 @@ AgentGrid *gAgentGrid = 0;
 Vector<AgentSpecies *> gAgentSpecies;
 Vector<Solute *> gSolutes;
 Vector<Particle *> gParticles;
+Vector<Reaction *> gReactions;
 Vector<MechIntrctSpAgent *> gMechIntrctSpAgent;
 Vector< Vector<BOOL> > gMechIntrctShoveEnabled;
 
@@ -90,6 +91,14 @@ void terminateBioModel() {
   }
   gParticles.clear();
 
+  for( i = 0; i < (S32) gReactions.size(); i++ ) {
+    if( gReactions[i] ) {
+      delete gReactions[i];
+      gReactions[i] = 0;
+    }
+  }
+  gReactions.clear();
+  
   for( i = 0; i < (S32) gMechIntrctSpAgent.size(); i++ ) {
     if( gMechIntrctSpAgent[i] ) {
       delete gMechIntrctSpAgent[i];

@@ -1,28 +1,27 @@
-#ifndef _SOLUTE_H
-#define _SOLUTE_H
+#ifndef _SOLUTE_H_
+#define _SOLUTE_H_
 #include "biocellion.h"
+#include "param_holder.h"
+#include <string>
 
-class Solute {
+class Solute : public ParamHolder {
 public:
   Solute();
-  Solute(const S32& domain, const REAL& diffusivity, const REAL& airDiffusivity, const REAL& decayRate, const BOOL& writeOutput);
-  S32 getDomain() const { return mDomain; };
-  REAL getDiffusivity() const { return mDiffusivity; };
-  REAL getAirDiffusivity() const { return mAirDiffusivity; };
-  REAL getDecayRate() const { return mDecayRate; };
-  BOOL getWriteOutput() const { return mWriteOutput; };
-  void setDomain(const S32& domain);
-  void setDiffusivity(const REAL& diffusivity);
-  void setAirDiffusivity(const REAL& airDiffusivity);
-  void setDecayRate(const REAL& decayRate);
-  void setWriteOutput(const BOOL& writeOutput);
+  Solute(const std::string& name, const S32& solute_idx, const S32& domain_idx, const S32& num_real_param, const S32& num_int_param, const S32& num_bool_param, const S32& num_string_param);
+
+  const std::string& getName() const;
+  S32 getSoluteIdx() const;
+  S32 getDomainIdx() const;
+
+  void setName(const std::string& name);
+  void setSoluteIdx(const S32& idx);
+  void setDomainIdx(const S32& idx);
   
 protected:
-  S32 mDomain;
-  REAL mDiffusivity;
-  REAL mAirDiffusivity;
-  REAL mDecayRate;
-  BOOL mWriteOutput;
+  std::string mName;
+  S32 mSoluteIdx;
+  S32 mDomainIdx;
+  
 };
 
 class BulkSolute {
@@ -47,4 +46,7 @@ protected:
   REAL mPulseRate;
 };
 
-#endif /*_SOLUTE_H*/
+#endif /* _SOLUTE_H_ */
+/* Local Variables: */
+/* mode:c++         */
+/* End:             */

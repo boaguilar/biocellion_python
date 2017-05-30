@@ -21,9 +21,9 @@ MechIntrctSpAgent* MechIntrctSpAgentShove::create()
 
   S32 i;
   for( i = 0 ; i < NUM_AGENT_SPECIES ; i++ ) {
-    intrct->setScale( i , gAgentSpecies[ i ]->getParamReal( gAgentSpecies[ i ]->getIdxReal( SP_shoveScale ) ) );
-    intrct->setFactor( i , gAgentSpecies[ i ]->getParamReal( gAgentSpecies[ i ]->getIdxReal( SP_shoveFactor ) ) );
-    intrct->setLimit( i , gAgentSpecies[ i ]->getParamReal( gAgentSpecies[ i ]->getIdxReal( SP_shoveLimit ) ) );
+    intrct->setScale( i , gAgentSpecies[ i ]->getParamReal( gAgentSpecies[ i ]->getIdxReal( SPECIES_shoveScale ) ) );
+    intrct->setFactor( i , gAgentSpecies[ i ]->getParamReal( gAgentSpecies[ i ]->getIdxReal( SPECIES_shoveFactor ) ) );
+    intrct->setLimit( i , gAgentSpecies[ i ]->getParamReal( gAgentSpecies[ i ]->getIdxReal( SPECIES_shoveLimit ) ) );
   }
   intrct->setDimensions(3);
 
@@ -288,8 +288,8 @@ MechIntrctSpAgent* MechIntrctSpAgentDistanceJunction::create()
     for( j = 0 ; j < (S32)junctions.size( ) ; j++ ) {
       intrct->setEnabled( i, junctions[ j ]->getWithSpecies( ), junctions[ j ]->getEnabled( ) );
     }
-    intrct->setLinkScale( i,  gAgentSpecies[ i ]->getParamReal( gAgentSpecies[ i ]->getIdxReal( SP_attachCreateFactor ) ) );
-    intrct->setUnlinkScale( i,  gAgentSpecies[ i ]->getParamReal( gAgentSpecies[ i ]->getIdxReal( SP_attachDestroyFactor ) ) );
+    intrct->setLinkScale( i,  gAgentSpecies[ i ]->getParamReal( gAgentSpecies[ i ]->getIdxReal( SPECIES_attachCreateFactor ) ) );
+    intrct->setUnlinkScale( i,  gAgentSpecies[ i ]->getParamReal( gAgentSpecies[ i ]->getIdxReal( SPECIES_attachDestroyFactor ) ) );
   }
   intrct->setJunctionIdx( JUNCTION_TYPE_DISTANCE );
   intrct->setRealDistanceIdx( JUNCTION_REAL_DISTANCE );

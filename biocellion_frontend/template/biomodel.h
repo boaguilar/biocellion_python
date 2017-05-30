@@ -11,6 +11,7 @@
 #include "distance_junction.h"
 #include "tight_junction.h"
 #include "solute.h"
+#include "reaction.h"
 
 class BioModel {
 public:
@@ -27,6 +28,7 @@ extern AgentGrid *gAgentGrid;
 extern Vector<AgentSpecies *> gAgentSpecies;
 extern Vector<Solute *> gSolutes;
 extern Vector<Particle *> gParticles;
+extern Vector<Reaction *> gReactions;
 extern Vector<MechIntrctSpAgent *> gMechIntrctSpAgent;
 extern Vector< Vector<BOOL> > gMechIntrctShoveEnabled;
 

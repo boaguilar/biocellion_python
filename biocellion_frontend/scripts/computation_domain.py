@@ -38,6 +38,9 @@ class ComputationDomain( ParamHolder ):
         self.mBoundaryConditions = ItemHolder( ComputationDomainBoundaryCondition )
         return
 
+    def getEnumToken(self):
+        return "DOMAIN_%s" % ( self.getAttribute( 'name' ).getValue( ), )
+    
     def getGrid( self ):
         return self.mGrid
 
@@ -73,9 +76,22 @@ class AllComputationDomains( ItemHolder ):
 
     def getBioModelH( self, indent, depth ):
         lines = [ ]
-        lines.append( '// FIXME: ComputationDomains' )
+        lines.append( self.getDomainsEnum( indent, depth ) )
         for name in self.mOrder:
             lines.append( self.mItems[ name ].getBioModelH( indent, depth ) )
+        return "\n".join( lines )
+    
+    def getDomainsEnum(self, indent, depth):
+        lines = []
+        lines.append( (depth*indent) + "typedef enum _domain_type_e {" )
+        depth += 1
+        for name in self.mOrder:
+            s = (depth*indent) + "%s," % (self.mItems[ name ].getEnumToken(), )
+            lines.append( s )
+        s = (depth*indent) + "NUM_DOMAINS"
+        lines.append( s )
+        depth -= 1
+        lines.append( (depth*indent) + "} domain_type_e;" )
         return "\n".join( lines )
 
     def getInitializeBioModel( self, indent, depth ):

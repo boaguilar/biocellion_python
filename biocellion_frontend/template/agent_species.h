@@ -107,3 +107,6 @@ protected:
 };
 
 #endif /* _AGENT_SPECIES_H_ */
+/* Local Variables: */
+/* mode:c++         */
+/* End:             */

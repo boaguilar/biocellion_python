@@ -1,7 +1,7 @@
 import sys
 import xml.etree.ElementTree as ET
 from agent_species import Param
-import simulator, particle, agent_species, agent_grid, computation_domain
+import simulator, particle, agent_species, agent_grid, computation_domain, solute, reaction
 
 def same_type( a, b ):
     if type( a ).__name__ == 'instance':
@@ -131,11 +131,12 @@ class BioModel:
 
             if child.tag == "param":
                 name = child.get('name')
-                if name in may_params or name in required_params:
+                if ( name in may_params ) or ( name in required_params ) or ( '*' in may_params ):
                     found_params.add( name )
                 else:
                     ok = False
                     print( "Param ( " + name + " = " + child.text + " ) of ( " + node.tag + " ) not expected, but found." )
+                    print( "Allowed Params = " + str( may_params ) )
                 
                 param = Param( child.get('name'), child.get('unit'), child.text )
                 if not param_validator.validateParam( param ):
@@ -195,7 +196,7 @@ class BioModel:
             if child.tag == "param":
                 name = child.get('name')
                 child_param = Param( name, child.get('unit'), child.text )
-                if name in may_params or name in required_params:
+                if ( name in may_params ) or ( name in required_params ) or ( '*' in may_params ):
                     found_params.add( name )
                 else:
                     ok = False
@@ -318,8 +319,22 @@ class BioModel:
         return ok
 
     def scanSoluteXML( self, node, parent_object=None ):
-        ok = True
-        print( "solute not scaned yet" )
+        may_children = ( "param", )
+        required_children = (  )
+        if not self.mIDynoMiCS.getSolutes().addItem( node.get('name') ):
+            sys.exit( "ERROR : couldn't add a solute." )
+        node_object = self.mIDynoMiCS.getSolutes().getLastItem( )
+        may_attributes = node_object.getMayAttributes( )
+        required_attributes = node_object.getRequiredAttributes( )
+        may_params = node_object.getMayParams( )
+        required_params = node_object.getRequiredParams( )
+        parent_object = None # don't need to add this as a child
+        child_methods = {
+            "param": self.scanGenericParamXML,
+        }
+        
+        ok = self.scanNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
+        
         return ok
 
     def scanParticleXML( self, node, parent_object=None ):
@@ -418,10 +433,70 @@ class BioModel:
         return ok
 
     def scanReactionXML( self, node, parent_object=None ):
-        ok = True
-        print( "reaction not scaned yet" )
+        may_children = ( "param", "kineticFactor", "yield", )
+        required_children = (  )
+        if not self.mIDynoMiCS.getReactions().addItem( node.get('name') ):
+            sys.exit( "ERROR : couldn't add a reaction." )
+        node_object = self.mIDynoMiCS.getReactions().getLastItem()
+        may_attributes = node_object.getMayAttributes( )
+        required_attributes = node_object.getRequiredAttributes( )
+        may_params = node_object.getMayParams( )
+        required_params = node_object.getRequiredParams( )
+        parent_object = None # don't need to add this as a child
+        child_methods = {
+            "param": self.scanGenericParamXML,
+            "kineticFactor": self.scanReactionKineticFactorXML,
+            "yield": self.scanReactionYieldXML,
+        }
+        
+        ok = self.scanNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
+        
         return ok
 
+    def scanReactionKineticFactorXML( self, node, parent_object=None ):
+        may_children = ( "param", )
+        required_children = (  )
+        if parent_object is None:
+            node_object = reaction.KineticFactor( )
+        else:
+            if not parent_object.getKineticFactors().addItem(  ):
+                sys.exit( "ERROR : couldn't add a reaction kinetic factor." )
+            node_object = parent_object.getKineticFactors().getLastItem()
+            parent_object = None # don't need to add this as a child
+        may_attributes = node_object.getMayAttributes( )
+        required_attributes = node_object.getRequiredAttributes( )
+        may_params = node_object.getMayParams( )
+        required_params = node_object.getRequiredParams( )
+        child_methods = {
+            "param": self.scanGenericParamXML,
+        }
+        
+        ok = self.scanNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
+        
+        return ok
+    
+    def scanReactionYieldXML( self, node, parent_object=None ):
+        may_children = ( "param", )
+        required_children = (  )
+        if parent_object is None:
+            node_object = reaction.Yields( )
+        else:
+            node_object = parent_object.getYields( )
+            parent_object = None
+        
+        may_attributes = node_object.getMayAttributes( )
+        required_attributes = node_object.getRequiredAttributes( )
+        may_params = node_object.getMayParams( )
+        required_params = node_object.getRequiredParams( )
+        parent_object = None # don't need to add this as a child
+        child_methods = {
+            "param": self.scanGenericParamXML,
+        }
+        
+        ok = self.scanNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
+        
+        return ok
+    
     def scanMolecularReactionsXML( self, node, parent_object=None ):
         ok = True
         print( "molecularReactions not scaned yet" )

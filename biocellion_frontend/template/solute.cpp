@@ -2,35 +2,44 @@
 
 
 Solute::Solute()
-  :mDomain(0), mDiffusivity(0), mAirDiffusivity(0), mDecayRate(0), mWriteOutput(false)
+  : ParamHolder( ),
+    mName( "" ), mSoluteIdx( -1 ), mDomainIdx( -1 )
 {
   //empty
 }
-Solute::Solute(const S32& domain, const REAL& diffusivity, const REAL& airDiffusivity, const REAL& decayRate, const BOOL& writeOutput)
-  :mDomain(domain), mDiffusivity(diffusivity), mAirDiffusivity(airDiffusivity), mDecayRate(decayRate), mWriteOutput(writeOutput)
+
+Solute::Solute(const std::string& name, const S32& solute_idx, const S32& domain_idx, const S32& num_real_param, const S32& num_int_param, const S32& num_bool_param, const S32& num_string_param) 
+  : ParamHolder( num_real_param, num_int_param, num_bool_param, num_string_param ),
+    mName( name ), mSoluteIdx( solute_idx ), mDomainIdx( domain_idx )
 {
 
 }
-void Solute::setDomain(const S32& domain)
-{
-  mDomain = domain;
+
+const std::string& Solute::getName() const {
+  return mName;
 }
-void Solute::setDiffusivity(const REAL& diffusivity)
-{
-  mDiffusivity = diffusivity;
+
+S32 Solute::getSoluteIdx() const {
+  return mSoluteIdx;
 }
-void Solute::setAirDiffusivity(const REAL& airDiffusivity)
-{
-  mAirDiffusivity = airDiffusivity;
+
+S32 Solute::getDomainIdx() const {
+  return mDomainIdx;
 }
-void Solute::setDecayRate(const REAL& decayRate)
-{
-  mDecayRate = decayRate;
+
+void Solute::setName(const std::string& name) {
+  mName = name;
 }
-void Solute::setWriteOutput(const BOOL& writeOutput)
-{
-  mWriteOutput = writeOutput; 
+
+void Solute::setSoluteIdx(const S32& idx) {
+  mSoluteIdx = idx;
 }
+
+void Solute::setDomainIdx(const S32& idx) {
+  mDomainIdx = idx;
+}
+
+
 
 BulkSolute::BulkSolute()
   :mSBulk(0), mSin(0), mIsConstant(false), mSPulse(0), mPulseRate(0)
