@@ -60,6 +60,8 @@ public:
   Vector<DistanceJunction *>& getDistanceJunctions( );
   const Vector<TightJunction *>& getTightJunctions( ) const;
   Vector<TightJunction *>& getTightJunctions( );
+  const Vector< AgentSpeciesParticle >& getParticles( ) const;
+  Vector< AgentSpeciesParticle >& getParticles( );
 
   // these routines make an index, if there isn't one.
   // they are not efficient for inside tight loops

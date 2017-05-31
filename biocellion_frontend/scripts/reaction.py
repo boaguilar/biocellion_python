@@ -167,7 +167,7 @@ class Reaction( ParamHolder ):
         if s:
             lines.append( s )
         
-        lines.append( (depth*indent) + "gReactions.push_back( %s );" % ( varname, ) )
+        lines.append( (depth*indent) + "gBioModel->getReactions( ).push_back( %s );" % ( varname, ) )
         depth -= 1;
         lines.append( (depth*indent) + "}" )
         return "\n".join( lines )

@@ -20,6 +20,8 @@ public:
 
   const Vector< Solute * >& getSolutes( ) const;
   Vector< Solute * >& getSolutes( );
+  const Vector< Reaction * >& getReactions( ) const;
+  Vector< Reaction * >& getReactions( );
   BOOL getDistanceJunctionsEnabled( ) const;
 
   void setDistanceJunctionsEnabled( const BOOL& value );
@@ -56,6 +58,7 @@ public:
 
 protected:
   Vector<Solute *> mSolutes;
+  Vector<Reaction *> mReactions;
   BOOL mDistanceJunctionsEnabled;
 };
 
@@ -64,7 +67,6 @@ extern Simulator *gSimulator;
 extern AgentGrid *gAgentGrid;
 extern Vector<AgentSpecies *> gAgentSpecies;
 extern Vector<Particle *> gParticles;
-extern Vector<Reaction *> gReactions;
 extern Vector<MechIntrctSpAgent *> gMechIntrctSpAgent;
 extern Vector< Vector<BOOL> > gMechIntrctShoveEnabled;
 

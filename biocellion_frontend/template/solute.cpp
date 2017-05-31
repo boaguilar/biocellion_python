@@ -245,9 +245,48 @@ void Solute::updateIfSubgridBetaDomainBdry( const S32 dim, const VIdx& vIdx, con
 }
 
 void Solute::updateIfSubgridRHSLinear( const VIdx& vIdx, const VIdx& subgridVOffset, const UBAgentData& ubAgentData, const UBEnv& ubEnv, REAL& gridRHS/* uptake(-) and secretion (+) */ ) const {
-  gridRHS = 0.0; // no secretion or uptake
+  
   // for every reaction with a yield that involves this solute, add/subtract gridRHS.
   // amount is controlled by kineticFactors
+  // FIXME: Need to apply kineticFactors
+  // FIXME: Need to apply computationDomains
+  // FIXME: Need to apply muMax
+
+  gridRHS = 0.0;
+  S32 i, j, k;
+  const Vector< Reaction * >& reactions = gBioModel->getReactions( );
+  for( i = 0 ; i < (S32) reactions.size( ) ; i++ ) {
+    const Vector< Reaction::Yield >& yields = reactions[ i ]->getYields( );
+    for( j = 0; j < (S32) yields.size( ) ; j++ ) {
+      if( yields[ j ].isSolute( ) && yields[ j ].getItemIdx( ) == getSoluteIdx( ) ) {
+        // We care about this Reaction::Yield
+        
+        // Now check for all agents that apply
+        for( ubAgentIdx_t l = 0 ; l < ( ubAgentIdx_t )ubAgentData.v_spAgent.size() ; l++ ) {
+          const SpAgent& spAgent = ubAgentData.v_spAgent[ l ];
+          S32 agentType = spAgent.state.getType( );
+          if( reactions[ i ]->getCatalyst( ) == -1 || reactions[ i ]->getCatalyst( ) == agentType ) {
+            // species is of interest
+            const Vector< AgentSpeciesParticle >& particles = gAgentSpecies[ agentType ]->getParticles( );
+            for( k = 0 ; k < (S32) particles.size( ) ; k++ ) {
+              if( particles[ k ].getParticleIdx( ) == reactions[ i ]->getCatalyzedBy( ) ) {
+                // species.particle is of interest
+                VIdx sgridVOffset;
+                getSubgridOffset( spAgent.vOffset, sgridVOffset );
+                if( sgridVOffset == subgridVOffset ) {
+                  // agent is in this subgrid
+                  REAL mass = spAgent.state.getModelReal( particles[ k ].getModelRealIdx( ) );
+                  gridRHS += yields[ j ].getValue( ) * mass;
+                }
+              }
+            }
+          }
+        }
+
+
+      }
+    }
+  }
   
 }
 

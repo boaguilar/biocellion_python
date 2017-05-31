@@ -200,6 +200,14 @@ Vector<TightJunction *>& AgentSpecies::getTightJunctions( )
   return mTightJunctions;
 }
 
+const Vector< AgentSpeciesParticle >& AgentSpecies::getParticles( ) const {
+  return mParticles;
+}
+
+Vector< AgentSpeciesParticle >& AgentSpecies::getParticles( ) {
+  return mParticles;
+}
+
 const Vector<DistanceJunction *>& AgentSpecies::getDistanceJunctions( ) const
 {
   return mDistanceJunctions;
