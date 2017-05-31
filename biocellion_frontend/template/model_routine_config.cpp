@@ -218,18 +218,8 @@ static inline void setPhiPDEChemoattractant( Vector<PDEInfo>& v_phiPDEInfo , S32
 void ModelRoutine::updatePhiPDEInfo( Vector<PDEInfo>& v_phiPDEInfo ) {
   /* MODEL START */
 
-  // FIXME: solute info not controlled from XML yet
-
-#if USE_PHI_ONE
-  CHECK( NUM_GRID_PHIS == 1 );
-
-  v_phiPDEInfo.resize( NUM_GRID_PHIS );
-  setPhiPDEChemoattractant(v_phiPDEInfo, GRID_PHI_ONE_TYPE );
-#else
-  //CHECK( NUM_GRID_PHIS == 0 );
-
-  v_phiPDEInfo.clear();
-#endif
+  initializeBioModel();
+  gBioModel->updatePhiPDEInfo( v_phiPDEInfo );
 
   /* MODEL END */
 
@@ -290,17 +280,14 @@ void ModelRoutine::updateFileOutputInfo( FileOutputInfo& fileOutputInfo ) {
   /* MODEL START */
 
   // FIXME: output not controlled from XML yet
-
+  WARNING( "particle output not configured by XML yet." )
+    
   fileOutputInfo.particleOutput = true;
   fileOutputInfo.v_particleExtraOutputScalarVarName.clear();
   fileOutputInfo.v_particleExtraOutputVectorVarName.clear();
-#if USE_PHI_ONE
-  fileOutputInfo.v_gridPhiOutput.assign( NUM_GRID_PHIS, true );
-  fileOutputInfo.v_gridPhiOutputDivideByKappa.assign( NUM_GRID_PHIS, false );
-#else
-  fileOutputInfo.v_gridPhiOutput.clear();
-  fileOutputInfo.v_gridPhiOutputDivideByKappa.clear();
-#endif
+
+  initializeBioModel();
+  gBioModel->updateFileOutputInfo( fileOutputInfo );
 
   /* MODEL END */
 

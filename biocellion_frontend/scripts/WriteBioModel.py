@@ -229,8 +229,11 @@ def copy_file( directory, source_directory, filename ):
 
 def write_biomodel_files( biomodel, directory, source_directory ):
     names = [ 'adhesion.cpp', 'adhesion.h',
+              'agar.cpp', 'agar.h',
               'agent_grid.cpp', 'agent_grid.h',
               'agent_species.cpp', 'agent_species.h',
+              'bulk.cpp', 'bulk.h',
+              'computation_domain.cpp', 'computation_domain.h',
               'distance_junction.cpp', 'distance_junction.h',
               'init_area.cpp', 'init_area.h',
               'model_define.h',

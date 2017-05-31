@@ -74,7 +74,7 @@ if True:
     biomodel = BioModel()
     biomodel.parseXML( xmlfilename )
     write_biomodel_files( biomodel, dirname, g_source_dir )
-    print( str( biomodel ) )
+    # print( str( biomodel ) )
 else:
     diffusibles = dict()  # list of solutes (names)
     celltypes = dict() # list of cell types (names)

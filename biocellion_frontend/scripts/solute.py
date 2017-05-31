@@ -78,7 +78,7 @@ class Solute( ParamHolder ):
         s = ParamHolder.getInitializeBioModel( self, varname, indent, depth )
         if s:
             lines.append( s )
-        lines.append( (depth*indent) + "gSolutes.push_back( %s );" % ( varname, ) )
+        lines.append( (depth*indent) + "gBioModel->getSolutes( ).push_back( %s );" % ( varname, ) )
         depth -= 1;
         lines.append( (depth*indent) + "}" )
         return "\n".join( lines )
