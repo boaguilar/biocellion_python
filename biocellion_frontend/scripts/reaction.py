@@ -23,14 +23,15 @@ class KineticFactor( ParamHolder ):
 
     def getInitializeBioModel( self, container_name, indent, depth ):
         varname = "kinetic_factor"
+        class_name = self.getAttribute( 'class' ).getValue( )
         lines = [ ]
         lines.append( (depth*indent) + "{" )
         depth += 1
-
-        lines.append( (depth*indent) + "Reaction::KineticFactor %s;" % (varname, ) )
+        
+        lines.append( (depth*indent) + "Reaction::KineticFactor *%s = new Reaction::%s( );" % (varname, class_name, ) )
         lines.append( ParamHolder.getInitializeBioModel( self, varname, indent, depth ) )
         
-        s = self.getInitializeBioModelSetDataMembers( varname, ".", indent, depth,
+        s = self.getInitializeBioModelSetDataMembers( varname, "->", indent, depth,
                                                       self.mPrivateBoolHiddenParams,
                                                       self.mPrivateNumberHiddenParams,
                                                       self.mPrivateStringHiddenParams )

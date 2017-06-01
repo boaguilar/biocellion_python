@@ -1,4 +1,6 @@
 #include "reaction.h"
+#include "agent_species.h"
+#include "biomodel.h"
 #include "biocellion.h"
 #include <string>
 
@@ -67,6 +69,10 @@ Reaction::KineticFactor::KineticFactor( )
 {
 }
 
+Reaction::KineticFactor::~KineticFactor( ) {
+  // empty
+}
+
 const std::string& Reaction::KineticFactor::getClass( ) const {
   return mKineticFactorClass;
 }
@@ -107,6 +113,28 @@ void Reaction::KineticFactor::setKs( const REAL& value) {
   mKs = value;
 }
 
+REAL Reaction::FirstOrderKinetic::kineticValue( const REAL& solute_value ) const {
+  return 1.0;
+}
+
+REAL Reaction::SimpleInhibition::kineticValue( const REAL& solute_value ) const {
+  if( ( mKi + solute_value ) < 1.0e-7 ) {
+    return 0.0;
+  }
+  return mKi / ( mKi + solute_value );
+}
+
+REAL Reaction::LinearKinetic::kineticValue( const REAL& solute_value ) const {
+  return mKs * solute_value;
+}
+
+REAL Reaction::MonodKinetic::kineticValue( const REAL& solute_value ) const {
+  if( ( mKs + solute_value ) < 1.0e-7 ) {
+    return 0.0;
+  }
+  return solute_value / ( mKs + solute_value );
+}
+
 
 // Reaction
 Reaction::Reaction( )
@@ -132,7 +160,14 @@ Reaction::Reaction( const std::string& name, const std::string& reactionClass,
 }
 
 Reaction::~Reaction( ) {
-  // empty
+  S32 i;
+  for( i = 0 ; i < (S32) mKineticFactors.size( ) ; i++ ) {
+    if( mKineticFactors[ i ] ) {
+      delete mKineticFactors[ i ];
+      mKineticFactors[ i ] = 0;
+    }
+  }
+  mKineticFactors.clear( );
 }
 
 const Vector< Reaction::Yield >& Reaction::getYields( ) const {
@@ -143,11 +178,11 @@ Vector< Reaction::Yield >& Reaction::getYields( ) {
   return mYields;
 }
 
-const Vector< Reaction::KineticFactor >& Reaction::getKineticFactors( ) const {
+const Vector< Reaction::KineticFactor* >& Reaction::getKineticFactors( ) const {
   return mKineticFactors;
 }
 
-Vector< Reaction::KineticFactor >& Reaction::getKineticFactors( ) {
+Vector< Reaction::KineticFactor* >& Reaction::getKineticFactors( ) {
   return mKineticFactors;
 }
 
@@ -172,3 +207,43 @@ void Reaction::setMuMax(const REAL& value) {
   mMuMax = value;
 }
 
+REAL Reaction::getKineticFactor( const S32& solute_idx, const REAL& solute_value ) const {
+  REAL factor = mMuMax;
+  S32 i;
+  for( i = 0 ; i < (S32) mKineticFactors.size( ) ; i++ ) {
+    if( mKineticFactors[ i ]->getSolute( ) == solute_idx ) {
+      factor *= mKineticFactors[ i ]->kineticValue( solute_value );
+    } else if( mKineticFactors[ i ]->getSolute( ) == -1 && mKineticFactors[ i ]->getMolecule( ) == -1 ) {
+      factor *= mKineticFactors[ i ]->kineticValue( 0 );
+    }
+  }
+  return factor;
+}
+
+/*
+ * Assumes that spAgent is within the subgrid container in question.
+ * Finds the total yield this agent produces for this solute, due
+ * to this reaction.
+ */
+REAL Reaction::getYield( const S32& solute_idx, const SpAgent& spAgent ) const {
+  S32 i, j;
+  REAL yield = 0.0;
+  for( i = 0; i < (S32) mYields.size( ) ; i++ ) {
+    if( mYields[ i ].isSolute( ) && mYields[ i ].getItemIdx( ) == solute_idx ) {
+      // Yield matches solute
+      S32 agentType = spAgent.state.getType( );
+      if( getCatalyst( ) == -1 || getCatalyst( ) == agentType ) {
+        // Agent's type matches catalyst
+        const Vector< AgentSpeciesParticle >& particles = gAgentSpecies[ agentType ]->getParticles( );
+        for( j = 0 ; j < (S32) particles.size( ) ; j++ ) {
+          if( particles[ j ].getParticleIdx( ) == getCatalyzedBy( ) ) {
+            // Agent's particle matches catalyzed by.
+            REAL mass = spAgent.state.getModelReal( particles[ j ].getModelRealIdx( ) );
+            yield += mYields[ i ].getValue( ) * mass;
+          }
+        }
+      }
+    }
+  }
+  return yield;
+}

@@ -23,7 +23,7 @@ public:
     void setItemIdx( const S32& value );
     void setValue( const REAL& value);
     
-  private:
+  protected:
     enum { TYPE_SOLUTE, TYPE_PARTICLE, NUM_TYPE };
     S32 mType;     // type of yield
     S32 mItemIdx;  // index into gBioModel->getSolutes() or gAgentSpecies
@@ -35,26 +35,49 @@ public:
   public:
 
     KineticFactor( );
+    virtual ~KineticFactor( );
 
-    const std::string& getClass() const;
+    const std::string& getClass( ) const;
     S32 getSolute( ) const;
     S32 getMolecule( ) const;
     REAL getKi( ) const;
     REAL getKs( ) const;
 
-    void setClass(const std::string& value);
+    void setClass( const std::string& value );
     void setSolute( const S32& value );
     void setMolecule( const S32& value );
-    void setKi( const REAL& value);
-    void setKs( const REAL& value);
+    void setKi( const REAL& value );
+    void setKs( const REAL& value );
 
-  private:
+    virtual REAL kineticValue( const REAL& solute_value ) const = 0;
+
+  protected:
     
     std::string mKineticFactorClass;
     S32 mSoluteIdx;
     S32 mMoleculeIdx;
     REAL mKi;
     REAL mKs;
+  };
+
+  class FirstOrderKinetic : public  KineticFactor {
+  public:
+    virtual REAL kineticValue( const REAL& solute_value ) const;
+  };
+
+  class SimpleInhibition : public  KineticFactor {
+  public:
+    virtual REAL kineticValue( const REAL& solute_value ) const;
+  };
+
+  class MonodKinetic : public  KineticFactor {
+  public:
+    virtual REAL kineticValue( const REAL& solute_value ) const;
+  };
+
+  class LinearKinetic : public  KineticFactor {
+  public:
+    virtual REAL kineticValue( const REAL& solute_value ) const;
   };
   
   Reaction( );
@@ -71,15 +94,18 @@ public:
 
   const Vector< Yield >& getYields( ) const;
   Vector< Yield >& getYields( );
-  const Vector< KineticFactor >& getKineticFactors( ) const;
-  Vector< KineticFactor >& getKineticFactors( );
+  const Vector< KineticFactor* >& getKineticFactors( ) const;
+  Vector< KineticFactor* >& getKineticFactors( );
 
   void setName(const std::string& value);
   void setClass(const std::string& value);
   void setCatalyzedBy(const S32& value); 
   void setCatalyst(const S32& value); 
   void setMuMax(const REAL& value);
-  
+
+  REAL getKineticFactor( const S32& solute_idx, const REAL& solute_value ) const;
+  REAL getYield( const S32& solute_idx, const SpAgent& spAgent ) const;
+
 protected:
   std::string mName;
   std::string mReactionClass;
@@ -88,7 +114,7 @@ protected:
   REAL        mMuMax;
 
   Vector< Yield > mYields;
-  Vector< KineticFactor > mKineticFactors;
+  Vector< KineticFactor* > mKineticFactors;
 };
 
 
