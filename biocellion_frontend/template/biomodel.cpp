@@ -62,7 +62,7 @@ void BioModel::setDistanceJunctionsEnabled( const BOOL& value ) {
 
 void BioModel::updatePhiPDEInfo( Vector<PDEInfo>& v_phiPDEInfo ) const {
 
-  WARNING( "Relies on pdeIdx and elemIdx being 1-to-1 matched." );
+  WARNING( "This implementation relies on pdeIdx and elemIdx being 1-to-1 matched." );
   if( mSolutes.size() > 0 ) {
     S32 i;
     v_phiPDEInfo.resize( mSolutes.size( ) );

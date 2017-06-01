@@ -127,8 +127,6 @@ class Reaction( ParamHolder ):
         
         self.mYields = Yields( )        
         self.mKineticFactors = ItemHolder( KineticFactor )
-        print( "FIXME: <reaction><kineticFactor/></reaction> not yet scanned" )
-
         return
     
     def getName(self):

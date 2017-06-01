@@ -134,11 +134,11 @@ class IDynoMiCS( ParamHolder ):
         ParamHolder.__init__(self)
 
         self.mSimulator = Simulator( )
-        self.mWorld = World( )
+        self.mWorld = World( self )
         self.mReactions = AllReactions( self )
         self.mAgentGrid = AgentGrid()
         self.mAgentSpecies = AllAgentSpecies( self )
-        self.mSolutes = AllSolutes()
+        self.mSolutes = AllSolutes( self )
         self.mParticles = AllParticles()
         
         return
@@ -231,6 +231,9 @@ class IDynoMiCS( ParamHolder ):
 
         print( "FIXME: Warning, *->Solutes need to be connected by enumtoken." )
         print( "FIXME: Warning, *->Reactions need to be connected by enumtoken." )
+
+        ## Set up AMR related features for the model
+        self.mSolutes.calcRefineRatio( )
         
         ## Reactions.catalyzedBy->Particles 
         self.linkAttributeToEnumToken( self.mReactions, 'catalyzedBy', self.mParticles )

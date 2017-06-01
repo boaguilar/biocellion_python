@@ -152,15 +152,47 @@ void InitArea::addSpAgentsUnfilledBlock( const BOOL init, const VIdx& startVIdx,
   REAL agent_density = mNumber / volume;
 
   /* FIXME END REFACTOR */
+  
+  VReal partition_min, partition_max;
+  VIdx  vPartitionIdx_min, vPartitionIdx_max;
+  VReal vPartitionOffset_min, vPartitionOffset_max;
+  for( dim = 0 ; dim < 3 ; dim++ ) {
+    vPartitionOffset_min[ dim ] = -0.5 * gAgentGrid->getResolution( );
+    vPartitionOffset_max[ dim ] = -0.5 * gAgentGrid->getResolution( );
+    vPartitionIdx_min[ dim ] = startVIdx[ dim ];
+    vPartitionIdx_max[ dim ] = startVIdx[ dim ] + regionSize[ dim ];
+  }
+  Util::changePosFormat2LvTo1Lv( vPartitionIdx_min, vPartitionOffset_min, partition_min );
+  Util::changePosFormat2LvTo1Lv( vPartitionIdx_max, vPartitionOffset_max, partition_max );
 
+  
   /**** find how many agents to create in the intersecting region ****/
   // find intersection of this region and the bounding box region
-  VIdx  intersectStartVIdx, intersectRegionSize;
+  VReal intersectStartPos, intersectEndPos;
+  VIdx  intersectStartVIdx, intersectEndVIdx, intersectRegionSize;
   VReal intersectStartVOffset, intersectEndVOffset, intersectLen;
   REAL intersect_volume = 1.0;
   S32 dimensions = 0;
   for( dim = 0 ; dim < 3 ; dim++ ) {
 
+    if( partition_min[ dim ] <= pos_min[ dim ] ) {
+      intersectStartPos[ dim ] = pos_min[ dim ];
+    } else {
+      intersectStartPos[ dim ] = partition_min[ dim ];
+    }
+
+    if( partition_max[ dim ] <= pos_max[ dim ] ) {
+      intersectEndPos[ dim ] = partition_max[ dim ];
+    } else {
+      intersectEndPos[ dim ] = pos_max[ dim ];
+    }
+    intersectLen[ dim ] = intersectEndPos[ dim ] - intersectStartPos[ dim ];
+    if( intersectLen[ dim ] > 0 ) {
+      intersect_volume *= intersectLen[ dim ];
+      dimensions++;
+    }
+
+#if 0
     // find lower side of intersection
     if( startVIdx[ dim ] <= vIdx_min[ dim ] ) {
       intersectStartVIdx[ dim ] = vIdx_min[ dim ];
@@ -208,7 +240,12 @@ void InitArea::addSpAgentsUnfilledBlock( const BOOL init, const VIdx& startVIdx,
             << " - intersectStartVOffset[ " << dim << " ] " << intersectStartVOffset[ dim ]
             << " - intersectEndVOffset[ " << dim << " ] " << intersectEndVOffset[ dim ]
             );
+#endif
   }
+
+  Util::changePosFormat1LvTo2Lv( intersectStartPos, intersectStartVIdx, intersectStartVOffset );
+  Util::changePosFormat1LvTo2Lv( intersectEndPos, intersectEndVIdx, intersectEndVOffset );
+  
   // FIXME: 2 should come from the computationdomain.grid.nDim
   if( dimensions <  2 ) {
     intersect_volume = 0.0;
@@ -232,9 +269,26 @@ void InitArea::addSpAgentsUnfilledBlock( const BOOL init, const VIdx& startVIdx,
             << "  intersectStartVOffset: " << intersectStartVOffset[ 0 ] << "," << intersectStartVOffset[ 1 ] << "," << intersectStartVOffset[ 2 ]
             << "  intersectEndVOffset: " << intersectEndVOffset[ 0 ] << "," << intersectEndVOffset[ 1 ] << "," << intersectEndVOffset[ 2 ]
             << "  intersectLen: " << intersectLen[ 0 ] << "," << intersectLen[ 1 ] << "," << intersectLen[ 2 ]
+            << "  mNumber: " << mNumber
+            << "  volume: " << volume
+            << "  agent_density: " << agent_density
+            << "  intersect_volume: " << intersect_volume 
+            << "  agent_number: " << agent_number
           );
+    OUTPUT( 0, "vIdx_min = " << vIdx_min[ 0 ] << "," << vIdx_min[ 1 ] << "," << vIdx_min[ 2 ]
+            << "  vOffset_min = " << vOffset_min[ 0 ] << "," << vOffset_min[ 1 ] << "," << vOffset_min[ 2 ]
+            << "  pos_min = " << pos_min[ 0 ] << "," << pos_min[ 1 ] << "," << pos_min[ 2 ]
+            << "  vIdx_max = " << vIdx_max[ 0 ] << "," << vIdx_max[ 1 ] << "," << vIdx_max[ 2 ]
+            << "  vOffset_max = " << vOffset_max[ 0 ] << "," << vOffset_max[ 1 ] << "," << vOffset_max[ 2 ]
+            << "  pos_max = " << pos_max[ 0 ] << "," << pos_max[ 1 ] << "," << pos_max[ 2 ]
+            << "  partition_min = " << partition_min[ 0 ] << "," << partition_min[ 1 ] << "," << partition_min[ 2 ]
+            << "  partition_max = " << partition_max[ 0 ] << "," << partition_max[ 1 ] << "," << partition_max[ 2 ]
+            << "  startVIdx = " << startVIdx[ 0 ] << "," << startVIdx[ 1 ] << "," << startVIdx[ 2 ]
+            << "  regionSize = " << regionSize[ 0 ] << "," << regionSize[ 1 ] << "," << regionSize[ 2 ]
+            << "  agent_number: " << agent_number );
   }
-  /**** create the agents now ****/
+  
+    /**** create the agents now ****/
   S64 j;
   for( j = 0 ; j < ( S64 ) agent_number ; j ++ ) {
     VReal vPosAgent;
@@ -250,13 +304,20 @@ void InitArea::addSpAgentsUnfilledBlock( const BOOL init, const VIdx& startVIdx,
       }
       CHECK( randScale >= 0.0 );
       CHECK( randScale < 1.0 );
-
+#if 0
       if( intersectRegionSize[ dim ] > 0 ) {
         vPosAgent[ dim ] = ( ( intersectStartVIdx[ dim ] + 0.5 ) * gAgentGrid->getResolution( ) + intersectStartVOffset[ dim ]
                              + intersectLen[ dim ] * randScale );
       } else {
         vPosAgent[ dim ] = ( REAL )intersectStartVIdx[ dim ] * gAgentGrid->getResolution( );
       }
+#else
+      if( intersectLen[ dim ] > 0 ) {
+        vPosAgent[ dim ] = ( intersectStartPos[ dim ] + intersectLen[ dim ] * randScale );
+      } else {
+        vPosAgent[ dim ] = intersectStartPos[ dim ];
+      }
+#endif
 
     }
     Util::changePosFormat1LvTo2Lv( vPosAgent, vIdxAgent, vOffsetAgent );

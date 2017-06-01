@@ -5,9 +5,10 @@ from computation_domain import AllComputationDomains
 
 class World( ParamHolder ):
 
-    def __init__(self):
+    def __init__( self, model ):
         self.mName = "world"
         ParamHolder.__init__( self )
+        self.mModel = model
         self.mBulks = AllBulks()
         self.mAgars = AllAgars()
         self.mComputationDomains = AllComputationDomains()
@@ -42,9 +43,8 @@ class World( ParamHolder ):
         return self.mComputationDomains
 
     def makeDomainDimensionValid( self, x ):
-        refine_ratio = 2 #FIXME this should be pulled from somewhere else
-        interface_grid_level = 3 #FIXME this should be pulled from somewhere else
-        print( "FIXME: refine_ratio and interface_grid_level should be read from somewhere, not hard-coded" )
+        refine_ratio = self.mModel.getSolutes( ).calcRefineRatio( )
+        interface_grid_level = self.mModel.getSolutes( ).calcInterfaceAMRLevel( )
         amr_multiple = refine_ratio ** interface_grid_level
         if x < 4:
             x = 4
@@ -58,8 +58,8 @@ class World( ParamHolder ):
         if len( self.mComputationDomains ) == 0:
             return 0
         partition_size = self.makeDomainDimensionValid( 1 )
-        if partition_size % 2 == 0:
-            partition_size = int( partition_size / 2 )
+        # if partition_size % 2 == 0:
+        #     partition_size = int( partition_size / 2 )
         return partition_size
     
     def getDomainXYZ( self ):

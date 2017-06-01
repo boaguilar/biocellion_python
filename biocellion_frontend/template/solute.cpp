@@ -3,10 +3,9 @@
 Solute::Solute()
   : ParamHolder( ),
     mName( "" ), mSoluteIdx( -1 ), mDomainIdx( -1 ),
-    mAMRLevels( 3 ), mInterfaceAMRLevel( 2 ),    // FIXME: AMR related values should not be hard-coded
+    mAMRLevels( 3 ), mInterfaceAMRLevel( 2 ),
     mNumTimeSteps( 1 ), mSubgridDimension(-1)
 {
-  WARNING( "Solute::mAMRLevels should not be hard-coded" );
   calcSubgridDimension( );
 }
 
@@ -16,7 +15,6 @@ Solute::Solute(const std::string& name, const S32& solute_idx, const S32& domain
     mAMRLevels( 3 ), mInterfaceAMRLevel( 2 ),
     mNumTimeSteps( 1 ), mSubgridDimension(-1)
 {
-  WARNING( "Solute::mAMRLevels should not be hard-coded" );
   calcSubgridDimension( );
 }
 
@@ -136,8 +134,8 @@ void Solute::setPDEInfo( PDEInfo& pdeInfo ) const {
 
   pdeInfo.pdeIdx = mSoluteIdx;
   pdeInfo.pdeType = PDE_TYPE_REACTION_DIFFUSION_TIME_DEPENDENT_LINEAR;
-  pdeInfo.numLevels = mAMRLevels; // ???FIXME: Need to configure this correctly
-  pdeInfo.ifLevel = mInterfaceAMRLevel; // ???FIXME: Need to configure this correctly
+  pdeInfo.numLevels = mAMRLevels;
+  pdeInfo.ifLevel = mInterfaceAMRLevel;
   pdeInfo.v_tagExpansionSize.assign( mAMRLevels, 0 ); // ???FIXME: Need to configure this correctly
   pdeInfo.numTimeSteps = mNumTimeSteps; // ???FIXME: Need to configure this correctly
   pdeInfo.callAdjustRHSTimeDependentLinear = false; // ???FIXME: Need to configure this correctly
@@ -280,9 +278,8 @@ void Solute::updateIfSubgridRHSTimeDependentSplitting( const VIdx& vIdx, const V
 }
 
 void Solute::updateIfGridAMRTags( const VIdx& vIdx, const NbrUBAgentData& nbrUBAgentData, const NbrUBEnv& nbrUBEnv, S32& finestLevel ) const {
-  // FIXME: ?documentation says finestLevel is a vector, but it's not?
-  // FIXME: could be dynamic based on the number of particles around, etc.
-  finestLevel = mAMRLevels - 1; // FIXME: need to be specific to the model.
+  // this is the default maximum.
+  finestLevel = mAMRLevels - 1;
 }
 
 void Solute::updateIfGridDirichletBCVal( const VReal& pos, const S32 dim, const BOOL lowSide, const UBEnvModelVar a_ubEnvModelVar[3], const Vector<REAL> av_gridPhi[3]/* av_gridPhi[].size() == ratio * raito * ratio (ratio = Info::envAuxDataInfo.v_phiRatioFromIfGridToIfSubgrid[elemIdx]), use VIdx::getIdx3DTo1D() to index */, REAL& bcVal ) const {
