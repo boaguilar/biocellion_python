@@ -1,5 +1,4 @@
-#include "biocellion.h"
-#include "simulator.h"
+#include "biomodel.h"
 
 Simulator::Simulator(
 		     const BOOL& restartPreviousRun, const BOOL& chemostat, const BOOL& diffusionReactionOnAgentTime,

@@ -1,7 +1,7 @@
 import sys
 import xml.etree.ElementTree as ET
 from agent_species import Param
-import simulator, particle, agent_species, agent_grid, computation_domain, solute, reaction
+import simulator, particle, agent_species, agent_grid, computation_domain, solute, reaction, bulk
 
 def same_type( a, b ):
     if type( a ).__name__ == 'instance':
@@ -376,8 +376,47 @@ class BioModel:
         return ok
 
     def scanWorldBulkXML( self, node, parent_object=None ):
-        ok = True
-        print( "world-bulk not scaned yet" )
+        may_children = ( "solute", "param", )
+        required_children = ( )
+        if not self.mIDynoMiCS.getWorld().getBulks().addItem( node.get('name') ):
+            sys.exit( "ERROR : couldn't add a bulk." )
+        node_object = self.mIDynoMiCS.getWorld().getBulks().getLastItem( )
+        may_attributes = node_object.getMayAttributes( )
+        required_attributes = node_object.getRequiredAttributes( )
+        may_params = node_object.getMayParams( )
+        required_params = node_object.getRequiredParams( )
+        parent_object = None # don't need to add this as a child
+        child_methods = {
+            "param": self.scanGenericParamXML,
+            "solute": self.scanWorldBulkSoluteXML,
+        }
+
+        ok = self.scanNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
+        
+        return ok
+
+
+    def scanWorldBulkSoluteXML( self, node, parent_object=None ):
+        may_children = ( "param", )
+        required_children = (  )
+        if parent_object is None:
+            node_object = bulk.BulkSolute( node.get( 'name' ) )
+        else:
+            if not parent_object.getSolutes().addItem( node.get('name') ):
+                sys.exit( "ERROR : couldn't add a bulk solute." )
+            node_object = parent_object.getSolutes().getLastItem( )
+            parent_object = None
+        may_attributes = node_object.getMayAttributes( )
+        required_attributes = node_object.getRequiredAttributes( )
+        may_params = node_object.getMayParams( )
+        required_params = node_object.getRequiredParams( )
+        parent_object = None # don't need to add this as a child
+        child_methods = {
+            "param": self.scanGenericParamXML,
+        }
+        
+        ok = self.scanNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
+        
         return ok
 
     def scanWorldAgarXML( self, node, parent_object=None ):

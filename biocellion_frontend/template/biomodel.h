@@ -2,16 +2,22 @@
 #define _BIOMODEL_H_
 
 #include "biocellion.h"
+#include "init_area.h"
+#include "agent_species.h"
 #include "simulator.h"
 #include "agent_grid.h"
-#include "agent_species.h"
+#include "param_holder.h"
 #include "particle.h"
 #include "model_mechanisms.h"
 #include "adhesion.h"
 #include "distance_junction.h"
 #include "tight_junction.h"
+#include "computation_domain.h"
 #include "solute.h"
 #include "reaction.h"
+#include "bulk.h"
+#include "agar.h"
+#include "world.h"
 
 class BioModel {
 public:
@@ -23,7 +29,8 @@ public:
   const Vector< Reaction * >& getReactions( ) const;
   Vector< Reaction * >& getReactions( );
   BOOL getDistanceJunctionsEnabled( ) const;
-
+  const World& getWorld( ) const;
+  World& getWorld( );
   void setDistanceJunctionsEnabled( const BOOL& value );
 
   // support for model_routine_config.cpp
@@ -60,6 +67,7 @@ protected:
   Vector<Solute *> mSolutes;
   Vector<Reaction *> mReactions;
   BOOL mDistanceJunctionsEnabled;
+  World mWorld;
 };
 
 extern BioModel *gBioModel;

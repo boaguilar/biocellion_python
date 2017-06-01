@@ -1,4 +1,4 @@
-#include "solute.h"
+#include "biomodel.h"
 
 Solute::Solute()
   : ParamHolder( ),
@@ -185,9 +185,7 @@ void Solute::setPDEInfo( PDEInfo& pdeInfo ) const {
 
 // support for model_routine_grid.cpp
 void Solute::initIfGridVar( const VIdx& vIdx, const UBAgentData& ubAgentData, UBEnv& ubEnv ) const {
-  WARNING( "Solute:: initialvalue should not be hard coded" );
-  //ubEnv.setPhi( mSoluteIdx, mInitialValue );
-  ubEnv.setPhi( mSoluteIdx, 0 );
+  ubEnv.setPhi( mSoluteIdx, getParamReal( getIdxReal( SOLUTE_concentration ) ) );
 }
 
 void Solute::initIfSubgridKappa( const VIdx& vIdx, const VIdx& subgridVOffset, const UBAgentData& ubAgentData, const UBEnv& ubEnv, REAL& gridKappa ) const {
@@ -247,6 +245,9 @@ void Solute::updateIfSubgridRHSLinear( const VIdx& vIdx, const VIdx& subgridVOff
   // for every reaction with a yield that involves this solute, add/subtract gridRHS.
   // amount is controlled by kineticFactors
   // FIXME: Need to apply computationDomains
+
+  // _specRate = muMax * PI_i( kineticFactor_i( current_concentration ) ) for all KF that apply to this solute.
+  // RHS = _specRate * mass * yield_rate
 
   gridRHS = 0.0;
   S32 i;
@@ -328,37 +329,4 @@ void Solute::updatePDEBufferDirichletBCVal( const VReal& startPos, const VReal& 
 
 void Solute::updatePDEBufferNeumannBCVal( const VReal& startPos, const VReal& pdeBufferFaceSize, const S32 dim, const BOOL lowSide, REAL& bcVal ) const {
   ERROR( "unimplmented." );
-}
-
-
-
-BulkSolute::BulkSolute()
-  :mSBulk(0), mSin(0), mIsConstant(false), mSPulse(0), mPulseRate(0)
-{
-  //empty
-}
-BulkSolute::BulkSolute(const REAL& SBulk, const REAL& sin, const BOOL& isConstant, const REAL& sPulse, const REAL& pulseRate)
- :mSBulk(SBulk), mSin(sin), mIsConstant(isConstant), mSPulse(sPulse), mPulseRate(pulseRate)
-{
-  //empty
-}
-void BulkSolute::setSBulk(const REAL& SBulk)
-{
-  mSBulk = SBulk;
-}
-void BulkSolute::setSin(const REAL& sin)
-{
-  mSin = sin;
-}
-void BulkSolute::setIsConstant(const BOOL& isConstant)
-{
-  mIsConstant = isConstant;
-}
-void BulkSolute::setSPulse(const REAL& sPulse)
-{
-  mSPulse = sPulse;
-}
-void BulkSolute::setPulseRate(const REAL& pulseRate)
-{
-  mPulseRate = pulseRate;
 }

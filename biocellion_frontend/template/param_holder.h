@@ -1,6 +1,6 @@
 #ifndef _PARAM_HOLDER_H_
 #define _PARAM_HOLDER_H_
-#include "biocellion.h"
+#include "biomodel.h"
 #include <map>
 
 class ParamHolder {
@@ -25,7 +25,13 @@ public:
   S32 getIdxBool(const std::string& param_name);
   S32 getIdxString(const std::string& param_name);
   
-  // These routines don not make an index, if there isn't one.
+  // These routines do not make an index
+  S32 getIdxReal(const std::string& param_name) const;
+  S32 getIdxInt(const std::string& param_name) const;
+  S32 getIdxBool(const std::string& param_name) const;
+  S32 getIdxString(const std::string& param_name) const;
+  
+  // These routines do not make an index, if there isn't one.
   // It is an error to use invalid indexes.
   void setParamReal(const S32& idx, const REAL& param);
   void setParamInt(const S32& idx, const S32& param);

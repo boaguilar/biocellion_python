@@ -1,4 +1,4 @@
-#include "tight_junction.h"
+#include "biomodel.h"
 
 TightJunction::TightJunction( )
   :mStiffness(0), mWithSpecies(0)

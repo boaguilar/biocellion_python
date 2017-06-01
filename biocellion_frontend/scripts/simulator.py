@@ -232,15 +232,32 @@ class IDynoMiCS( ParamHolder ):
         print( "FIXME: Warning, *->Solutes need to be connected by enumtoken." )
         print( "FIXME: Warning, *->Reactions need to be connected by enumtoken." )
 
+        ### These must happen before enums are used to like items
         ## Set up AMR related features for the model
         self.mSolutes.calcRefineRatio( )
+        ## Set up solute initial concentrations
+        self.mSolutes.calcConcentrations( )
         
+        ### These are linking with enums
         ## Reactions.catalyzedBy->Particles 
         self.linkAttributeToEnumToken( self.mReactions, 'catalyzedBy', self.mParticles )
         ## Reactions.catalyst->AgentSpecies
         self.linkAttributeToEnumToken( self.mReactions, 'catalyst', self.mAgentSpecies )
         ## Solutes->ComputationDomains
         self.linkAttributeToEnumToken( self.mSolutes, 'domain', self.mWorld.getComputationDomains( ) )
+
+        ## Bulks.BulkSolutes->Solutes
+        for bulk_key in self.mWorld.getBulks( ).getKeys( ):
+            bulk_solutes = self.mWorld.getBulks( ).getItem( bulk_key ).getSolutes( )
+            for bulk_solute_key in bulk_solutes.getKeys( ):
+                bulk_solute = bulk_solutes.getItem( bulk_solute_key )
+                solute_key = bulk_solute.getAttribute( 'name' ).getValue( )
+                if self.mSolutes.hasKey( solute_key ):
+                    bulk_solute.getAttribute( 'solute' ).setValue( self.mSolutes.getItem( solute_key).getEnumToken( ) )
+                else:
+                    msg  = "ERROR: World.Bulk.Solute.name should name a solute. " + str( solute_key ) + " is not in the list.\n"
+                    msg += "ERROR: Known solutes: " + ", ".join( self.mSolutes.getKeys( ) ) + ".\n"
+                    sys.exit( msg )
 
 
         ## Reactions.*->others

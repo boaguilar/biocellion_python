@@ -1,5 +1,4 @@
-#include "biocellion.h"
-#include "particle.h"
+#include "biomodel.h"
 
 Particle::Particle(const S32& id, const std::string& name, const REAL& density)
   : mId(id), mName(name), mDensity(density)

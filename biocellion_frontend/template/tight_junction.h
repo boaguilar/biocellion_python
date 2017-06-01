@@ -1,6 +1,6 @@
 #ifndef _TIGHT_JUNCTION_H
 #define _TIGHT_JUNCTION_H
-#include "biocellion.h"
+#include "biomodel.h"
 
 class TightJunction {
 public:

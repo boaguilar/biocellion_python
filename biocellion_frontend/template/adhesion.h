@@ -1,6 +1,6 @@
 #ifndef _ADHESION_H
 #define _ADHESION_H
-#include "biocellion.h"
+#include "biomodel.h"
 
 class Adhesion
 {

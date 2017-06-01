@@ -1,4 +1,4 @@
-#include "agent_grid.h"
+#include "biomodel.h"
 
 AgentGrid::AgentGrid() 
   :

@@ -1,8 +1,4 @@
-#include "reaction.h"
-#include "agent_species.h"
 #include "biomodel.h"
-#include "biocellion.h"
-#include <string>
 
 // Reaction::Yield
 

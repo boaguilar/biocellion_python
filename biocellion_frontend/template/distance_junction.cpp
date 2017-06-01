@@ -1,5 +1,4 @@
-#include "biocellion.h"
-#include "distance_junction.h"
+#include "biomodel.h"
 
 DistanceJunction::DistanceJunction( )
   : mEnabled(false), mWithSpecies(0)

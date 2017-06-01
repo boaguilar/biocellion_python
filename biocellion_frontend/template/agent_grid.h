@@ -1,7 +1,7 @@
 #ifndef _AGENT_GRID_H_
 #define _AGENT_GRID_H_
 
-#include "biocellion.h"
+#include "biomodel.h"
 #include <string>
 
 class AgentGrid {

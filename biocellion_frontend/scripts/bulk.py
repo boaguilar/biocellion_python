@@ -1,25 +1,128 @@
 from agent_species import Param, ParamHolder, ItemHolder
 
+class BulkSolute( ParamHolder ):
+
+    def __init__(self, name):
+        self.mName = name
+        
+        ParamHolder.__init__(self)
+        self.setPrefix( "BULK_SOLUTE" )
+
+        self.addAttribute( Param( "name", "str", "", True ) )
+        self.addParam( Param( "Sbulk", "g.L-1", 0.0, False ) )
+        self.addParam( Param( "Sin", "g.L-1", 0.0, False ) )
+        self.addParam( Param( "isConstant", "bool", True, False ) )
+        self.addParam( Param( "Spulse", "g.L-1", 0.0, False ) )
+        self.addParam( Param( "pulseRate", "h-1", 0.0, False ) )
+
+        self.addAttribute( Param( "solute", "str", "", False ) )    # Solute reference
+        self.mPrivateNumberHiddenParams = [ "solute", ]
+        self.mPrivateBoolHiddenParams = [  ]
+        self.mPrivateStringHiddenParams = [  ]
+        self.mPrivateHiddenParams = self.mPrivateNumberHiddenParams + self.mPrivateBoolHiddenParams + self.mPrivateStringHiddenParams
+        self.mHiddenParams = self.mHiddenParams + self.mPrivateHiddenParams
+        return
+
+    def getName(self):
+        return self.mName
+
+
+    def getInitializeBioModel( self, container_name, indent, depth ):
+        varname = "bulk_solute"
+
+        lines = [ ]
+        lines.append( (depth*indent) + "{" )
+        depth += 1
+        
+        lines.append( (depth*indent) + "BulkSolute *%s = new BulkSolute( );" % (varname, ) )
+        lines.append( ParamHolder.getInitializeBioModel( self, varname, indent, depth ) )
+        
+        s = self.getInitializeBioModelSetDataMembers( varname, "->", indent, depth,
+                                                      self.mPrivateBoolHiddenParams,
+                                                      self.mPrivateNumberHiddenParams,
+                                                      self.mPrivateStringHiddenParams )
+        if s:
+            lines.append( s )
+        if container_name:
+            lines.append( (depth*indent) + "%s.push_back( %s );" % (container_name, varname, ) )
+        depth -= 1;
+        lines.append( (depth*indent) + "}" )
+        return "\n".join( lines )
+
+
+    def __str__(self):
+        s  = "<bulk-solute" + self.formatAttributes() + ">\n"
+        s += ParamHolder.__str__( self )
+        s += "</bulk-solute>\n"
+        return s
+
+class AllBulkSolutes( ItemHolder ):
+
+    def __init__( self ):
+        ItemHolder.__init__( self, BulkSolute )
+        return
+
+    def addItem( self, name, item=None ):
+        if item is None:
+            item = self.mItemClass( name )
+        return ItemHolder.addItem( self, name, item )
+
 class Bulk( ParamHolder ):
 
     def __init__( self ):
         ParamHolder.__init__(self)
+        self.setPrefix( "BULK" )
         self.addAttribute( Param( "name", "str", "", True ) )
+        self.addParam( Param( "isConstant", "bool", True, True ) )
+        self.addParam( Param( "D", "h-1", 0.0, True ) )
+        self.addParam( Param( "updateType", "str", "reaction", False ) )
+        
+        self.mSolutes = AllBulkSolutes( )
         return
+
+    def getSolutes( self ):
+        return self.mSolutes
+        
+    def getEnumToken(self):
+        return "%s_%s" % ( self.getPrefix( ), self.getAttribute( 'name' ).getValue( ), )
+
+    def getSoluteConcentration( self, solute_name ):
+        # returns the highest concentration specified for this solute in this bulk
+        concentration = -1.0
+        if self.mSolutes.hasKey( solute_name ):
+            concentration = self.mSolutes.getItem( solute_name ).getParam( 'Sbulk' ).getValue( )
+        return concentration
 
     def getBioModelH( self, indent, depth ):
         lines = [ ]
-        lines.append( '// FIXME: Bulk' )
         return "\n".join( lines )
 
     def getInitializeBioModel(self, indent, depth):
-        lines = [ ]
-        lines.append( '// FIXME: Bulk' )
+        varname = "bulk"
+        lines = []
+        lines.append( (depth*indent) + "{" )
+        depth += 1
+        lines.append( (depth*indent) + "Bulk *%s = new Bulk(  );" % ( varname, ) )
+        lines.append( (depth*indent) + "%s->setName( \"%s\" );" % ( varname, self.getAttribute( 'name' ).getValue( ) ) )
+        lines.append( (depth*indent) + "%s->setBulkIdx( %s );" % ( varname, self.getEnumToken( ) ) )
+        s = ParamHolder.getInitializeBioModel( self, varname, indent, depth )
+        if s:
+            lines.append( s )
+        
+        container_name = "%s->getSolutes()" % ( varname, )
+        s = self.mSolutes.getInitializeBioModel( container_name, indent, depth )
+        if s:
+            lines.append( s )
+
+        lines.append( (depth*indent) + "gBioModel->getWorld( ).getBulks( ).push_back( %s );" % ( varname, ) )
+        depth -= 1;
+        lines.append( (depth*indent) + "}" )
         return "\n".join( lines )
     
     def __str__(self):
         s  = "<bulk" + self.formatAttributes() + ">\n"
         s += ParamHolder.__str__( self )
+        s += str( self.mSolutes )
         s += "</bulk>\n"
         return s
 
@@ -32,16 +135,73 @@ class AllBulks( ItemHolder ):
         ItemHolder.__init__( self, Bulk )
         return
 
+    def getSoluteConcentration( self, solute_name ):
+        # returns the highest concentration specified for this solute in any bulk
+        concentration = -1.0
+        for name in self.mOrder:
+            concentration = max( concentration,
+                                 self.mItems[ name ].getSoluteConcentration( solute_name ) )
+        return concentration
+
     def getBioModelH( self, indent, depth ):
         lines = [ ]
-        lines.append( '// FIXME: Bulks' )
+        lines.append( self.getBulkParamNames( indent, depth ) )
+        lines.append( "" )
+        lines.append( self.getBulkSoluteParamNames( indent, depth ) )
+        lines.append( "" )
+        lines.append( self.getBulksEnum( indent, depth ) )
+        lines.append( "" )
         for name in self.mOrder:
             lines.append( self.mItems[ name ].getBioModelH( indent, depth ) )
         return "\n".join( lines )
 
+    def getBulkParamNames(self, indent, depth):
+        all_params = { }
+        all_order = [ ]
+        for name in self.mOrder:
+            params = self.mItems[ name ].getParams()
+            for param_name in params:
+                if param_name not in all_params:
+                    all_params[ param_name ] = params[ param_name ]
+                    all_order.append( param_name )
+        lines = []
+        for n in all_order:
+            s = (depth*indent) + "const std::string %s = \"%s\";" % ( all_params[ n ].getConstName( ), n, )
+            lines.append( s )
+        return "\n".join( lines )
+ 
+    def getBulkSoluteParamNames(self, indent, depth):
+        all_params = { }
+        all_order = [ ]
+        for name in self.mOrder:
+            solutes = self.mItems[ name ].getSolutes( )
+            for sname in solutes.getKeys( ):
+                params = solutes.getItem( sname ).getParams( )
+                for param_name in params:
+                    if param_name not in all_params:
+                        all_params[ param_name ] = params[ param_name ]
+                        all_order.append( param_name )
+        lines = []
+        for n in all_order:
+            s = (depth*indent) + "const std::string %s = \"%s\";" % ( all_params[ n ].getConstName( ), n, )
+            lines.append( s )
+        return "\n".join( lines )
+ 
+    def getBulksEnum(self, indent, depth):
+        lines = []
+        lines.append( (depth*indent) + "typedef enum _bulk_type_e {" )
+        depth += 1
+        for name in self.mOrder:
+            s = (depth*indent) + "%s," % (self.mItems[ name ].getEnumToken(), )
+            lines.append( s )
+        s = (depth*indent) + "NUM_BULKS"
+        lines.append( s )
+        depth -= 1
+        lines.append( (depth*indent) + "} bulk_type_e;" )
+        return "\n".join( lines )
+
     def getInitializeBioModel( self, indent, depth ):
         lines = [ ]
-        lines.append( '// FIXME: Bulks' )
         for name in self.mOrder:
             lines.append( self.mItems[ name ].getInitializeBioModel( indent, depth ) )
         return "\n".join( lines )

@@ -1,4 +1,4 @@
-#include "param_holder.h"
+#include "biomodel.h"
 
 /*********************************
  *  ParamHolder
@@ -46,7 +46,7 @@ const std::string& ParamHolder::getParamString(const S32& idx) const
 }
 
 template <class T, class U>
-S32 getIdxGeneric( const std::string& param_name, std::map<std::string, T>& idx_map, const U& size )
+S32 getIdxGeneric( const std::string& param_name, std::map<std::string, T>& idx_map, Vector<U>& params )
 {
   S32 i = -1;
   typename std::map<std::string, T>::const_iterator it = idx_map.find(param_name);
@@ -61,29 +61,66 @@ S32 getIdxGeneric( const std::string& param_name, std::map<std::string, T>& idx_
     i++;
     idx_map[ param_name ] = i;
   }
+  if( i >= (S32 )params.size( ) ) {
+    params.resize( i+1 );
+  }
   CHECK( i >= 0 );
-  CHECK( ((U)i) < size );
+  CHECK( i < (S32) params.size( ) );
+  return i;
+}
+
+
+template <class T, class U>
+S32 getIdxGeneric( const std::string& param_name, const std::map<std::string, T>& idx_map, const Vector<U>& params )
+{
+  S32 i = -1;
+  typename std::map<std::string, T>::const_iterator it = idx_map.find(param_name);
+  if( it != idx_map.end() ) {
+    i = it->second;
+  }
+  CHECK( i >= 0 );
+  CHECK( i < (S32) params.size( ) );
   return i;
 }
 
 S32 ParamHolder::getIdxReal(const std::string& param_name)
 {
-  return getIdxGeneric( param_name, mIdxReal, mParamsReal.size() );
+  return getIdxGeneric( param_name, mIdxReal, mParamsReal );
 }
 
 S32 ParamHolder::getIdxInt(const std::string& param_name)
 {
-  return getIdxGeneric( param_name, mIdxInt, mParamsInt.size() );
+  return getIdxGeneric( param_name, mIdxInt, mParamsInt );
 }
 
 S32 ParamHolder::getIdxBool(const std::string& param_name)
 {
-  return getIdxGeneric( param_name, mIdxBool, mParamsBool.size() );
+  return getIdxGeneric( param_name, mIdxBool, mParamsBool );
 }
 
 S32 ParamHolder::getIdxString(const std::string& param_name)
 {
-  return getIdxGeneric( param_name, mIdxString, mParamsString.size() );
+  return getIdxGeneric( param_name, mIdxString, mParamsString );
+}
+
+S32 ParamHolder::getIdxReal(const std::string& param_name) const
+{
+  return getIdxGeneric( param_name, mIdxReal, mParamsReal );
+}
+
+S32 ParamHolder::getIdxInt(const std::string& param_name) const
+{
+  return getIdxGeneric( param_name, mIdxInt, mParamsInt );
+}
+
+S32 ParamHolder::getIdxBool(const std::string& param_name) const
+{
+  return getIdxGeneric( param_name, mIdxBool, mParamsBool );
+}
+
+S32 ParamHolder::getIdxString(const std::string& param_name) const
+{
+  return getIdxGeneric( param_name, mIdxString, mParamsString );
 }
 
 void ParamHolder::setParamReal(const S32& idx, const REAL& param)

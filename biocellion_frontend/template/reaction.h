@@ -1,7 +1,6 @@
 #ifndef _REACTION_H_
 #define _REACTION_H_
-#include "biocellion.h"
-#include <string>
+#include "biomodel.h"
 
 class Reaction {
 public:

@@ -1,45 +1,6 @@
 from agent_species import Param, ParamHolder, ItemHolder
 import sys
 
-class BulkSolute( ParamHolder ):
-
-    def __init__(self, name):
-        self.mName = name
-        
-        ParamHolder.__init__(self)
-        self.addAttribute( Param( "name", "str", "", True ) )
-        return
-
-    def getName(self):
-        return self.mName
-
-    def getEnumToken(self):
-        return self.mEnumToken
-
-
-    def getInitializeBioModel(self, indent, depth):
-        lines = []
-        lines.append( (depth*indent) + "{" )
-        depth += 1
-        lines.append( (depth*indent) + "Particle *particle = new Particle( %s, \"%s\", %s );" % (self.mEnumToken, self.mName, self.getParams()[ "density" ].getValue(), ) )
-        s = ParamHolder.getInitializeBioModel( self, "particle", indent, depth )
-        if s:
-            lines.append( s )
-        lines.append( (depth*indent) + "gParticles.push_back( particle );" )
-        depth -= 1;
-        lines.append( (depth*indent) + "}" )
-        return "\n".join( lines )
-    
-    def __str__(self):
-        s  = "<particle" + self.formatAttributes() + ">\n"
-        s += ParamHolder.__str__( self )
-        s += "</particle>\n"
-        return s
-
-    def __repr__(self):
-        return str(self)
-        
-
 class Solute( ParamHolder ):
 
     def __init__( self, name, model ):
@@ -64,6 +25,13 @@ class Solute( ParamHolder ):
         self.addParam( Param( "refineRatio", "int", 0, False ) )
         self.addParam( Param( "AMRLevels", "int", 0, False ) )
         self.addParam( Param( "interfaceAMRLevel", "int", 0, False ) )
+
+        self.mPrivateNumberHiddenParams = [ "AMRLevels", "interfaceAMRLevel", ]
+        self.mPrivateBoolHiddenParams = [  ]
+        self.mPrivateStringHiddenParams = [ ]
+        self.mPrivateHiddenParams = self.mPrivateNumberHiddenParams + self.mPrivateBoolHiddenParams + self.mPrivateStringHiddenParams
+        self.mHiddenParams = self.mHiddenParams + self.mPrivateHiddenParams
+
         return
 
 
@@ -155,6 +123,17 @@ class Solute( ParamHolder ):
         self.getParam( 'resolution' ).setValue( resolution )
         return resolution
 
+    def getConcentration( self ):
+        concentration = self.getParam( 'concentration' ).getValue( )
+        if concentration <= 0.0:
+            concentration = self.mModel.getWorld( ).getBulks( ).getSoluteConcentration( self.mName )
+        
+        self.getParam( 'concentration' ).setValue( concentration )
+        return concentration
+
+    def calcConcentration( self ):
+        return self.getConcentration( )
+        
     def getName(self):
         return self.mName
 
@@ -171,6 +150,13 @@ class Solute( ParamHolder ):
         s = ParamHolder.getInitializeBioModel( self, varname, indent, depth )
         if s:
             lines.append( s )
+            
+        s = self.getInitializeBioModelSetDataMembers( varname, "->", indent, depth,
+                                                      self.mPrivateBoolHiddenParams,
+                                                      self.mPrivateNumberHiddenParams,
+                                                      self.mPrivateStringHiddenParams )
+        lines.append( s )
+
         lines.append( (depth*indent) + "gBioModel->getSolutes( ).push_back( %s );" % ( varname, ) )
         depth -= 1;
         lines.append( (depth*indent) + "}" )
@@ -206,7 +192,12 @@ class AllSolutes( ItemHolder ):
             levels.append( self.mItems[ name ].calcInterfaceAMRLevel( ) )
         if len( levels ) < 1:
             sys.exit( "ERROR: Need at least 1 interface AMR level." )
-        return min( levels )
+        return max( levels )
+
+    def calcConcentrations( self ):
+        for name in self.mOrder:
+            self.mItems[ name ].calcConcentration( )
+        return
 
     def getBioModelH( self, indent, depth ):
         lines = [ ]

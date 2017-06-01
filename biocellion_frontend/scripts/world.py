@@ -46,6 +46,9 @@ class World( ParamHolder ):
         refine_ratio = self.mModel.getSolutes( ).calcRefineRatio( )
         interface_grid_level = self.mModel.getSolutes( ).calcInterfaceAMRLevel( )
         amr_multiple = refine_ratio ** interface_grid_level
+        # print( "refine_ratio = " + str( refine_ratio ) )
+        # print( "interface_grid_level = " + str( interface_grid_level ) )
+        # print( "amr_multiple = " + str( amr_multiple ) )
         if x < 4:
             x = 4
         if x < 2 * amr_multiple:
@@ -74,9 +77,11 @@ class World( ParamHolder ):
             nJ = 1
         if nDim < 3:
             nK = 1
+        # print( " nI, nJ, nK = " + str( nI ) + " " + str( nJ ) + " " + str( nK ) )
         x = self.makeDomainDimensionValid( nI )
         y = self.makeDomainDimensionValid( nJ )
         z = self.makeDomainDimensionValid( nK )
+        # print( " x, y, z = " + str( x ) + " " + str( y ) + " " + str( z ) )
         return ( x, y, z )
     
     def __str__(self):

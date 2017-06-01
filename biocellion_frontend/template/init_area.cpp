@@ -1,4 +1,3 @@
-#include "init_area.h"
 #include "biomodel.h"
 #include "model_define.h"
 #include <cmath>

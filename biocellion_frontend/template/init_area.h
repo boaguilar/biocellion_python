@@ -1,9 +1,9 @@
 #ifndef _INIT_AREA_H_
 #define _INIT_AREA_H_
+#include "biomodel.h"
 
-#include "biocellion.h"
-#include "agent_species.h"
 class AgentSpecies;
+class InitArea;
 
 #include <string>
 

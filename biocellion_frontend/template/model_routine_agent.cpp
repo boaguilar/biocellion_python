@@ -9,7 +9,7 @@ NOTICE:  These data were produced by Battelle Memorial Institute (BATTELLE) unde
 /* DO NOT USE FUNCTIONS THAT ARE NOT THREAD SAFE (e.g. rand(), use Util::getModelRand() instead) */
 
 #include "biocellion.h"
-
+#include "biomodel.h"
 #include "model_routine.h"
 
 /* MODEL START */

@@ -1,6 +1,6 @@
 #ifndef _SIMULATOR_H_
 #define _SIMULATOR_H_
-#include "biocellion.h"
+#include "biomodel.h"
 
 class TimeStep {
 public:

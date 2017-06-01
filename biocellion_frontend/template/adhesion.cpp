@@ -1,5 +1,4 @@
-#include "biocellion.h"
-#include "adhesion.h"
+#include "biomodel.h"
 
 Adhesion::Adhesion( )
   :mStrength(0), mWithSpecies(0), mScale( 1.0 )

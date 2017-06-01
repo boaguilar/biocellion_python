@@ -4,10 +4,7 @@
 class Solute;
 class BulkSolute;
 
-#include "biocellion.h"
 #include "biomodel.h"
-#include "param_holder.h"
-#include <string>
 
 class Solute : public ParamHolder {
 public:
@@ -76,28 +73,6 @@ protected:
   S32         mInterfaceAMRLevel; // AMR Level of the interface // RANGE 0 <-> mAMRLevels - 1
   S32         mNumTimeSteps;
   S32         mSubgridDimension;  // subgrid dimension
-};
-
-class BulkSolute {
-public:
-  BulkSolute();
-  BulkSolute(const REAL& SBulk, const REAL& sin, const BOOL& isConstant, const REAL& sPulse, const REAL& pulseRate);
-  REAL getSBulk() const { return mSBulk; }
-  REAL getSin() const { return mSin; };
-  BOOL getIsConstant() const { return mIsConstant; };
-  REAL getSPulse() const { return mSPulse; };
-  REAL getPulseRate() const { return mPulseRate; };
-  void setSBulk(const REAL& SBulk);
-  void setSin(const REAL& sin);
-  void setIsConstant(const BOOL& isConstant);
-  void setSPulse(const REAL& sPulse);
-  void setPulseRate(const REAL& pulseRate);
-protected:
-  REAL mSBulk;
-  REAL mSin;
-  BOOL mIsConstant;
-  REAL mSPulse;
-  REAL mPulseRate;
 };
 
 #endif /* _SOLUTE_H_ */

@@ -249,6 +249,7 @@ def write_biomodel_files( biomodel, directory, source_directory ):
               'simulator.cpp', 'simulator.h',
               'solute.cpp', 'solute.h',
               'tight_junction.cpp', 'tight_junction.h',
+              'world.cpp', 'world.h',
               'Makefile', 
               'RUN.bash', 
               ]

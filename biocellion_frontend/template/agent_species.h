@@ -1,16 +1,14 @@
 #ifndef _AGENT_SPECIES_H_
 #define _AGENT_SPECIES_H_
-#include "biocellion.h"
-#include "init_area.h"
-#include "adhesion.h"
-#include "distance_junction.h"
-#include "tight_junction.h"
+#include "biomodel.h"
+#include "model_define.h"
+#include <map>
 class InitArea;
 class Adhesion;
 class DistanceJunction;
 class TightJunction;
 #include <string>
-#include <map>
+
 
 class AgentSpeciesParticle {
 public:

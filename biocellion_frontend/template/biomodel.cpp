@@ -54,6 +54,14 @@ BOOL BioModel::getDistanceJunctionsEnabled( ) const {
   return mDistanceJunctionsEnabled;
 }
 
+const World& BioModel::getWorld( ) const {
+  return mWorld;
+}
+
+World& BioModel::getWorld( ) {
+  return mWorld;
+}
+
 void BioModel::setDistanceJunctionsEnabled( const BOOL& value ) {
   mDistanceJunctionsEnabled = value;
 }

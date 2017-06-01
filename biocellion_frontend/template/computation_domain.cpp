@@ -1,4 +1,4 @@
-#include "computation_domain.h"
+#include "biomodel.h"
 
 Grid::Grid()
   :mNDim(0), mNI(0), mNJ(0), mNK(0)

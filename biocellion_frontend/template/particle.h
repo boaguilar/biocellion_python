@@ -1,7 +1,6 @@
 #ifndef _PARTICLE_H_
 #define _PARTICLE_H_
-#include "biocellion.h"
-#include <string>
+#include "biomodel.h"
 
 class Particle {
 public:

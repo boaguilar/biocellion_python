@@ -1,6 +1,6 @@
 #ifndef _DISTANCE_JUNCTION_H_
 #define _DISTANCE_JUNCTION_H_
-#include "biocellion.h"
+#include "biomodel.h"
 
 class DistanceJunction
 {

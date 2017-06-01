@@ -1,8 +1,6 @@
 #ifndef _COMPUTATION_DOMAIN_H
 #define _COMPUTATION_DOMAIN_H
-#include "biocellion.h"
-#include "param_holder.h"
-#include <string>
+#include "biomodel.h"
 
 class Grid {
 public:
@@ -31,17 +29,14 @@ public:
   S32 getComputationDomainIndex() const { return mComputationDomainIndex; };
   void setName(const std::string& name);
   void setComputationDomainIndex(const S32& computationDomainIndex);
+  const Vector <BoundaryCondition >& getBoundaryConditions() const { return mBoundaryCyclic; };
+  Vector <BoundaryCondition >& getBoundaryConditions() { return mBoundaryCyclic; };
   
 protected:
   std::string mName;
   S32 mComputationDomainIndex;
-  Grid nDim;
-  S32 mResolution;
-  REAL mSpecificArea;
-  BOOL mHasBulk;
-  S32 mBoundaryLayer;
-  REAL mBiofilmDiffusivity;
-  BoundaryCondition mBoundaryCyclic;
+  Grid mGrid;
+  Vector<BoundaryCondition > mBoundaryCyclic;
 };
 
 

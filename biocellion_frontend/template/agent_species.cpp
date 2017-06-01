@@ -1,7 +1,4 @@
-#include "biocellion.h"
-#include "agent_species.h"
-#include "model_define.h"
-#include <cmath>
+#include "biomodel.h"
 
 /*********************************
  *  AgentSpeciesParticle
