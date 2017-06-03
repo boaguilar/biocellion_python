@@ -33,7 +33,7 @@ class Unit:
 
     def convertToStandard( self, unit, value ):
         if not self.contains( unit ):
-            sys.exit( "ERROR: unknown unit: " + str( unit ) )
+            raise Exception( "ERROR: unknown unit: " + str( unit ) )
             return 0.0
         return value * self.mConversions[ unit ]
 
@@ -233,7 +233,7 @@ class Param:
 
     def checkUnit(self, desired_unit):
         if self.getUnit() != desired_unit:
-            sys.exit( 'ERROR: ' + str( self.mName ) + ' unit should be ' + desired_unit + ' but is actually ' + str( self.getUnit() ) )
+            raise Exception( 'ERROR: ' + str( self.mName ) + ' unit should be ' + desired_unit + ' but is actually ' + str( self.getUnit() ) )
             return False
         return True
 
@@ -352,7 +352,7 @@ class ParamHolder:
             else:
                 s = "FIXME: Unknown unit: " + str( param.getUnit( ) )
                 lines.append( s )
-                sys.exit( "ERROR: " + s )
+                raise Exception( "ERROR: " + s )
         return "\n".join( lines )
 
     def getParamOrAttribute( self, name ):
@@ -402,8 +402,10 @@ class ParamHolder:
         if n in self.mAttributes:
             if self.mAttributes[ n ].setValueFromParam( attr ):
                 return True
-            if (self.mAttributes[ n ].getUnit() in Param.mRealUnits) and (attr.getUnit() in Param.mIntUnits):
+            elif ( ( self.mAttributes[ n ].getUnit() in Param.mRealUnits ) and 
+                   ( ( attr.getUnit() in Param.mIntUnits ) or ( attr.getUnit() == "float" ) ) ):
                 # maybe mis-classified a float type as an int type due to value. Try it as a float type.
+                # maybe mis-classified as a float, instead of the united type, because it's an attribute.
                 attr = attr.copy()
                 attr.setUnit( self.mAttributes[ n ].getUnit() )
                 return self.mAttributes[ n ].setValueFromParam( attr )
@@ -417,8 +419,10 @@ class ParamHolder:
         if n in self.mAttributes:
             if self.mAttributes[ n ].validateParam( attr ):
                 return True
-            elif (self.mAttributes[ n ].getUnit() in Param.mRealUnits) and (attr.getUnit() in Param.mIntUnits):
+            elif ( ( self.mAttributes[ n ].getUnit() in Param.mRealUnits ) and 
+                   ( ( attr.getUnit() in Param.mIntUnits ) or ( attr.getUnit() == "float" ) ) ):
                 # maybe mis-classified a float type as an int type due to value. Try it as a float type.
+                # maybe mis-classified as a float, instead of the united type, because it's an attribute.
                 attr = attr.copy()
                 attr.setUnit( self.mAttributes[ n ].getUnit() )
                 return self.mAttributes[ n ].validateParam( attr )
@@ -593,7 +597,7 @@ class AgentSpeciesParticle(ParamHolder):
 
     def getParticleEnumToken( self ):
         if self.mParticle is None:
-            sys.exit( "ERROR: <species><particle> must be linked to <idynomics><particle>" )
+            raise Exception( "ERROR: <species><particle> must be linked to <idynomics><particle>" )
         return self.mParticle.getEnumToken( )
 
     def __str__(self):
@@ -604,6 +608,35 @@ class AgentSpeciesParticle(ParamHolder):
 
     def __repr__(self):
         return str(self)
+
+#####################################################
+# AgentSpeciesReaction
+#####################################################
+class AgentSpeciesReaction( ParamHolder ):
+
+    def __init__( self ):
+        ParamHolder.__init__( self )        
+        self.addAttribute( Param( "name", "str", "", True ) )
+        self.addAttribute( Param( "status", "str", "inactive", True ) )
+        self.mReaction = None
+        return
+
+    def isActive( self ):
+        return self.getAttribute( 'status' ).getValue( ) == 'active'
+
+    def setReaction( self, reaction ):
+        self.mReaction = reaction
+
+    def getReactionEnumToken( self ):
+        if self.mReaction is None:
+            raise Exception( "ERROR: <species><reaction> must be linked to <idynomics><reaction>" )
+        return self.mReaction.getEnumToken( )
+
+    def __str__(self):
+        s  = "<species-reaction" + self.formatAttributes() + ">\n"
+        s += ParamHolder.__str__( self )
+        s += "</species-reaction>\n"
+        return s
 
 #####################################################
 # Blocks
@@ -676,7 +709,7 @@ class InitArea( ParamHolder ):
     def __init__( self ):
         ParamHolder.__init__( self )
         self.addAttribute( Param( "number", "float", 0, True ) )
-        self.addAttribute( Param( "shape", "str", "unfilledBlock", False ) )
+        self.addAttribute( Param( "shape", "str", "default", False ) )
         self.addParam( Param( "birthday", "hour", 0.0, True ) )
         self.mCoordinates = ItemHolder( Coordinates )
         self.mBlocks = ItemHolder( Blocks )
@@ -1069,15 +1102,15 @@ class AgentSpecies(ParamHolder):
             junction = DistanceJunction( )
             node_attr = Param( "enabled", None, "true" )
             if not junction.validateAttribute( node_attr ):
-                sys.exit( "ERROR : Failed to create DistanceJunction" )
+                raise Exception( "ERROR : Failed to create DistanceJunction" )
             if not junction.updateAttribute( node_attr ):
-                sys.exit( "ERROR : Failed to create DistanceJunction" )
+                raise Exception( "ERROR : Failed to create DistanceJunction" )
 
             node_attr = Param( "withSpecies", None, species_name )
             if not junction.validateAttribute( node_attr ):
-                sys.exit( "ERROR : Failed to create DistanceJunction" )
+                raise Exception( "ERROR : Failed to create DistanceJunction" )
             if not junction.updateAttribute( node_attr ):
-                sys.exit( "ERROR : Failed to create DistanceJunction" )
+                raise Exception( "ERROR : Failed to create DistanceJunction" )
 
             self.mDistanceJunctions.addItem( species_name, junction )
             
@@ -1089,15 +1122,15 @@ class AgentSpecies(ParamHolder):
             junction = DistanceJunction( )
             node_attr = Param( "enabled", None, "true" )
             if not junction.validateAttribute( node_attr ):
-                sys.exit( "ERROR : Failed to create DistanceJunction" )
+                raise Exception( "ERROR : Failed to create DistanceJunction" )
             if not junction.updateAttribute( node_attr ):
-                sys.exit( "ERROR : Failed to create DistanceJunction" )
+                raise Exception( "ERROR : Failed to create DistanceJunction" )
 
             node_attr = Param( "withSpecies", None, species_name )
             if not junction.validateAttribute( node_attr ):
-                sys.exit( "ERROR : Failed to create DistanceJunction" )
+                raise Exception( "ERROR : Failed to create DistanceJunction" )
             if not junction.updateAttribute( node_attr ):
-                sys.exit( "ERROR : Failed to create DistanceJunction" )
+                raise Exception( "ERROR : Failed to create DistanceJunction" )
 
             self.mDistanceJunctions.addItem( species_name, junction )
 
@@ -1109,15 +1142,15 @@ class AgentSpecies(ParamHolder):
             junction = DistanceJunction( )
             node_attr = Param( "enabled", None, "true" )
             if not junction.validateAttribute( node_attr ):
-                sys.exit( "ERROR : Failed to create DistanceJunction" )
+                raise Exception( "ERROR : Failed to create DistanceJunction" )
             if not junction.updateAttribute( node_attr ):
-                sys.exit( "ERROR : Failed to create DistanceJunction" )
+                raise Exception( "ERROR : Failed to create DistanceJunction" )
 
             node_attr = Param( "withSpecies", None, species_name )
             if not junction.validateAttribute( node_attr ):
-                sys.exit( "ERROR : Failed to create DistanceJunction" )
+                raise Exception( "ERROR : Failed to create DistanceJunction" )
             if not junction.updateAttribute( node_attr ):
-                sys.exit( "ERROR : Failed to create DistanceJunction" )
+                raise Exception( "ERROR : Failed to create DistanceJunction" )
 
             self.mDistanceJunctions.addItem( species_name, junction )
             
@@ -1246,7 +1279,7 @@ class AgentSpeciesActive(AgentSpecies):
         AgentSpecies.__init__(self, class_name, name, model)
         
         self.mParticles = ItemHolder( AgentSpeciesParticle )
-        print("FIXME: <species><reaction name='name' status='active'/></species> not yet parsed.")
+        self.mReactions = ItemHolder( AgentSpeciesReaction )
         print("FIXME: <species><molecules></molecules></species> not yet parsed.")
         print("FIXME: <species><agentMolecularReactions></agentMolecularReactions></species> not yet parsed.")
         return
@@ -1275,13 +1308,27 @@ class AgentSpeciesActive(AgentSpecies):
                 lines.append( (depth*indent) + s )
             depth -= 1
             lines.append( (depth*indent) + "}" )
+        if len( self.mReactions ) > 0:
+            lines.append( (depth*indent) + "{" )
+            depth += 1
+            for i in range( len( self.mReactions ) ):
+                r = self.mReactions[ i ]
+                if r.isActive( ):
+                    s = "%s->getReactions( ).push_back( %s );" % ( varname, r.getReactionEnumToken( ), );
+                    lines.append( (depth*indent) + s )
+            depth -= 1
+            lines.append( (depth*indent) + "}" )
         return "\n".join( lines )
 
     def getParticles( self ):
         return self.mParticles
 
+    def getReactions( self ):
+        return self.mReactions
+
     def toString( self, additional ):
         additional += str( self.mParticles )
+        additional += str( self.mReactions )
         return AgentSpecies.toString( self, additional )
 
 class AgentSpeciesLocated(AgentSpeciesActive):
@@ -1331,7 +1378,6 @@ class AgentSpeciesYeast(AgentSpeciesBactEPS):
         self.addParam( Param( "startingTimeActivationInhibition", "int", 0 ) )
         print("FIXME: <species><entryConditions></species> not yet parsed <entryCondition type='type' name='name'><switch/><fromSpecies/> </entryCondition>")
         print("FIXME: <species><switchingLags></species> not yet parsed")
-        print("FIXME: <species><chemotaxis></species> not yet parsed")
         return
 
 

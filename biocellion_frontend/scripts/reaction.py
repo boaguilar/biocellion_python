@@ -92,7 +92,7 @@ class Yields( ParamHolder ):
             elif n in self.mParticles:
                 lines.append( (depth*indent) + "%s.setParticle( );" % (varname, ) )
             else:
-                sys.exit( "ERROR: Yield must be solute or particle" )
+                raise Exception( "ERROR: Yield must be solute or particle" )
 
             lines.append( (depth*indent) + "%s.setItemIdx( %s );" % ( varname, self.mIdxs[ n ] ) )
             lines.append( (depth*indent) + "%s.setValue( %s );" % ( varname, param.getValue( ) ) )

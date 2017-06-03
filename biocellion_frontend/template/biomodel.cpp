@@ -66,6 +66,17 @@ void BioModel::setDistanceJunctionsEnabled( const BOOL& value ) {
   mDistanceJunctionsEnabled = value;
 }
 
+// general grid support
+REAL BioModel::getSubgridValue( const S32& elemIdx, const NbrUBEnv& nbrUBEnv, const VReal& vOffset ) const {
+  return mSolutes[ elemIdx ]->getSubgridValue( nbrUBEnv, vOffset );
+}
+
+REAL BioModel::getSubgridValue( const S32& elemIdx, const UBEnv& ubEnv, const VIdx& subgridVOffset ) const {
+  return mSolutes[ elemIdx ]->getSubgridValue( ubEnv, subgridVOffset );
+}
+
+
+
 // support for model_routine_config.cpp
 
 void BioModel::updatePhiPDEInfo( Vector<PDEInfo>& v_phiPDEInfo ) const {

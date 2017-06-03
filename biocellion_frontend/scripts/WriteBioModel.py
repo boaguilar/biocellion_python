@@ -7,7 +7,7 @@ def write_config_xml( biomodel, directory, source_directory ):
     name = directory + '/' + filename
     fout = open(name, 'w')
     if not fout:
-        sys.exit( 'ERROR: unable to open ' + name )
+        raise Exception( 'ERROR: unable to open ' + name )
 
     
     top = Element( 'biocellion' )
@@ -168,12 +168,12 @@ def write_biomodel_h( biomodel, directory, source_directory ):
     name = directory + '/' + filename
     fout = open(name, 'w')
     if not fout:
-        sys.exit( 'ERROR: unable to open ' + name )
+        raise Exception( 'ERROR: unable to open ' + name )
         
     name = source_directory + '/template/' + filename
     fin  = open(name, 'r')
     if not fin:
-        sys.exit( 'ERROR: unable to open ' + name )
+        raise Exception( 'ERROR: unable to open ' + name )
         
     for line in fin:
         fout.write(line)
@@ -191,12 +191,12 @@ def write_biomodel_cpp( biomodel, directory, source_directory ):
     name = directory + '/' + filename
     fout = open(name, 'w')
     if not fout:
-        sys.exit( 'ERROR: unable to open ' + name )
+        raise Exception( 'ERROR: unable to open ' + name )
         
     name = source_directory + '/template/' + filename
     fin  = open(name, 'r')
     if not fin:
-        sys.exit( 'ERROR: unable to open ' + name )
+        raise Exception( 'ERROR: unable to open ' + name )
         
     for line in fin:
         fout.write(line)
@@ -213,12 +213,12 @@ def copy_file( directory, source_directory, filename ):
     name = directory + '/' + filename
     fout = open(name, 'w')
     if not fout:
-        sys.exit( 'ERROR: unable to open ' + name )
+        raise Exception( 'ERROR: unable to open ' + name )
         
     name = source_directory + '/template/' + filename
     fin  = open(name, 'r')
     if not fin:
-        sys.exit( 'ERROR: unable to open ' + name )
+        raise Exception( 'ERROR: unable to open ' + name )
         
     for line in fin:
         fout.write( line )

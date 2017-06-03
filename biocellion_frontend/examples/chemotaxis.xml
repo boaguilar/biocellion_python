@@ -40,8 +40,9 @@
     <param name="decayRate">0.00001</param>
     <param name="writeOutput">true</param>
     <param name="AMRLevels">3</param><!--biocellion only-->
+    <param name="numTimeSteps">10</param><!--biocellion only-->
     <param name="concentration" unit="g.L-1">0.0</param>
-    <param name="resolution" unit="um">4.0</param>
+    <param name="resolution" unit="um">2.0</param>
   </solute>
 
   <particle name="biomass">
@@ -67,7 +68,7 @@
     </bulk>
     <computationDomain name="MyColony">
       <!-- this is the grid size, counts of UBs -->
-      <grid nDim="2" nI="32" nJ="32" nK="1"/>
+      <grid nDim="3" nI="32" nJ="32" nK="4"/>
       <!-- this is the UB size -->
       <param name="resolution" unit="um">4</param>
       <param name="refineRatio">2</param><!--biocellion only-->
@@ -119,8 +120,8 @@
     <param name="computationDomain">MyColony</param>
     <initArea number="1">
       <param name="birthday" unit="hour">0</param>
-      <coordinates x="50" y="50" z="0"/>
-      <coordinates x="51" y="51" z="0"/>
+      <coordinates x="50" y="50" z="8.5"/>
+      <coordinates x="51" y="51" z="8.5"/>
     </initArea>
   </species>
 
@@ -138,8 +139,8 @@
     </chemotaxis>
     <initArea number="1">
       <param name="birthday" unit="hour">0</param>
-      <coordinates x="46" y="50" z="0"/>
-      <coordinates x="47" y="51" z="0"/>
+      <coordinates x="46" y="50" z="8.5"/>
+      <coordinates x="47" y="51" z="8.5"/>
     </initArea>
   </species>
   

@@ -124,6 +124,9 @@ REAL Solute::getSubgridValue(const NbrUBEnv& nbrUBEnv, const VReal& vOffset) con
   return nbrUBEnv.getSubgridPhi( vidx, vsubidx, mSoluteIdx );
 }
 
+REAL Solute::getSubgridValue( const UBEnv& ubEnv, const VIdx& subgridVOffset ) const {
+  return ubEnv.getSubgridPhi( subgridVOffset, mSoluteIdx );
+}
 
 
 // support for model_routine_config.cpp
@@ -251,20 +254,20 @@ void Solute::updateIfSubgridRHSLinear( const VIdx& vIdx, const VIdx& subgridVOff
   S32 i;
   const Vector< Reaction * >& reactions = gBioModel->getReactions( );
   for( i = 0 ; i < (S32) reactions.size( ) ; i++ ) {
-    REAL solute_value = ubEnv.getSubgridPhi( subgridVOffset, getSoluteIdx( ) );
-    REAL factor = reactions[ i ]->getKineticFactor( getSoluteIdx( ), solute_value );
+    REAL factor = reactions[ i ]->getKineticFactor( ubEnv, subgridVOffset );
     
     // Check for all agents that apply
+    REAL yield = 0;
     for( ubAgentIdx_t l = 0 ; l < ( ubAgentIdx_t )ubAgentData.v_spAgent.size() ; l++ ) {
       const SpAgent& spAgent = ubAgentData.v_spAgent[ l ];
       VIdx sgridVOffset;
       getSubgridOffset( spAgent.vOffset, sgridVOffset );
       if( sgridVOffset == subgridVOffset ) {
         // agent is in the subgrid
-        REAL yield = reactions[ i ]->getYield( getSoluteIdx( ), spAgent );
-        gridRHS += yield * factor;
+        yield += reactions[ i ]->getYield( getSoluteIdx( ), spAgent );
       }
     }
+    gridRHS += yield * factor;
   }
 }
 

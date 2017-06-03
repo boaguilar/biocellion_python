@@ -31,6 +31,7 @@ public:
   void getSubgridOffset( const VReal& vOffset, VIdx& subgridVOffset ) const;
   BOOL offsetIsInSubgrid( const VReal& vOffset, const VIdx& vSubgrid ) const;
   REAL getSubgridValue( const NbrUBEnv& nbrUBEnv, const VReal& vOffset ) const;
+  REAL getSubgridValue( const UBEnv& ubEnv, const VIdx& subgridVOffset ) const;
 
   // support for model_routine_config.cpp
   void setPDEInfo( PDEInfo& pdeInfo ) const;

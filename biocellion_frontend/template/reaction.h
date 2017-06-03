@@ -102,7 +102,7 @@ public:
   void setCatalyst(const S32& value); 
   void setMuMax(const REAL& value);
 
-  REAL getKineticFactor( const S32& solute_idx, const REAL& solute_value ) const;
+  REAL getKineticFactor( const UBEnv& ubEnv, const VIdx& subgridVOffset ) const;
   REAL getYield( const S32& solute_idx, const SpAgent& spAgent ) const;
 
 protected:

@@ -9,14 +9,14 @@ def same_type( a, b ):
     elif type( a ).__name__ == 'classobj':
         ta = a.__name__
     else:
-        sys.exit( "ERROR: Unable to find type of object: " + str( a ) )
+        raise Exception( "ERROR: Unable to find type of object: " + str( a ) )
 
     if type( b ).__name__ == 'instance':
         tb = b.__class__.__name__
     elif type( b ).__name__ == 'classobj':
         tb = b.__name__
     else:
-        sys.exit( "ERROR: Unable to find type of object: " + str( b ) )
+        raise Exception( "ERROR: Unable to find type of object: " + str( b ) )
 
     return ta == tb
 
@@ -80,7 +80,7 @@ class BioModel:
             for param in species.findall('param'):
                 agent_param = Param( param.get('name'), param.get('unit'), param.text )
                 if not self.mAgentSpecies.getSpecies( name ).updateParam( agent_param ):
-                    sys.exit( "ERROR : Unknown param (" + str( agent_param ) + ") for species (" + name + ")" )
+                    raise Exception( "ERROR : Unknown param (" + str( agent_param ) + ") for species (" + name + ")" )
 
             
         return
@@ -91,11 +91,11 @@ class BioModel:
             if ok:
                 print( "XML file validated." )
             else:
-                sys.exit( "ERROR : Bad XML file" )
+                raise Exception( "ERROR : Bad XML file" )
         elif self.mScanMode == self.SCAN_PARSE_MODE:
             pass
         else:
-            sys.exit( "ERROR : Bad scan mode." )
+            raise Exception( "ERROR : Bad scan mode." )
             
         return
 
@@ -112,7 +112,10 @@ class BioModel:
                     node_attr = Param( name, None, value )
                     if not param_validator.validateAttribute( node_attr ):
                         ok = False
-                        print( "Attribute ( " + str( node_attr ) + " ) of ( " + node.tag + " ) not known." )
+                        default_attr = param_validator.getAttribute( name )
+                        msg  = "Attribute ( " + str( node_attr ) + " ) of ( " + node.tag + " ) not valid."
+                        msg += " Expected attribute is " + str( default_attr )
+                        print( msg )
             else:
                 ok = False
                 print( "Attribute ( " + name + " = " + value + " ) of ( " + node.tag + " ) not expected, but found." )
@@ -173,25 +176,25 @@ class BioModel:
                     node_attr = Param( name, None, value )
                     if not node_object.validateAttribute( node_attr ):
                         ok = False
-                        sys.exit( "ERROR : Unknown attribute (" + str( node_attr ) + ") for tag (" + node.tag + ")" )
+                        raise Exception( "ERROR : Unknown attribute (" + str( node_attr ) + ") for tag (" + node.tag + ")" )
                     if not node_object.updateAttribute( node_attr ):
                         ok = False
-                        sys.exit( "ERROR : Unknown attribute (" + str( node_attr ) + ") for tag (" + node.tag + ")" )
+                        raise Exception( "ERROR : Unknown attribute (" + str( node_attr ) + ") for tag (" + node.tag + ")" )
             else:
                 ok = False
-                sys.exit( "ERROR : Attribute ( " + name + " = " + value + " ) of ( " + node.tag + " ) not expected, but found." )
+                raise Exception( "ERROR : Attribute ( " + name + " = " + value + " ) of ( " + node.tag + " ) not expected, but found." )
             
         for name in required_attributes:
             if name not in found_attributes:
                 ok = False
-                sys.exit( "ERROR : Attribute ( " + name + " ) of ( " + node.tag + " ) expected, but not found." )
+                raise Exception( "ERROR : Attribute ( " + name + " ) of ( " + node.tag + " ) expected, but not found." )
             
         for child in list(node):
             if child.tag in required_children or child.tag in may_children:
                 found_children.add( child.tag )
             else:
                 ok = False
-                sys.exit( "ERROR : Child ( " + child.tag + " ) of ( " + node.tag + " ) not expected, but found." )
+                raise Exception( "ERROR : Child ( " + child.tag + " ) of ( " + node.tag + " ) not expected, but found." )
 
             if child.tag == "param":
                 name = child.get('name')
@@ -200,24 +203,24 @@ class BioModel:
                     found_params.add( name )
                 else:
                     ok = False
-                    sys.exit( "ERROR : Param ( " + str( child_param ) + " ) of ( " + node.tag + " ) not expected, but found." )
+                    raise Exception( "ERROR : Param ( " + str( child_param ) + " ) of ( " + node.tag + " ) not expected, but found." )
 
                 if not node_object.validateParam( child_param ):
                     ok = False
-                    sys.exit( "ERROR : ( " + str( child_param ) + " ) of ( " + node.tag + " ) not valid, check name, unit, and value." )
+                    raise Exception( "ERROR : ( " + str( child_param ) + " ) of ( " + node.tag + " ) not valid, check name, unit, and value." )
                 if not node_object.updateParam( child_param ):
                     ok = False
-                    sys.exit("ERROR : Unknown param (" + str( child_param ) + ") for tag (" + node.tag + ") : check name, unit, and value.")
+                    raise Exception("ERROR : Unknown param (" + str( child_param ) + ") for tag (" + node.tag + ") : check name, unit, and value.")
 
         for name in required_children:
             if name not in found_children:
                 ok = False
-                sys.exit("ERROR : Child ( " + name + " ) of ( " + node.tag + " ) expected, but not found." )
+                raise Exception("ERROR : Child ( " + name + " ) of ( " + node.tag + " ) expected, but not found." )
 
         for name in required_params:
             if name not in found_params:
                 ok = False
-                sys.exit("ERROR : Param ( " + name + " ) of ( " + node.tag + " ) expected, but not found." )
+                raise Exception("ERROR : Param ( " + name + " ) of ( " + node.tag + " ) expected, but not found." )
 
         for child in list( node ):
             ok = child_methods[ child.tag ]( child, node_object ) and ok
@@ -250,7 +253,7 @@ class BioModel:
         elif self.mScanMode == self.SCAN_PARSE_MODE:
             return self.parseNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
         else:
-            sys.exit( "ERROR : Bad scan mode." )
+            raise Exception( "ERROR : Bad scan mode." )
             return False
         
     def scanIdynomicsXML( self, node, parent_object=None ):
@@ -322,7 +325,7 @@ class BioModel:
         may_children = ( "param", )
         required_children = (  )
         if not self.mIDynoMiCS.getSolutes().addItem( node.get('name') ):
-            sys.exit( "ERROR : couldn't add a solute." )
+            raise Exception( "ERROR : couldn't add a solute." )
         node_object = self.mIDynoMiCS.getSolutes().getLastItem( )
         may_attributes = node_object.getMayAttributes( )
         required_attributes = node_object.getRequiredAttributes( )
@@ -341,7 +344,7 @@ class BioModel:
         may_children = ( "param", )
         required_children = (  )
         if not self.mIDynoMiCS.getParticles().addItem( node.get('name') ):
-            sys.exit( "ERROR : couldn't add a particle." )
+            raise Exception( "ERROR : couldn't add a particle." )
         node_object = self.mIDynoMiCS.getParticles().getLastItem( )
         may_attributes = node_object.getMayAttributes( )
         required_attributes = node_object.getRequiredAttributes( )
@@ -379,7 +382,7 @@ class BioModel:
         may_children = ( "solute", "param", )
         required_children = ( )
         if not self.mIDynoMiCS.getWorld().getBulks().addItem( node.get('name') ):
-            sys.exit( "ERROR : couldn't add a bulk." )
+            raise Exception( "ERROR : couldn't add a bulk." )
         node_object = self.mIDynoMiCS.getWorld().getBulks().getLastItem( )
         may_attributes = node_object.getMayAttributes( )
         required_attributes = node_object.getRequiredAttributes( )
@@ -403,7 +406,7 @@ class BioModel:
             node_object = bulk.BulkSolute( node.get( 'name' ) )
         else:
             if not parent_object.getSolutes().addItem( node.get('name') ):
-                sys.exit( "ERROR : couldn't add a bulk solute." )
+                raise Exception( "ERROR : couldn't add a bulk solute." )
             node_object = parent_object.getSolutes().getLastItem( )
             parent_object = None
         may_attributes = node_object.getMayAttributes( )
@@ -428,7 +431,7 @@ class BioModel:
         may_children = ( "grid", "boundaryCondition", "param", )
         required_children = ( "grid", )
         if not self.mIDynoMiCS.getWorld().getComputationDomains().addItem( node.get('name') ):
-            sys.exit( "ERROR : couldn't add a computation domain." )
+            raise Exception( "ERROR : couldn't add a computation domain." )
         node_object = self.mIDynoMiCS.getWorld().getComputationDomains().getLastItem( )
         may_attributes = node_object.getMayAttributes( )
         required_attributes = node_object.getRequiredAttributes( )
@@ -475,7 +478,7 @@ class BioModel:
         may_children = ( "param", "kineticFactor", "yield", )
         required_children = (  )
         if not self.mIDynoMiCS.getReactions().addItem( node.get('name') ):
-            sys.exit( "ERROR : couldn't add a reaction." )
+            raise Exception( "ERROR : couldn't add a reaction." )
         node_object = self.mIDynoMiCS.getReactions().getLastItem()
         may_attributes = node_object.getMayAttributes( )
         required_attributes = node_object.getRequiredAttributes( )
@@ -499,7 +502,7 @@ class BioModel:
             node_object = reaction.KineticFactor( )
         else:
             if not parent_object.getKineticFactors().addItem(  ):
-                sys.exit( "ERROR : couldn't add a reaction kinetic factor." )
+                raise Exception( "ERROR : couldn't add a reaction kinetic factor." )
             node_object = parent_object.getKineticFactors().getLastItem()
             parent_object = None # don't need to add this as a child
         may_attributes = node_object.getMayAttributes( )
@@ -568,7 +571,7 @@ class BioModel:
         may_children = ( "param", "particle", "reaction", "tightJunctions", "adhesions", "initArea", "entryConditions", "chemotaxis", "switchingLags",  )
         required_children = (  )
         if not self.mIDynoMiCS.getAgentSpecies().addSpecies( node.get('class'), node.get('name') ):
-            sys.exit( "ERROR : couldn't add a species." )
+            raise Exception( "ERROR : couldn't add a species." )
         node_object = self.mIDynoMiCS.getAgentSpecies().getLastItem()
         may_attributes = node_object.getMayAttributes( )
         required_attributes = node_object.getRequiredAttributes( )
@@ -599,7 +602,7 @@ class BioModel:
             node_object = agent_species.AgentSpeciesParticle()
         else:
             if not parent_object.getParticles().addItem( node.get('name') ):
-                sys.exit( "ERROR : couldn't add a species particle." )
+                raise Exception( "ERROR : couldn't add a species particle." )
             node_object = parent_object.getParticles().getLastItem()
             parent_object = None # don't need to add this as a child
         may_attributes = node_object.getMayAttributes( )
@@ -615,8 +618,24 @@ class BioModel:
         return ok
 
     def scanSpeciesReactionXML( self, node, parent_object=None ):
-        ok = True
-        print( "species::reaction not scaned yet" )
+        may_children = (  )
+        required_children = (  )
+        if parent_object is None:
+            node_object = agent_species.AgentSpeciesReaction( )
+        else:
+            if not parent_object.getReactions().addItem( node.get('name') ):
+                raise Exception( "ERROR : couldn't add a species reaction." )
+            node_object = parent_object.getReactions().getLastItem()
+            parent_object = None # don't need to add this as a child
+        may_attributes = node_object.getMayAttributes( )
+        required_attributes = node_object.getRequiredAttributes( )
+        may_params = node_object.getMayParams( )
+        required_params = node_object.getRequiredParams( )
+        child_methods = {
+        }
+        
+        ok = self.scanNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
+        
         return ok
 
     def scanSpeciesTightJunctionsXML( self, node, parent_object=None ):
@@ -646,7 +665,7 @@ class BioModel:
             node_object = agent_species.TightJunction( )
         else:
             if not parent_object.addItem(  ):
-                sys.exit( "ERROR : couldn't add a species tight junction." )
+                raise Exception( "ERROR : couldn't add a species tight junction." )
             node_object = parent_object.getLastItem( )
             parent_object = None # don't need to add this as a child
         may_attributes = node_object.getMayAttributes( )
@@ -688,7 +707,7 @@ class BioModel:
             node_object = agent_species.Adhesion( )
         else:
             if not parent_object.addItem(  ):
-                sys.exit( "ERROR : couldn't add a species adhesion." )
+                raise Exception( "ERROR : couldn't add a species adhesion." )
             node_object = parent_object.getLastItem( )
             parent_object = None # don't need to add this as a child
         may_attributes = node_object.getMayAttributes( )
@@ -710,7 +729,7 @@ class BioModel:
             node_object = agent_species.InitArea()
         else:
             if not parent_object.getInitAreas(  ).addItem(  ):
-                sys.exit( "ERROR : couldn't add a species initArea." )
+                raise Exception( "ERROR : couldn't add a species initArea." )
             node_object = parent_object.getInitAreas().getLastItem()
             parent_object = None # don't need to add this as a child
         may_attributes = node_object.getMayAttributes( )
@@ -734,7 +753,7 @@ class BioModel:
             node_object = agent_species.Coordinates()
         else:
             if not parent_object.getCoordinates(  ).addItem(  ):
-                sys.exit( "ERROR : couldn't add a coordinates." )
+                raise Exception( "ERROR : couldn't add a coordinates." )
             node_object = parent_object.getCoordinates().getLastItem()
             parent_object = None # don't need to add this as a child
         may_attributes = node_object.getMayAttributes( )
@@ -755,7 +774,7 @@ class BioModel:
             node_object = agent_species.Blocks()
         else:
             if not parent_object.getBlocks(  ).addItem(  ):
-                sys.exit( "ERROR : couldn't add a blocks." )
+                raise Exception( "ERROR : couldn't add a blocks." )
             node_object = parent_object.getBlocks().getLastItem()
             parent_object = None # don't need to add this as a child
         may_attributes = node_object.getMayAttributes( )
@@ -801,7 +820,7 @@ class BioModel:
             node_object = agent_species.Chemotaxis( )
         else:
             if not parent_object.addItem(  ):
-                sys.exit( "ERROR : couldn't add a species chemotactic." )
+                raise Exception( "ERROR : couldn't add a species chemotactic." )
             node_object = parent_object.getLastItem( )
             parent_object = None # don't need to add this as a child
         may_attributes = node_object.getMayAttributes( )

@@ -227,7 +227,7 @@ class IDynoMiCS( ParamHolder ):
     def organizeChildren( self ):
         for t in self.mChildren:
             print( "Still have children of type: " + str( t ) )
-            sys.exit( "ERROR: children should not be here." )
+            raise Exception( "ERROR: children should not be here." )
 
         print( "FIXME: Warning, *->Solutes need to be connected by enumtoken." )
         print( "FIXME: Warning, *->Reactions need to be connected by enumtoken." )
@@ -257,7 +257,7 @@ class IDynoMiCS( ParamHolder ):
                 else:
                     msg  = "ERROR: World.Bulk.Solute.name should name a solute. " + str( solute_key ) + " is not in the list.\n"
                     msg += "ERROR: Known solutes: " + ", ".join( self.mSolutes.getKeys( ) ) + ".\n"
-                    sys.exit( msg )
+                    raise Exception( msg )
 
 
         ## Reactions.*->others
@@ -276,7 +276,7 @@ class IDynoMiCS( ParamHolder ):
                     msg  = "ERROR: Reaction.Yield.Param should name a solute or a particle. " + str( yield_name ) + " is not in either list.\n"
                     msg += "ERROR: Known solutes: " + ", ".join( self.mSolutes.getKeys( ) ) + ".\n"
                     msg += "ERROR: Known particles: " + ", ".join( self.mParticles.getKeys( ) ) + ".\n"
-                    sys.exit( msg )
+                    raise Exception( msg )
 
             ## Reactions.KineticFactors->Solutes
             kinetic_factors = reaction.getKineticFactors()
@@ -291,7 +291,7 @@ class IDynoMiCS( ParamHolder ):
                 else:
                     msg  = "ERROR: Reaction.KineticFactor.solute should name a solute. " + str( solute_key ) + " is not in the list.\n"
                     msg += "ERROR: Known solutes: " + ", ".join( self.mSolutes.getKeys( ) ) + ".\n"
-                    sys.exit( msg )
+                    raise Exception( msg )
 
             ## Reactions.KineticFactors->Molecules
             kinetic_factors = reaction.getKineticFactors()
@@ -304,7 +304,7 @@ class IDynoMiCS( ParamHolder ):
                 else:
                     msg  = "ERROR: Reaction.KineticFactor.molecule should name a molecule. " + str( molecule_key ) + " is not in the list.\n"
                     msg += "ERROR: Known molecules: NONE.\n"
-                    sys.exit( msg )
+                    raise Exception( msg )
         
         for species_key in self.mAgentSpecies.getKeys( ):
             species = self.mAgentSpecies.getItem( species_key )
@@ -320,7 +320,21 @@ class IDynoMiCS( ParamHolder ):
                     msg += " species " + species.getAttribute( 'class' ).getValue( ) + "-" + species.getAttribute( 'name' ).getValue( )
                     msg += " has particle " + species_particle.getAttribute( 'name' ).getValue( )
                     msg += " but no particle exists.  Particles = " + " ".join( self.mParticles.getKeys( ) )
-                    sys.exit( msg )
+                    raise Exception( msg )
+                    
+            ## AgentSpeciesReactions need to be connected to Reactions
+            for species_reaction_key in species.getReactions( ).getKeys( ):
+                species_reaction = species.getReactions( ).getItem( species_reaction_key )
+                reaction_key = species_reaction.getAttribute( 'name' ).getValue( )
+                if self.mReactions.hasKey( reaction_key ):
+                    reaction = self.mReactions.getItem( reaction_key )
+                    species_reaction.setReaction( reaction )
+                else:
+                    msg  = "ERROR:"
+                    msg += " species " + species.getAttribute( 'class' ).getValue( ) + "-" + species.getAttribute( 'name' ).getValue( )
+                    msg += " has reaction " + species_reaction.getAttribute( 'name' ).getValue( )
+                    msg += " but no reaction exists.  Reactions = " + " ".join( self.mReactions.getKeys( ) )
+                    raise Exception( msg )
                     
             ## AgentSpecies.Adhesions->AgentSpecies
             self.linkAttributeToEnumToken( species.getAdhesions( ), 'withSpecies', self.mAgentSpecies )

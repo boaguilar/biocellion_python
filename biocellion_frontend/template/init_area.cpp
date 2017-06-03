@@ -103,15 +103,15 @@ void InitArea::setAgentSpecies(AgentSpecies* value) {
 
 void InitArea::addSpAgents( const BOOL init, const VIdx& startVIdx, const VIdx& regionSize, const IfGridBoxData<BOOL>& ifGridHabitableBoxData, Vector<VIdx>& v_spAgentVIdx, Vector<SpAgentState>& v_spAgentState, Vector<VReal>& v_spAgentOffset ) {
 
-  if( getShape() == "unfilledBlock" ) {
-    addSpAgentsUnfilledBlock( init, startVIdx, regionSize, ifGridHabitableBoxData, v_spAgentVIdx, v_spAgentState, v_spAgentOffset );
+  if( getShape() == "default" ) {
+    addSpAgentsDefault( init, startVIdx, regionSize, ifGridHabitableBoxData, v_spAgentVIdx, v_spAgentState, v_spAgentOffset );
   } else {
     ERROR( "Unexpected shape:" << getShape() );
   }
   
 }
 
-void InitArea::addSpAgentsUnfilledBlock( const BOOL init, const VIdx& startVIdx, const VIdx& regionSize, const IfGridBoxData<BOOL>& ifGridHabitableBoxData, Vector<VIdx>& v_spAgentVIdx, Vector<SpAgentState>& v_spAgentState, Vector<VReal>& v_spAgentOffset ) {
+void InitArea::addSpAgentsDefault( const BOOL init, const VIdx& startVIdx, const VIdx& regionSize, const IfGridBoxData<BOOL>& ifGridHabitableBoxData, Vector<VIdx>& v_spAgentVIdx, Vector<SpAgentState>& v_spAgentState, Vector<VReal>& v_spAgentOffset ) {
 
   /* FIXME BEGIN REFACTOR 
    * This code should only happen once, not every time it is used.
@@ -168,83 +168,23 @@ void InitArea::addSpAgentsUnfilledBlock( const BOOL init, const VIdx& startVIdx,
   /**** find how many agents to create in the intersecting region ****/
   // find intersection of this region and the bounding box region
   VReal intersectStartPos, intersectEndPos;
-  VIdx  intersectStartVIdx, intersectEndVIdx, intersectRegionSize;
-  VReal intersectStartVOffset, intersectEndVOffset, intersectLen;
+  VReal intersectLen;
   REAL intersect_volume = 1.0;
   S32 dimensions = 0;
   for( dim = 0 ; dim < 3 ; dim++ ) {
 
-    if( partition_min[ dim ] <= pos_min[ dim ] ) {
-      intersectStartPos[ dim ] = pos_min[ dim ];
-    } else {
-      intersectStartPos[ dim ] = partition_min[ dim ];
-    }
-
-    if( partition_max[ dim ] <= pos_max[ dim ] ) {
-      intersectEndPos[ dim ] = partition_max[ dim ];
-    } else {
-      intersectEndPos[ dim ] = pos_max[ dim ];
-    }
+    intersectStartPos[ dim ] = std::max( partition_min[ dim ], pos_min[ dim ] );
+    intersectEndPos[ dim ] = std::min( partition_max[ dim ], pos_max[ dim ] );
     intersectLen[ dim ] = intersectEndPos[ dim ] - intersectStartPos[ dim ];
     if( intersectLen[ dim ] > 0 ) {
       intersect_volume *= intersectLen[ dim ];
       dimensions++;
-    }
-
-#if 0
-    // find lower side of intersection
-    if( startVIdx[ dim ] <= vIdx_min[ dim ] ) {
-      intersectStartVIdx[ dim ] = vIdx_min[ dim ];
-      intersectStartVOffset[ dim ] = vOffset_min[ dim ];
-
-      OUTPUT( 10, "C-startVIdx [ " << dim << " ] = " << startVIdx[ dim ] << " <= vIdx_min [ " << dim << " ] = " << vIdx_min[ dim ] );
-      OUTPUT( 10, "C-intersectStartVIdx [ " << dim << " ] = " << intersectStartVIdx[ dim ] );
-    } else {
-      intersectStartVIdx[ dim ] = startVIdx[ dim ];
-      intersectStartVOffset[ dim ] = -0.5 * gAgentGrid->getResolution( );
-      
-      OUTPUT( 10, "D-startVIdx [ " << dim << " ] = " << startVIdx[ dim ] << " > vIdx_min [ " << dim << " ] = " << vIdx_min[ dim ] );
-      OUTPUT( 10, "D-intersectStartVIdx [ " << dim << " ] = " << intersectStartVIdx[ dim ] );
-    }
-
-    // find upper side of intersection
-    if( startVIdx[ dim ] + regionSize[ dim ] <= vIdx_max[ dim ] ) {
-      intersectRegionSize[ dim ] = ( startVIdx[ dim ] + regionSize[ dim ] ) - intersectStartVIdx[ dim ];
-      intersectEndVOffset[ dim ] = 0.5 * gAgentGrid->getResolution( );
-      
-      OUTPUT( 10, "A-startVIdx [ " << dim << " ] = " << startVIdx[ dim ] << " + regionSize [ " << dim << " ] = " << regionSize[ dim ] << " <= vIdx_max [ " << dim << " ] = " << vIdx_max[ dim ] );
-      OUTPUT( 10, "A-intersectRegionSize [ " << dim << " ] = " << intersectRegionSize[ dim ] );
-    } else {
-      intersectRegionSize[ dim ] = vIdx_max[ dim ] - intersectStartVIdx[ dim ] + 1;
-      intersectEndVOffset[ dim ] = vOffset_max[ dim ];
-      if( intersectRegionSize[ dim ] < 1 ) {
-        intersectRegionSize[ dim ] = 0;
-        intersectEndVOffset[ dim ] = - 0.5 * gAgentGrid->getResolution( );
-      }
-      OUTPUT( 10, "B-vOffset_max[ "<< dim << " ] = " << vOffset_max[ dim ]
-              << "  vIdx_max[ " << dim << " ] = " << vIdx_max[ dim ]   );
-      OUTPUT( 10, "B-startVIdx [ " << dim << " ] = " << startVIdx[ dim ] << " + regionSize [ " << dim << " ] = " << regionSize[ dim ] << " > vIdx_max [ " << dim << " ] = " << vIdx_max[ dim ] << " ::: intersectRegionSize [ " << dim << " ] = " << intersectRegionSize[ dim ] );
-    }
-
-    intersectLen[ dim ] = 1.0;
-    if( intersectRegionSize[ dim ] > 0 ) {
-      intersectLen[ dim ] = ( intersectRegionSize[ dim ] * gAgentGrid->getResolution( )
-                              - ( intersectStartVOffset[ dim ] + 0.5 * gAgentGrid->getResolution( ) )
-                              + ( intersectEndVOffset[ dim ] - 0.5 * gAgentGrid->getResolution( ) ) );
+    } else if( intersectLen[ dim ] < 0 ) {
+      intersect_volume = 0.0;
       dimensions++;
     }
-    intersect_volume *= intersectLen[ dim ];
-    OUTPUT( 10, "intersectLen[ " << dim << " ] = ( " << intersectLen[ dim ] 
-            << " intersectRegionSize[ " << dim << " ] " << intersectRegionSize[ dim ] 
-            << " - intersectStartVOffset[ " << dim << " ] " << intersectStartVOffset[ dim ]
-            << " - intersectEndVOffset[ " << dim << " ] " << intersectEndVOffset[ dim ]
-            );
-#endif
   }
 
-  Util::changePosFormat1LvTo2Lv( intersectStartPos, intersectStartVIdx, intersectStartVOffset );
-  Util::changePosFormat1LvTo2Lv( intersectEndPos, intersectEndVIdx, intersectEndVOffset );
-  
   // FIXME: 2 should come from the computationdomain.grid.nDim
   if( dimensions <  2 ) {
     intersect_volume = 0.0;
@@ -259,14 +199,10 @@ void InitArea::addSpAgentsUnfilledBlock( const BOOL init, const VIdx& startVIdx,
   OUTPUT( 10, "intersect_volume = " << intersect_volume );
   OUTPUT( 10, "agent_number = " << agent_number );
 
-  if( 0 ) {
+  if( false ) {
     OUTPUT( 0, "INTERSECTION:"
             << "  startIdx: " << startVIdx[ 0 ] << "," << startVIdx[ 1 ] << ","<< startVIdx[ 2 ]
             << "  regionSize: " << regionSize[ 0 ] << "," << regionSize[ 1 ] << ","<< regionSize[ 2 ]
-            << "  intersectStartVIdx: " << intersectStartVIdx[ 0 ] << "," << intersectStartVIdx[ 1 ] << "," << intersectStartVIdx[ 2 ]
-            << "  intersectRegionSize: " << intersectRegionSize[ 0 ] << "," << intersectRegionSize[ 1 ] << "," << intersectRegionSize[ 2 ]
-            << "  intersectStartVOffset: " << intersectStartVOffset[ 0 ] << "," << intersectStartVOffset[ 1 ] << "," << intersectStartVOffset[ 2 ]
-            << "  intersectEndVOffset: " << intersectEndVOffset[ 0 ] << "," << intersectEndVOffset[ 1 ] << "," << intersectEndVOffset[ 2 ]
             << "  intersectLen: " << intersectLen[ 0 ] << "," << intersectLen[ 1 ] << "," << intersectLen[ 2 ]
             << "  mNumber: " << mNumber
             << "  volume: " << volume
@@ -287,7 +223,7 @@ void InitArea::addSpAgentsUnfilledBlock( const BOOL init, const VIdx& startVIdx,
             << "  agent_number: " << agent_number );
   }
   
-    /**** create the agents now ****/
+  /**** create the agents now ****/
   S64 j;
   for( j = 0 ; j < ( S64 ) agent_number ; j ++ ) {
     VReal vPosAgent;
@@ -303,21 +239,11 @@ void InitArea::addSpAgentsUnfilledBlock( const BOOL init, const VIdx& startVIdx,
       }
       CHECK( randScale >= 0.0 );
       CHECK( randScale < 1.0 );
-#if 0
-      if( intersectRegionSize[ dim ] > 0 ) {
-        vPosAgent[ dim ] = ( ( intersectStartVIdx[ dim ] + 0.5 ) * gAgentGrid->getResolution( ) + intersectStartVOffset[ dim ]
-                             + intersectLen[ dim ] * randScale );
-      } else {
-        vPosAgent[ dim ] = ( REAL )intersectStartVIdx[ dim ] * gAgentGrid->getResolution( );
-      }
-#else
       if( intersectLen[ dim ] > 0 ) {
         vPosAgent[ dim ] = ( intersectStartPos[ dim ] + intersectLen[ dim ] * randScale );
       } else {
         vPosAgent[ dim ] = intersectStartPos[ dim ];
       }
-#endif
-
     }
     Util::changePosFormat1LvTo2Lv( vPosAgent, vIdxAgent, vOffsetAgent );
     mAgentSpecies->setInitialAgentState( state );
@@ -326,10 +252,6 @@ void InitArea::addSpAgentsUnfilledBlock( const BOOL init, const VIdx& startVIdx,
       OUTPUT( 0, "INTERSECTION:"
               << "  startIdx: " << startVIdx[ 0 ] << "," << startVIdx[ 1 ] << ","<< startVIdx[ 2 ]
               << "  regionSize: " << regionSize[ 0 ] << "," << regionSize[ 1 ] << ","<< regionSize[ 2 ]
-              << "  intersectStartVIdx: " << intersectStartVIdx[ 0 ] << "," << intersectStartVIdx[ 1 ] << "," << intersectStartVIdx[ 2 ]
-              << "  intersectRegionSize: " << intersectRegionSize[ 0 ] << "," << intersectRegionSize[ 1 ] << "," << intersectRegionSize[ 2 ]
-              << "  intersectStartVOffset: " << intersectStartVOffset[ 0 ] << "," << intersectStartVOffset[ 1 ] << "," << intersectStartVOffset[ 2 ]
-              << "  intersectEndVOffset: " << intersectEndVOffset[ 0 ] << "," << intersectEndVOffset[ 1 ] << "," << intersectEndVOffset[ 2 ]
               << "  intersectLen: " << intersectLen[ 0 ] << "," << intersectLen[ 1 ] << "," << intersectLen[ 2 ]
               );
       OUTPUT( 0, "NEW AGENT"

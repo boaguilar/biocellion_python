@@ -25,8 +25,9 @@ class Solute( ParamHolder ):
         self.addParam( Param( "refineRatio", "int", 0, False ) )
         self.addParam( Param( "AMRLevels", "int", 0, False ) )
         self.addParam( Param( "interfaceAMRLevel", "int", 0, False ) )
+        self.addParam( Param( "numTimeSteps", "int", 0, False ) )
 
-        self.mPrivateNumberHiddenParams = [ "AMRLevels", "interfaceAMRLevel", ]
+        self.mPrivateNumberHiddenParams = [ "AMRLevels", "interfaceAMRLevel", "numTimeSteps", ]
         self.mPrivateBoolHiddenParams = [  ]
         self.mPrivateStringHiddenParams = [ ]
         self.mPrivateHiddenParams = self.mPrivateNumberHiddenParams + self.mPrivateBoolHiddenParams + self.mPrivateStringHiddenParams
@@ -183,7 +184,7 @@ class AllSolutes( ItemHolder ):
         for name in self.mOrder:
             refine_ratios.add( self.mItems[ name ].calcRefineRatio( ) )
         if len( refine_ratios ) != 1:
-            sys.exit( "ERROR: All refine ratios must be the same. These were found: " + str( refine_ratios ) )
+            raise Exception( "ERROR: All refine ratios must be the same. These were found: " + str( refine_ratios ) )
         return refine_ratios.pop( )
 
     def calcInterfaceAMRLevel( self ):
@@ -191,7 +192,7 @@ class AllSolutes( ItemHolder ):
         for name in self.mOrder:
             levels.append( self.mItems[ name ].calcInterfaceAMRLevel( ) )
         if len( levels ) < 1:
-            sys.exit( "ERROR: Need at least 1 interface AMR level." )
+            raise Exception( "ERROR: Need at least 1 interface AMR level." )
         return max( levels )
 
     def calcConcentrations( self ):
