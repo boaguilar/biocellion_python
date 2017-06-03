@@ -328,6 +328,9 @@ class IDynoMiCS( ParamHolder ):
             ## AgentSpecies.TightJunctions->AgentSpecies
             self.linkAttributeToEnumToken( species.getTightJunctions( ), 'withSpecies', self.mAgentSpecies )
                 
+            ## AgentSpecies.Chemotaxis->Solute
+            self.linkAttributeToEnumToken( species.getChemotaxis( ), 'withSolute', self.mSolutes )
+                
             ## AgentSpecies.DistanaceJuctions need to be created
             species.createDistanceJunctions( )
             if len( species.getDistanceJunctions( ) ) > 0:

@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?><!--
+
+#########################################################################
+ iDynoMiCS: individual-based Dynamics of Microbial Communities Simulator
+#########################################################################
+
+-->
+<idynomics>
+  <!--#####################################################################
+		SIMULATOR SECTION
+	######################################################################-->
+  <simulator>
+    <param name="restartPreviousRun">false</param>
+    <param name="randomSeed">5515</param>
+    <param name="outputPeriod" unit="hour">0.01</param>
+
+    <timeStep>
+      <param name="adaptive">false</param>
+      <param name="timeStepIni" unit="hour">0.01</param>
+      <param name="timeStepMin" unit="hour">0.01</param>
+      <param name="timeStepMax" unit="hour">0.01</param>
+      <param name="endOfSimulation" unit="hour">1.00</param>
+    </timeStep>
+    <!-- The AGENTTIMESTEP which should always be EQUAL or LOWER than the global time step -->
+    <param name="agentTimeStep" unit="hour">0.01</param>
+  </simulator>
+  <!--#####################################################################
+		INPUT SECTION
+	######################################################################-->
+  <input>
+    <param name="useAgentFile">false</param>
+    <param name="useBulkFile">false</param>
+  </input>
+  <!--#####################################################################
+		SOLUTES AND BIOMASS TYPES SECTION
+	######################################################################-->
+  <solute domain="MyColony" name="Attractant">
+    <param name="diffusivity" unit="m2.day-1">8.64e-9</param>
+    <param name="airDiffusivity" unit="m2.day-1">8.64e-9</param>
+    <param name="decayRate">0.00001</param>
+    <param name="writeOutput">true</param>
+    <param name="AMRLevels">3</param><!--biocellion only-->
+    <param name="concentration" unit="g.L-1">0.0</param>
+    <param name="resolution" unit="um">4.0</param>
+  </solute>
+
+  <particle name="biomass">
+    <param name="density" unit="g.L-1">150</param>
+  </particle>
+  <particle name="inert">
+    <param name="density" unit="g.L-1">150</param>
+  </particle>
+  <!--#####################################################################
+		WORLD SECTION
+	######################################################################-->
+  <world>
+    <bulk name="MyTank">
+      <param name="isConstant">true</param>
+      <param name="D" unit="h-1">0.6</param>
+      <solute name="Attractant">
+	<param name="Sbulk" unit="g.L-1">0.0</param>
+	<param name="Sin" unit="g.L-1">0</param>
+	<param name="isConstant">true</param>
+	<param name="Spulse" unit="g.L-1">0.0</param>
+	<param name="pulseRate" unit="h-1">0.0</param>
+      </solute>
+    </bulk>
+    <computationDomain name="MyColony">
+      <!-- this is the grid size, counts of UBs -->
+      <grid nDim="2" nI="32" nJ="32" nK="1"/>
+      <!-- this is the UB size -->
+      <param name="resolution" unit="um">4</param>
+      <param name="refineRatio">2</param><!--biocellion only-->
+      <param name="AMRLevels">3</param><!--biocellion only-->
+      <param name="boundaryLayer" unit="um">1</param>
+      <param name="biofilmDiffusivity">0.8</param>
+      <param name="specificArea" unit="m2.m-3">80</param>
+    </computationDomain>
+  </world>
+  <!--#####################################################################
+		REACTION SECTION
+	######################################################################-->
+  <reaction catalyzedBy="biomass" catalyst="AttractorCells" class="ReactionFactor" name="AttractantSecretion">
+    <param name="muMax" unit="hour-1">3.6</param>
+    <kineticFactor class="FirstOrderKinetic"/>
+    <yield>
+      <param name="Attractant" unit="g.g-1">0.1</param>
+    </yield>
+  </reaction>
+  
+  <!--#####################################################################
+      MOLECULAR REACTION SECTION
+      ######################################################################-->
+
+  <!--#####################################################################
+		SOLVER SECTION
+	######################################################################-->
+
+  <!--#####################################################################
+		AGENT GRID SECTION
+	######################################################################-->
+   <agentGrid>
+    <param name="computationDomain">MyColony</param>
+    <param name="resolution" unit="um">4</param>
+  </agentGrid>
+
+  <!--#####################################################################
+		SPECIES SECTION
+	######################################################################-->
+
+  <species class="Yeast" name="AttractorCells">
+    <particle name="biomass">
+      <param name="mass" unit="fg">500</param>
+    </particle>
+    <particle name="inert">
+      <param name="mass" unit="fg">0</param>
+    </particle>
+    <param name="color">blue</param>
+    <param name="computationDomain">MyColony</param>
+    <initArea number="1">
+      <param name="birthday" unit="hour">0</param>
+      <coordinates x="50" y="50" z="0"/>
+      <coordinates x="51" y="51" z="0"/>
+    </initArea>
+  </species>
+
+  <species class="Yeast" name="MoverCells">
+    <particle name="biomass">
+      <param name="mass" unit="fg">500</param>
+    </particle>
+    <particle name="inert">
+      <param name="mass" unit="fg">0</param>
+    </particle>
+    <param name="color">red</param>
+    <param name="computationDomain">MyColony</param>
+    <chemotaxis>
+      <chemotactic strength="20.25" withSolute="Attractant" contactInhibition="0"/>
+    </chemotaxis>
+    <initArea number="1">
+      <param name="birthday" unit="hour">0</param>
+      <coordinates x="46" y="50" z="0"/>
+      <coordinates x="47" y="51" z="0"/>
+    </initArea>
+  </species>
+  
+  
+</idynomics>

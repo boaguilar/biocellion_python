@@ -256,6 +256,23 @@ S32 AgentSpecies::getIdxString(const std::string& param_name)
   return getIdxGeneric( param_name, mIdxString, mParamsString.size() );
 }
 
+const Vector< Chemotaxis * >& AgentSpecies::getChemotaxis() const
+{
+  return mChemotaxis;
+}
+Vector< Chemotaxis * >& AgentSpecies::getChemotaxis()
+{
+  return mChemotaxis;
+}
+
+const Vector< S32 >& AgentSpecies::getReactions() const
+{
+  return mReactions;
+}
+Vector< S32 >& AgentSpecies::getReactions()
+{
+  return mReactions;
+}
 void AgentSpecies::setName(const std::string& name)
 {
   mName = name;
@@ -343,3 +360,99 @@ void AgentSpecies::setInitialAgentState( SpAgentState& state ) const {
 
   state.setRadius( radius );
 }
+
+void AgentSpecies::adjustSpAgent( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, SpAgentState& state/* INOUT */, VReal& disp ) const {
+  adjustSpAgentChemotaxis( vIdx, junctionData, vOffset, mechIntrctData, nbrUBEnv, state, disp );
+}
+
+/*
+ **************************************** CHEMOTAXIS BEGIN ****************************************************
+ */
+static inline S32 countTouches( const JunctionData& junctionData ) {
+  S32 count = 0;
+  S32 i;
+  for( i = 0 ; i < junctionData.getNumJunctions() ; i++ ) {
+    if( junctionData.getJunctionEndRef( i ).getModelInt( JUNCTION_INT_TOUCHED ) ) {
+      count++;
+    }
+  }
+  return count;
+}
+
+/*
+ * replace contents of vUnit with a unit vector
+ */
+static inline void randomUnitVector( VReal& vUnit ) {
+  const REAL epsilon = 0.1;
+
+  vUnit = VReal::ZERO;
+  while(vUnit.length() < epsilon) {
+    for (S32 dim = 0; dim < DIMENSION; dim++) {
+      if( dim == DIMENSION-1 ) {
+        vUnit[dim] = 0.0;
+        continue;
+      }
+      vUnit[dim] = -0.5 + Util::getModelRand(MODEL_RNG_UNIFORM);
+    }
+    vUnit = VReal::normalize(epsilon, vUnit);
+  }
+
+}
+
+static inline void findChemoTaxisDirectionAndConcentration( const S32 elemIdx,  const VReal& vOffset, const NbrUBEnv& nbrUBEnv, const SpAgentState& state, VReal& dir, REAL& delta ) {
+
+  // Random direction of motion
+  VReal fwdDir, bckDir;
+  randomUnitVector( fwdDir );
+  bckDir = VReal::ZERO - fwdDir;
+
+  // Find solute concentration just ahead and just behind agent
+  REAL offset_magnitude = 1.42 * gAgentGrid->getResolution( ) / gBioModel->getSolutes( )[ elemIdx ]->getSubgridDimension( );
+  VReal curPos = vOffset;
+  VReal fwdPos = vOffset + fwdDir * offset_magnitude; // 1.5 * state.getRadius()
+  VReal bckPos = vOffset + bckDir * offset_magnitude; // 1.5 * state.getRadius()
+  REAL curVal = gBioModel->getSolutes( )[ elemIdx ]->getSubgridValue( nbrUBEnv, curPos );
+  REAL fwdVal = gBioModel->getSolutes( )[ elemIdx ]->getSubgridValue( nbrUBEnv, fwdPos );
+  REAL bckVal = gBioModel->getSolutes( )[ elemIdx ]->getSubgridValue( nbrUBEnv, bckPos );
+  if( fwdVal < 0 ) {
+    fwdVal = curVal;
+  }
+  if( bckVal < 0 ) {
+    bckVal = curVal;
+  }
+
+  // this scaling reduces the sharpness of the chemotactic pull
+  // makes it about the relative difference, not the absolute difference
+  // number borrowed from cDynoMiCS implementation
+  // this results in the maximum value asymptotically approaching 1/alpha
+  REAL alpha = 0.1;
+  fwdVal = fwdVal / (1.0 + alpha * fwdVal);
+  bckVal = bckVal / (1.0 + alpha * bckVal);
+
+  delta = fwdVal - bckVal;
+  dir = fwdDir;
+}
+
+
+void AgentSpecies::adjustSpAgentChemotaxis( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, SpAgentState& state/* INOUT */, VReal& disp ) const {
+  S32 i;
+  for( i = 0 ; i < (S32) mChemotaxis.size( ) ; i++ ) {
+    VReal dir;
+    REAL delta;
+
+    // contact inhibition
+    if( mChemotaxis[ i ]->getContactInhibition( ) != 0 &&
+        countTouches( junctionData ) >= mChemotaxis[ i ]->getContactInhibition( ) ) {
+      return;
+    }
+
+    findChemoTaxisDirectionAndConcentration( mChemotaxis[ i ]->getWithSolute( ),  vOffset, nbrUBEnv, state, dir, delta );
+    if( delta > 0 ) {
+      VReal chemDisp = dir * ( mChemotaxis[ i ]->getStrength( ) * delta );
+      disp += chemDisp;
+    }
+  }
+}
+/*
+ **************************************** CHEMOTAXIS END ****************************************************
+ */

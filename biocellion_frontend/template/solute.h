@@ -28,7 +28,6 @@ public:
   // general grid support
   idx_t getSubgridDimension( ) const;
   void calcSubgridDimension( );
-  idx_t getSubgridDimension( );
   void getSubgridOffset( const VReal& vOffset, VIdx& subgridVOffset ) const;
   BOOL offsetIsInSubgrid( const VReal& vOffset, const VIdx& vSubgrid ) const;
   REAL getSubgridValue( const NbrUBEnv& nbrUBEnv, const VReal& vOffset ) const;

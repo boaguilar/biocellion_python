@@ -225,14 +225,12 @@ void Solute::updateIfSubgridAlpha( const VIdx& vIdx, const VIdx& subgridVOffset,
 
 void Solute::updateIfSubgridBetaInIfRegion( const S32 dim, const VIdx& vIdx0, const VIdx& subgridVOffset0, const UBAgentData& ubAgentData0, const UBEnv& ubEnv0, const VIdx& vIdx1, const VIdx& subgridVOffset1, const UBAgentData& ubAgentData1, const UBEnv& ubEnv1, REAL& gridBeta ) const {
   /* flux between subgrids */
-  // gridBeta = mDiffusivity;
-  gridBeta = 1.0;
+  gridBeta = getParamReal( getIdxReal( SOLUTE_diffusivity ) );
 }
 
 void Solute::updateIfSubgridBetaPDEBufferBdry( const S32 dim, const VIdx& vIdx, const VIdx& subgridVOffset, const UBAgentData& ubAgentData, const UBEnv& ubEnv, REAL& gridBeta ) const {
   /* flux between grid and buffer */
-  //gridBeta = mDiffusivity;
-  gridBeta = 1.0;
+  gridBeta = getParamReal( getIdxReal( SOLUTE_diffusivity ) );
 }
 
 void Solute::updateIfSubgridBetaDomainBdry( const S32 dim, const VIdx& vIdx, const VIdx& subgridVOffset, const UBAgentData& ubAgentData, const UBEnv& ubEnv, REAL& gridBeta ) const {

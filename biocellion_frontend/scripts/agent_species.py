@@ -887,6 +887,56 @@ class TightJunction( ParamHolder ):
         return str(self)
 
 #####################################################
+# Chemotaxis
+#####################################################
+class Chemotaxis( ParamHolder ):
+
+    def __init__( self ):
+        ParamHolder.__init__( self )
+        self.addAttribute( Param( "strength", "float", 0, True ) )
+        self.addAttribute( Param( "withSolute", "str", "", True ) )
+        self.addAttribute( Param( "contactInhibition", "int", 0, False ) )
+
+        self.mPrivateNumberHiddenParams = [ "strength", "withSolute", "contactInhibition" ]
+        self.mPrivateBoolHiddenParams = [  ]
+        self.mPrivateStringHiddenParams = [  ]
+        self.mPrivateHiddenParams = self.mPrivateNumberHiddenParams + self.mPrivateBoolHiddenParams + self.mPrivateStringHiddenParams
+        self.mHiddenParams = self.mHiddenParams + self.mPrivateHiddenParams
+        return
+
+    def getBioModelH( self, indent, depth ):
+        lines = [ ]
+        return "\n".join( lines )
+
+    def getInitializeBioModel( self, parent_varname, container_name, indent, depth ):
+        varname = "chemotaxis"
+        lines = [ ]
+        lines.append( (depth*indent) + "{" )
+        depth += 1
+
+        lines.append( (depth*indent) + "Chemotaxis *%s = new Chemotaxis( );" % (varname, ) )
+        lines.append( ParamHolder.getInitializeBioModel( self, varname, indent, depth ) )
+        s = self.getInitializeBioModelSetDataMembers( varname, "->", indent, depth,
+                                                      self.mPrivateBoolHiddenParams,
+                                                      self.mPrivateNumberHiddenParams,
+                                                      self.mPrivateStringHiddenParams )
+        lines.append( s )
+        
+        lines.append( (depth*indent) + "%s.push_back( %s );" % (container_name, varname, ) )
+        depth -= 1;
+        lines.append( (depth*indent) + "}" )
+        return "\n".join( lines )
+    
+    def __str__(self):
+        s  = "<chemotaxis" + self.formatAttributes() + ">\n"
+        s += ParamHolder.__str__( self )
+        s += "</chemotaxis>\n"
+        return s
+
+    def __repr__(self):
+        return str(self)
+
+#####################################################
 # AgentSpecies
 #####################################################
 class AgentSpecies(ParamHolder):
@@ -920,6 +970,7 @@ class AgentSpecies(ParamHolder):
         self.mAdhesions = ItemHolder( Adhesion )
         self.mDistanceJunctions = ItemHolder( DistanceJunction )
         self.mTightJunctions = ItemHolder( TightJunction )
+        self.mChemotaxis = ItemHolder( Chemotaxis )
         return
 
     def getBioModelH( self, indent, depth ):
@@ -965,6 +1016,9 @@ class AgentSpecies(ParamHolder):
         container_name = "%s->getTightJunctions()" % ( varname )
         for i in range( len( self.mTightJunctions ) ):
             lines.append( self.mTightJunctions[ i ].getInitializeBioModel( varname, container_name, indent, depth ) )
+        container_name = "%s->getChemotaxis()" % ( varname )
+        for i in range( len( self.mChemotaxis ) ):
+            lines.append( self.mChemotaxis[ i ].getInitializeBioModel( varname, container_name, indent, depth ) )
         s = self.getSpecificInitializeBioModel( varname, indent, depth )
         if s:
             lines.append( s )
@@ -1001,6 +1055,9 @@ class AgentSpecies(ParamHolder):
 
     def getTightJunctions( self ):
         return self.mTightJunctions
+
+    def getChemotaxis( self ):
+        return self.mChemotaxis
 
     def createDistanceJunctions( self ):
         # Create all necessary distance junctions
@@ -1044,6 +1101,26 @@ class AgentSpecies(ParamHolder):
 
             self.mDistanceJunctions.addItem( species_name, junction )
 
+        # If chemotaxis is in play, contact inhibition may be needed, so create distance junctions
+        for key in self.mChemotaxis.getKeys( ):
+            item = self.getChemotaxis( ).getItem( key )
+            species_name = self.getEnumToken( )
+
+            junction = DistanceJunction( )
+            node_attr = Param( "enabled", None, "true" )
+            if not junction.validateAttribute( node_attr ):
+                sys.exit( "ERROR : Failed to create DistanceJunction" )
+            if not junction.updateAttribute( node_attr ):
+                sys.exit( "ERROR : Failed to create DistanceJunction" )
+
+            node_attr = Param( "withSpecies", None, species_name )
+            if not junction.validateAttribute( node_attr ):
+                sys.exit( "ERROR : Failed to create DistanceJunction" )
+            if not junction.updateAttribute( node_attr ):
+                sys.exit( "ERROR : Failed to create DistanceJunction" )
+
+            self.mDistanceJunctions.addItem( species_name, junction )
+            
         return
 
     def getEnums( self, indent, depth ):
@@ -1102,7 +1179,7 @@ class AgentSpecies(ParamHolder):
         return "\n".join( lines )
     
     def updateUseMechForceReals( self ):
-        # Mech Forces used by shove, adhesion, tightJunction
+        # Mech Forces used by shove, adhesion, tightJunction, chemotaxis
         trigger_names = [ "shoveLimit", "shoveFactor", "shoveScale" ]
         update = False
         for name in trigger_names:
@@ -1112,6 +1189,8 @@ class AgentSpecies(ParamHolder):
         if len( self.mAdhesions ) > 0:
             update = True
         if len( self.mTightJunctions ) > 0:
+            update = True
+        if len( self.mChemotaxis ) > 0:
             update = True
         if update:
             self.setUseMechForceReals( True )
@@ -1147,6 +1226,7 @@ class AgentSpecies(ParamHolder):
         s += str( self.mAdhesions )
         s += str( self.mDistanceJunctions )
         s += str( self.mTightJunctions )
+        s += str( self.mChemotaxis )
         s += additional
         s += "</species>"
         return s

@@ -238,16 +238,10 @@ void ModelRoutine::adjustSpAgent( const VIdx& vIdx, const JunctionData& junction
   S32 agentType = state.getType( );
   disp[0] = mechIntrctData.getModelReal( gAgentSpecies[ agentType ]->getIdxMechForceRealX() );
   disp[1] = mechIntrctData.getModelReal( gAgentSpecies[ agentType ]->getIdxMechForceRealY() );
-#if TWO_DIMENSION
-  disp[2] = 0.0;
-#else
   disp[2] = mechIntrctData.getModelReal( gAgentSpecies[ agentType ]->getIdxMechForceRealZ() );
-#endif
   
   brownianMotion( vIdx, junctionData, vOffset, mechIntrctData, nbrUBEnv, state, disp );
-  /*
-  allChemoTaxisMotion(vIdx, junctionData, vOffset, nbrUBEnv, state, disp);
-  */
+  gAgentSpecies[ agentType ]->adjustSpAgent( vIdx, junctionData, vOffset, mechIntrctData, nbrUBEnv, state, disp );
   limitMotion(disp);
   
   /* MODEL END */

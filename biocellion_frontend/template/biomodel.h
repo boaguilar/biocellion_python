@@ -3,6 +3,7 @@
 
 #include "biocellion.h"
 #include "init_area.h"
+#include "chemotaxis.h"
 #include "agent_species.h"
 #include "simulator.h"
 #include "agent_grid.h"

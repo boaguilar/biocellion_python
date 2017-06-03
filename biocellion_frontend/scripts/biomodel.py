@@ -775,8 +775,44 @@ class BioModel:
         return ok
 
     def scanSpeciesChemotaxisXML( self, node, parent_object=None ):
-        ok = True
-        print( "species::chemotaxis not scaned yet" )
+        may_children = ( "chemotactic", )
+        required_children = ( "chemotactic", )
+        if parent_object is None:
+            node_object = agent_species.ItemHolder( agent_species.Chemotaxis )
+        else:
+            node_object = parent_object.getChemotaxis( )
+            parent_object = None # don't need to add this as a child
+        may_attributes = ( )
+        required_attributes = ( )
+        may_params = ( )
+        required_params = ( )
+        child_methods = {
+            "chemotactic": self.scanSpeciesChemotacticXML,
+        }
+        
+        ok = self.scanNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
+        
+        return ok
+
+    def scanSpeciesChemotacticXML( self, node, parent_object=None ):
+        may_children = (  )
+        required_children = (  )
+        if parent_object is None:
+            node_object = agent_species.Chemotaxis( )
+        else:
+            if not parent_object.addItem(  ):
+                sys.exit( "ERROR : couldn't add a species chemotactic." )
+            node_object = parent_object.getLastItem( )
+            parent_object = None # don't need to add this as a child
+        may_attributes = node_object.getMayAttributes( )
+        required_attributes = node_object.getRequiredAttributes( )
+        may_params = node_object.getMayParams( )
+        required_params = node_object.getRequiredParams( )
+        child_methods = {
+        }
+        
+        ok = self.scanNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
+        
         return ok
 
     def scanSpeciesSwitchLagsXML( self, node, parent_object=None ):

@@ -67,7 +67,12 @@ public:
   S32 getIdxInt(const std::string& param_name);
   S32 getIdxBool(const std::string& param_name);
   S32 getIdxString(const std::string& param_name);
-  
+
+  const Vector< Chemotaxis * >& getChemotaxis() const;
+  Vector< Chemotaxis * >& getChemotaxis();
+  const Vector< S32 >& getReactions() const;
+  Vector< S32 >& getReactions();
+
   void setName(const std::string& name);
   void setSpeciesName(const std::string& speciesName);
   void setSpeciesIdx(const S32& idx);
@@ -83,6 +88,10 @@ public:
   void setIdxMechForceReals(const S32& idx_x, const S32& idx_y, const S32& idx_z);
   void addParticle( const S32& particleIdx, const S32& modelRealIdx, const REAL& initialValue );
   void setInitialAgentState( SpAgentState& state ) const;
+
+  // support for model_routine_agent.cpp
+  void adjustSpAgent( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, SpAgentState& state/* INOUT */, VReal& disp ) const;
+  void adjustSpAgentChemotaxis( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, SpAgentState& state/* INOUT */, VReal& disp ) const;
   
 protected:
   std::string mName;
@@ -93,7 +102,6 @@ protected:
   Vector<BOOL> mParamsBool;
   Vector<std::string> mParamsString;
   std::map<std::string, S32> mIdxReal, mIdxInt, mIdxBool, mIdxString;
-
   REAL        mDMax;
   S32         mNumModelBools, mNumModelReals, mNumModelInts;
   BOOL        mUseMechForceReals;
@@ -104,6 +112,8 @@ protected:
   Vector<DistanceJunction *> mDistanceJunctions;
   Vector<TightJunction *> mTightJunctions;
   Vector<AgentSpeciesParticle> mParticles;
+  Vector <Chemotaxis * > mChemotaxis;
+  Vector < S32 > mReactions;
 };
 
 #endif /* _AGENT_SPECIES_H_ */
