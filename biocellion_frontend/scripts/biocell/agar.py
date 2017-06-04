@@ -1,5 +1,6 @@
-from agent_species import Param, ParamHolder, ItemHolder
+from biocell import *
 
+    
 class Agar( ParamHolder ):
 
     def __init__( self ):
@@ -66,4 +67,3 @@ def main():
 if __name__ == "__main__":
     main()
         
-

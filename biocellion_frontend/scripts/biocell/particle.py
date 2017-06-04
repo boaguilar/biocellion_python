@@ -1,4 +1,5 @@
-from agent_species import Param, ParamHolder, ItemHolder
+from biocell import *
+
 
 class Particle( ParamHolder ):
 
@@ -87,5 +88,3 @@ def main():
     
 if __name__ == "__main__":
     main()
-        
-

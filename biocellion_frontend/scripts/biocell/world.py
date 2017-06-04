@@ -1,7 +1,4 @@
-from agent_species import Param, ParamHolder
-from bulk import AllBulks
-from agar import AllAgars
-from computation_domain import AllComputationDomains
+from biocell import *
 
 class World( ParamHolder ):
 
@@ -92,12 +89,10 @@ class World( ParamHolder ):
         s += str( self.mComputationDomains ) + "\n"
         s += "</%s>\n" % (self.mName)
         return s
-
+    
 def main():
-    print("UNCHECKED")
+    print( "FIXME: no tester for " + str( __file__ ) )
     return
     
 if __name__ == "__main__":
     main()
-        
-

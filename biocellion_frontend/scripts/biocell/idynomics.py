@@ -1,130 +1,4 @@
-import sys
-from agent_species import Param, ParamHolder
-from agent_species import AllAgentSpecies
-from particle import AllParticles
-from solute import AllSolutes
-from agent_grid import AgentGrid
-from world import World
-from reaction import AllReactions
-
-class Simulator( ParamHolder ):
-
-    def __init__(self):
-        self.mName = "simulator"
-        ParamHolder.__init__(self)
-        self.addParam( Param( "restartPreviousRun", "bool", False, False ) )
-        self.addParam( Param( "randomSeed", "int", 75321, False ) )
-        self.addParam( Param( "outputPeriod", "hr", 0.01, True ) )
-        self.addParam( Param( "chemostat", "bool", False, False ) )
-        self.addParam( Param( "diffusionReactionOnAgentTime", "bool", False, False ) )
-        self.addParam( Param( "agentTimeStep", "hr", 0.01, True ) )
-        self.mPrivateNumberHiddenParams = [ "randomSeed", "outputPeriod", "agentTimeStep" ]
-        self.mPrivateBoolHiddenParams = [ "restartPreviousRun", "chemostat", "diffusionReactionOnAgentTime" ]
-        self.mPrivateStringHiddenParams = [ ]
-        self.mPrivateHiddenParams = self.mPrivateNumberHiddenParams + self.mPrivateBoolHiddenParams + self.mPrivateStringHiddenParams
-        self.mHiddenParams = self.mHiddenParams + self.mPrivateHiddenParams
-
-        self.mTimeStep = TimeStep()
-        return
-
-    def getNumBaselineSteps( self ):
-        self.getTimeStep().getParam( 'endOfSimulation' ).checkUnit( 'hr' )
-        self.getParam( 'agentTimeStep' ).checkUnit( 'hr' )
-
-        end_of_simulation = self.getTimeStep().getParam( 'endOfSimulation' ).getValue()
-        agent_time_step = self.getParam( 'agentTimeStep' ).getValue()
-        number_steps = int( end_of_simulation / agent_time_step )
-
-        return number_steps
-
-    def getBioModelH( self, indent, depth ):
-        lines  = "// FIXME: Simulator \n"
-        return lines
-
-    def getInitializeBioModel( self, indent, depth ):
-        varname = "gSimulator"
-        lines = []
-        lines.append( (depth*indent) + "{" )
-        depth += 1
-        lines.append( (depth*indent) + "%s = new Simulator( %s, %s, %s, %s, %s, %s );" % (varname, "false", "false", "true", "75321", "0.01", "0.01", ) )
-        lines.append( ParamHolder.getInitializeBioModel( self, varname, indent, depth ) )
-
-        s = self.getInitializeBioModelSetDataMembers( varname, "->", indent, depth,
-                                                      self.mPrivateBoolHiddenParams,
-                                                      self.mPrivateNumberHiddenParams,
-                                                      self.mPrivateStringHiddenParams )
-        lines.append( s )
-        
-        s = self.mTimeStep.getInitializeBioModel( "%s->getTimeStep()" % ( varname, ), indent, depth )
-        lines.append( s )
-        depth -= 1;
-        lines.append( (depth*indent) + "}" )
-        return "\n".join( lines )
-
-    def getTimeStep( self ):
-        return self.mTimeStep
-        
-    def getName(self):
-        return self.mName
-
-    def __str__(self):
-        s  = "<%s>\n" % (self.mName)
-        s += ParamHolder.__str__( self )
-        s += str( self.mTimeStep ) + "\n"
-        s += "</%s>\n" % (self.mName)
-        return s
-
-    def __repr__(self):
-        return str(self)
-        
-class TimeStep( ParamHolder ):
-
-    def __init__(self):
-        self.mName = "timeStep"
-        ParamHolder.__init__(self)
-        self.addParam( Param( "adaptive", "bool", False, False ) )
-        self.addParam( Param( "timeStepIni", "hr", 0.01, False ) )
-        self.addParam( Param( "timeStepMin", "hr", 0.01, False ) )
-        self.addParam( Param( "timeStepMax", "hr", 0.01, False ) )
-        self.addParam( Param( "endOfSimulation", "hr", 0.01, True ) )
-
-        self.mPrivateNumberHiddenParams = [ "timeStepIni", "timeStepMin", "timeStepMax", "endOfSimulation" ]
-        self.mPrivateBoolHiddenParams = [ "adaptive" ]
-        self.mPrivateStringHiddenParams = [ ]
-        self.mPrivateHiddenParams = self.mPrivateNumberHiddenParams + self.mPrivateBoolHiddenParams + self.mPrivateStringHiddenParams
-        self.mHiddenParams = self.mHiddenParams + self.mPrivateHiddenParams
-
-        return
-
-    def getInitializeBioModel( self, varname, indent, depth ):
-        lines = []
-        lines.append( (depth*indent) + "{" )
-        depth += 1
-        lines.append( ParamHolder.getInitializeBioModel( self, varname, indent, depth ) )
-
-        s = self.getInitializeBioModelSetDataMembers( varname, ".", indent, depth,
-                                                      self.mPrivateBoolHiddenParams,
-                                                      self.mPrivateNumberHiddenParams,
-                                                      self.mPrivateStringHiddenParams )
-        lines.append( s )
-        
-        depth -= 1;
-        lines.append( (depth*indent) + "}" )
-        return "\n".join( lines )
-    
-
-    def getName(self):
-        return self.mName
-
-    def __str__(self):
-        s  = "<%s>\n" % (self.mName)
-        s += ParamHolder.__str__( self )
-        s += "</%s>\n" % (self.mName)
-        return s
-
-    def __repr__(self):
-        return str(self)
-
+from biocell import *
 
 class IDynoMiCS( ParamHolder ):
 
@@ -377,12 +251,9 @@ class IDynoMiCS( ParamHolder ):
     def __repr__(self):
         return str(self)
         
-
 def main():
-    print("UNCHECKED")
+    print( "FIXME: no tester for " + str( __file__ ) )
     return
     
 if __name__ == "__main__":
     main()
-        
-

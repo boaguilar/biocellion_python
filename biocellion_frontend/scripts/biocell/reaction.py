@@ -1,108 +1,4 @@
-from agent_species import Param, ParamHolder, ItemHolder
-import sys
-
-class KineticFactor( ParamHolder ):
-
-    def __init__( self ):
-        ParamHolder.__init__( self )
-        
-        self.addAttribute( Param( "class", "str", "", True ) )
-        self.addAttribute( Param( "molecule", "str", "", False ) )  # Molecule reference
-        self.addAttribute( Param( "solute", "str", "", False ) )    # Solute reference
-
-        self.addParam( Param( "Ki", "g.L-1", 0.0, False ) )
-        self.addParam( Param( "Ks", "g.L-1", 0.0, False ) )
-
-        self.mPrivateNumberHiddenParams = [ "solute", "molecule", "Ki", "Ks", ]
-        self.mPrivateBoolHiddenParams = [  ]
-        self.mPrivateStringHiddenParams = [ "class", ]
-        self.mPrivateHiddenParams = self.mPrivateNumberHiddenParams + self.mPrivateBoolHiddenParams + self.mPrivateStringHiddenParams
-        self.mHiddenParams = self.mHiddenParams + self.mPrivateHiddenParams
-        
-        return
-
-    def getInitializeBioModel( self, container_name, indent, depth ):
-        varname = "kinetic_factor"
-        class_name = self.getAttribute( 'class' ).getValue( )
-        lines = [ ]
-        lines.append( (depth*indent) + "{" )
-        depth += 1
-        
-        lines.append( (depth*indent) + "Reaction::KineticFactor *%s = new Reaction::%s( );" % (varname, class_name, ) )
-        lines.append( ParamHolder.getInitializeBioModel( self, varname, indent, depth ) )
-        
-        s = self.getInitializeBioModelSetDataMembers( varname, "->", indent, depth,
-                                                      self.mPrivateBoolHiddenParams,
-                                                      self.mPrivateNumberHiddenParams,
-                                                      self.mPrivateStringHiddenParams )
-        if s:
-            lines.append( s )
-        if container_name:
-            lines.append( (depth*indent) + "%s.push_back( %s );" % (container_name, varname, ) )
-        depth -= 1;
-        lines.append( (depth*indent) + "}" )
-        return "\n".join( lines )
-
-    def __str__(self):
-        s  = "<kineticFactor" + self.formatAttributes() + ">\n"
-        s += ParamHolder.__str__( self )
-        s += "</kineticFactor>\n"
-        return s
-
-    
-class Yields( ParamHolder ):
-    
-    def __init__( self ):
-        ParamHolder.__init__( self )
-        self.addParam( Param( "*", "g.g-1", 0.0, False ) )
-        self.mSolutes = [ ]
-        self.mParticles = [ ]
-        self.mIdxs = { }
-        return
-
-    def setSolute( self, name, idx ):
-        self.mSolutes.append( name )
-        self.mIdxs[ name ] = idx
-        return
-
-    def setParticle( self, name, idx ):
-        self.mParticles.append( name )
-        self.mIdxs[ name ] = idx
-        return
-    
-    def getKeys( self ):
-        return self.getParamKeys( )
-
-    def getItem( self, name ):
-        return self.getParam( name )
-
-    def getInitializeBioModel(self, container_name, indent, depth):
-        varname = "yield"
-        lines = []
-        for n in self.mParams:
-            if n == '*':
-                continue
-            
-            param = self.mParams[ n ]
-            lines.append( (depth*indent) + "{" )
-            depth += 1
-            lines.append( (depth*indent) + "Reaction::Yield %s;" % (varname, ) )
-            if n in self.mSolutes:
-                lines.append( (depth*indent) + "%s.setSolute( );" % (varname, ) )
-            elif n in self.mParticles:
-                lines.append( (depth*indent) + "%s.setParticle( );" % (varname, ) )
-            else:
-                raise Exception( "ERROR: Yield must be solute or particle" )
-
-            lines.append( (depth*indent) + "%s.setItemIdx( %s );" % ( varname, self.mIdxs[ n ] ) )
-            lines.append( (depth*indent) + "%s.setValue( %s );" % ( varname, param.getValue( ) ) )
-            
-            lines.append( (depth*indent) + "%s.push_back( %s );" % (container_name, varname, ) )
-            depth -= 1
-            lines.append( (depth*indent) + "}" )
-            
-
-        return "\n".join( lines )
+from biocell import *
 
 class Reaction( ParamHolder ):
 
@@ -217,12 +113,10 @@ class AllReactions( ItemHolder ):
         if item is None:
             item = self.mItemClass( name )
         return ItemHolder.addItem( self, name, item )
-
+    
 def main():
-    print("UNTESTED")
+    print( "FIXME: no tester for " + str( __file__ ) )
     return
     
 if __name__ == "__main__":
     main()
-        
-

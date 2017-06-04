@@ -1,7 +1,5 @@
-import sys
+from biocell import *
 import xml.etree.ElementTree as ET
-from agent_species import Param
-import simulator, particle, agent_species, agent_grid, computation_domain, solute, reaction, bulk
 
 def same_type( a, b ):
     if type( a ).__name__ == 'instance':
@@ -20,40 +18,13 @@ def same_type( a, b ):
 
     return ta == tb
 
-class BioModel:
+class ModelScanner:
 
-    def __init__( self ):
-        self.mIDynoMiCS = simulator.IDynoMiCS( self )
-        self.mDistanceJunctionsEnabled = False
+    def __init__( self, model ):
+        self.mModel = model
         self.SCAN_VALIDATE_MODE = 1
         self.SCAN_PARSE_MODE = 2
         return
-
-    def getIDynoMiCS( self ):
-        return self.mIDynoMiCS
-
-    def getDistanceJunctionsEnabled( self ):
-        return self.mDistanceJunctionsEnabled
-
-    def setDistanceJunctionsEnabled( self, value ):
-        self.mDistanceJunctionsEnabled = value
-        return
-
-    def getBioModelH( self, indent, depth ):
-        return self.mIDynoMiCS.getBioModelH( indent, depth )
-
-    def getInitializeBioModel( self, indent, depth ):
-        varname = "gBioModel"
-        lines = []
-        lines.append( (depth*indent) + "{" )
-        depth += 1
-        lines.append( (depth*indent) + "%s = new BioModel( );" % (varname, ) )
-        lines.append( (depth*indent) + "%s->setDistanceJunctionsEnabled( %s );" % ( varname, "true" if self.mDistanceJunctionsEnabled else "false", ) )
-        depth -= 1;
-        lines.append( (depth*indent) + "}" )
-
-        lines.append( self.mIDynoMiCS.getInitializeBioModel( indent, depth ) )
-        return "\n".join( lines )
 
     def parseXML( self, xmlfilename ):
         ## read parameters from input file.
@@ -69,20 +40,7 @@ class BioModel:
         self.scanXML( root )
         
         ## connect the related elements
-        self.mIDynoMiCS.organizeChildren()
-        return
-
-    def parseSpeciesXML( self, root ):
-        for species in root.findall('species'):
-            name = species.get('name')
-
-            ## parse parameters
-            for param in species.findall('param'):
-                agent_param = Param( param.get('name'), param.get('unit'), param.text )
-                if not self.mAgentSpecies.getSpecies( name ).updateParam( agent_param ):
-                    raise Exception( "ERROR : Unknown param (" + str( agent_param ) + ") for species (" + name + ")" )
-
-            
+        self.mModel.organizeChildren()
         return
 
     def scanXML( self, root ):
@@ -259,7 +217,8 @@ class BioModel:
     def scanIdynomicsXML( self, node, parent_object=None ):
         may_children = ( "simulator", "input", "solute", "particle", "world", "reaction", "molecularReactions", "solver", "agentGrid", "species", )
         required_children = ( "simulator", )
-        node_object = self.mIDynoMiCS = simulator.IDynoMiCS( self )
+        self.mModel.resetIDynoMiCS( )
+        node_object = self.mModel.getIDynoMiCS( )
         may_attributes = node_object.getMayAttributes( )
         required_attributes = node_object.getRequiredAttributes( )
         may_params = node_object.getMayParams( )
@@ -284,7 +243,7 @@ class BioModel:
     def scanSimulatorXML( self, node, parent_object=None ):
         may_children = ( "param", "timeStep", )
         required_children = (  )
-        node_object = self.mIDynoMiCS.getSimulator()
+        node_object = self.mModel.getIDynoMiCS( ).getSimulator()
         may_attributes = node_object.getMayAttributes( )
         required_attributes = node_object.getRequiredAttributes( )
         may_params = node_object.getMayParams( )
@@ -302,7 +261,7 @@ class BioModel:
     def scanSimulatorTimeStepXML( self, node, parent_object=None ):
         may_children = ( "param", )
         required_children = (  )
-        node_object = self.mIDynoMiCS.getSimulator().getTimeStep()
+        node_object = self.mModel.getIDynoMiCS( ).getSimulator().getTimeStep()
         may_attributes = node_object.getMayAttributes( )
         required_attributes = node_object.getRequiredAttributes( )
         may_params = node_object.getMayParams( )
@@ -324,9 +283,9 @@ class BioModel:
     def scanSoluteXML( self, node, parent_object=None ):
         may_children = ( "param", )
         required_children = (  )
-        if not self.mIDynoMiCS.getSolutes().addItem( node.get('name') ):
+        if not self.mModel.getIDynoMiCS( ).getSolutes().addItem( node.get('name') ):
             raise Exception( "ERROR : couldn't add a solute." )
-        node_object = self.mIDynoMiCS.getSolutes().getLastItem( )
+        node_object = self.mModel.getIDynoMiCS( ).getSolutes().getLastItem( )
         may_attributes = node_object.getMayAttributes( )
         required_attributes = node_object.getRequiredAttributes( )
         may_params = node_object.getMayParams( )
@@ -343,9 +302,9 @@ class BioModel:
     def scanParticleXML( self, node, parent_object=None ):
         may_children = ( "param", )
         required_children = (  )
-        if not self.mIDynoMiCS.getParticles().addItem( node.get('name') ):
+        if not self.mModel.getIDynoMiCS( ).getParticles().addItem( node.get('name') ):
             raise Exception( "ERROR : couldn't add a particle." )
-        node_object = self.mIDynoMiCS.getParticles().getLastItem( )
+        node_object = self.mModel.getIDynoMiCS( ).getParticles().getLastItem( )
         may_attributes = node_object.getMayAttributes( )
         required_attributes = node_object.getRequiredAttributes( )
         may_params = node_object.getMayParams( )
@@ -362,7 +321,7 @@ class BioModel:
     def scanWorldXML( self, node, parent_object=None ):
         may_children = ( "bulk", "agar", "computationDomain", )
         required_children = (  )
-        node_object = self.mIDynoMiCS.getWorld( )
+        node_object = self.mModel.getIDynoMiCS( ).getWorld( )
         may_attributes = node_object.getMayAttributes( )
         required_attributes = node_object.getRequiredAttributes( )
         may_params = node_object.getMayParams( )
@@ -381,9 +340,9 @@ class BioModel:
     def scanWorldBulkXML( self, node, parent_object=None ):
         may_children = ( "solute", "param", )
         required_children = ( )
-        if not self.mIDynoMiCS.getWorld().getBulks().addItem( node.get('name') ):
+        if not self.mModel.getIDynoMiCS( ).getWorld().getBulks().addItem( node.get('name') ):
             raise Exception( "ERROR : couldn't add a bulk." )
-        node_object = self.mIDynoMiCS.getWorld().getBulks().getLastItem( )
+        node_object = self.mModel.getIDynoMiCS( ).getWorld().getBulks().getLastItem( )
         may_attributes = node_object.getMayAttributes( )
         required_attributes = node_object.getRequiredAttributes( )
         may_params = node_object.getMayParams( )
@@ -403,7 +362,7 @@ class BioModel:
         may_children = ( "param", )
         required_children = (  )
         if parent_object is None:
-            node_object = bulk.BulkSolute( node.get( 'name' ) )
+            node_object = BulkSolute( node.get( 'name' ) )
         else:
             if not parent_object.getSolutes().addItem( node.get('name') ):
                 raise Exception( "ERROR : couldn't add a bulk solute." )
@@ -430,9 +389,9 @@ class BioModel:
     def scanWorldComputationDomainXML( self, node, parent_object=None ):
         may_children = ( "grid", "boundaryCondition", "param", )
         required_children = ( "grid", )
-        if not self.mIDynoMiCS.getWorld().getComputationDomains().addItem( node.get('name') ):
+        if not self.mModel.getIDynoMiCS( ).getWorld().getComputationDomains().addItem( node.get('name') ):
             raise Exception( "ERROR : couldn't add a computation domain." )
-        node_object = self.mIDynoMiCS.getWorld().getComputationDomains().getLastItem( )
+        node_object = self.mModel.getIDynoMiCS( ).getWorld().getComputationDomains().getLastItem( )
         may_attributes = node_object.getMayAttributes( )
         required_attributes = node_object.getRequiredAttributes( )
         may_params = node_object.getMayParams( )
@@ -452,7 +411,7 @@ class BioModel:
         may_children = (  )
         required_children = (  )
         if parent_object is None:
-            node_object = computation_domain.ComputationDomainGrid( )
+            node_object = ComputationDomainGrid( )
         else:
             node_object = parent_object.getGrid( )
             parent_object = None # don't need to add this as a child
@@ -477,9 +436,9 @@ class BioModel:
     def scanReactionXML( self, node, parent_object=None ):
         may_children = ( "param", "kineticFactor", "yield", )
         required_children = (  )
-        if not self.mIDynoMiCS.getReactions().addItem( node.get('name') ):
+        if not self.mModel.getIDynoMiCS( ).getReactions().addItem( node.get('name') ):
             raise Exception( "ERROR : couldn't add a reaction." )
-        node_object = self.mIDynoMiCS.getReactions().getLastItem()
+        node_object = self.mModel.getIDynoMiCS( ).getReactions().getLastItem()
         may_attributes = node_object.getMayAttributes( )
         required_attributes = node_object.getRequiredAttributes( )
         may_params = node_object.getMayParams( )
@@ -499,7 +458,7 @@ class BioModel:
         may_children = ( "param", )
         required_children = (  )
         if parent_object is None:
-            node_object = reaction.KineticFactor( )
+            node_object = KineticFactor( )
         else:
             if not parent_object.getKineticFactors().addItem(  ):
                 raise Exception( "ERROR : couldn't add a reaction kinetic factor." )
@@ -521,7 +480,7 @@ class BioModel:
         may_children = ( "param", )
         required_children = (  )
         if parent_object is None:
-            node_object = reaction.Yields( )
+            node_object = Yields( )
         else:
             node_object = parent_object.getYields( )
             parent_object = None
@@ -552,7 +511,7 @@ class BioModel:
     def scanAgentGridXML( self, node, parent_object=None ):
         may_children = ( "param", )
         required_children = ( "param", )
-        node_object = self.mIDynoMiCS.getAgentGrid()
+        node_object = self.mModel.getIDynoMiCS( ).getAgentGrid()
         may_attributes = node_object.getMayAttributes( )
         required_attributes = node_object.getRequiredAttributes( )
         may_params = node_object.getMayParams( )
@@ -570,9 +529,9 @@ class BioModel:
     def scanSpeciesXML( self, node, parent_object=None ):
         may_children = ( "param", "particle", "reaction", "tightJunctions", "adhesions", "initArea", "entryConditions", "chemotaxis", "switchingLags",  )
         required_children = (  )
-        if not self.mIDynoMiCS.getAgentSpecies().addSpecies( node.get('class'), node.get('name') ):
+        if not self.mModel.getIDynoMiCS( ).getAgentSpecies().addSpecies( node.get('class'), node.get('name') ):
             raise Exception( "ERROR : couldn't add a species." )
-        node_object = self.mIDynoMiCS.getAgentSpecies().getLastItem()
+        node_object = self.mModel.getIDynoMiCS( ).getAgentSpecies().getLastItem()
         may_attributes = node_object.getMayAttributes( )
         required_attributes = node_object.getRequiredAttributes( )
         may_params = node_object.getMayParams( )
@@ -599,7 +558,7 @@ class BioModel:
         may_children = ( "param", )
         required_children = ( "param", )
         if parent_object is None:
-            node_object = agent_species.AgentSpeciesParticle()
+            node_object = AgentSpeciesParticle()
         else:
             if not parent_object.getParticles().addItem( node.get('name') ):
                 raise Exception( "ERROR : couldn't add a species particle." )
@@ -621,7 +580,7 @@ class BioModel:
         may_children = (  )
         required_children = (  )
         if parent_object is None:
-            node_object = agent_species.AgentSpeciesReaction( )
+            node_object = AgentSpeciesReaction( )
         else:
             if not parent_object.getReactions().addItem( node.get('name') ):
                 raise Exception( "ERROR : couldn't add a species reaction." )
@@ -642,7 +601,7 @@ class BioModel:
         may_children = ( "tightJunction", )
         required_children = ( "tightJunction", )
         if parent_object is None:
-            node_object = agent_species.ItemHolder( agent_species.TightJunction )
+            node_object = ItemHolder( TightJunction )
         else:
             node_object = parent_object.getTightJunctions( )
             parent_object = None # don't need to add this as a child
@@ -662,7 +621,7 @@ class BioModel:
         may_children = (  )
         required_children = (  )
         if parent_object is None:
-            node_object = agent_species.TightJunction( )
+            node_object = TightJunction( )
         else:
             if not parent_object.addItem(  ):
                 raise Exception( "ERROR : couldn't add a species tight junction." )
@@ -684,7 +643,7 @@ class BioModel:
         may_children = ( "adhesion", )
         required_children = ( "adhesion", )
         if parent_object is None:
-            node_object = agent_species.ItemHolder( agent_species.Adhesion )
+            node_object = ItemHolder( Adhesion )
         else:
             node_object = parent_object.getAdhesions( )
             parent_object = None # don't need to add this as a child
@@ -704,7 +663,7 @@ class BioModel:
         may_children = (  )
         required_children = (  )
         if parent_object is None:
-            node_object = agent_species.Adhesion( )
+            node_object = Adhesion( )
         else:
             if not parent_object.addItem(  ):
                 raise Exception( "ERROR : couldn't add a species adhesion." )
@@ -726,7 +685,7 @@ class BioModel:
         may_children = ( "param", "coordinates", "blocks", )
         required_children = ( "param", )
         if parent_object is None:
-            node_object = agent_species.InitArea()
+            node_object = InitArea()
         else:
             if not parent_object.getInitAreas(  ).addItem(  ):
                 raise Exception( "ERROR : couldn't add a species initArea." )
@@ -750,7 +709,7 @@ class BioModel:
         may_children = (  )
         required_children = (  )
         if parent_object is None:
-            node_object = agent_species.Coordinates()
+            node_object = Coordinates()
         else:
             if not parent_object.getCoordinates(  ).addItem(  ):
                 raise Exception( "ERROR : couldn't add a coordinates." )
@@ -771,7 +730,7 @@ class BioModel:
         may_children = (  )
         required_children = (  )
         if parent_object is None:
-            node_object = agent_species.Blocks()
+            node_object = Blocks()
         else:
             if not parent_object.getBlocks(  ).addItem(  ):
                 raise Exception( "ERROR : couldn't add a blocks." )
@@ -797,7 +756,7 @@ class BioModel:
         may_children = ( "chemotactic", )
         required_children = ( "chemotactic", )
         if parent_object is None:
-            node_object = agent_species.ItemHolder( agent_species.Chemotaxis )
+            node_object = ItemHolder( Chemotaxis )
         else:
             node_object = parent_object.getChemotaxis( )
             parent_object = None # don't need to add this as a child
@@ -817,7 +776,7 @@ class BioModel:
         may_children = (  )
         required_children = (  )
         if parent_object is None:
-            node_object = agent_species.Chemotaxis( )
+            node_object = Chemotaxis( )
         else:
             if not parent_object.addItem(  ):
                 raise Exception( "ERROR : couldn't add a species chemotactic." )
@@ -839,11 +798,9 @@ class BioModel:
         print( "species::switchLags not scaned yet" )
         return ok
 
-    def __str__( self ):
-        s = "<BioModel>\n"
-        s += str( self.mIDynoMiCS ) + "\n"
-        s += "</BioModel>"
-        return s
-
-    def __repr__( self ):
-        return str( self )
+def main():
+    print( "FIXME: no tester for " + str( __file__ ) )
+    return
+    
+if __name__ == "__main__":
+    main()

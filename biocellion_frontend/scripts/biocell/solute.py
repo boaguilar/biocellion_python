@@ -1,5 +1,4 @@
-from agent_species import Param, ParamHolder, ItemHolder
-import sys
+from biocell import *
 
 class Solute( ParamHolder ):
 
@@ -245,12 +244,10 @@ class AllSolutes( ItemHolder ):
         if item is None:
             item = self.mItemClass( name, self.mModel )
         return ItemHolder.addItem( self, name, item )
-
+    
 def main():
-    print("UNTESTED")
+    print( "FIXME: no tester for " + str( __file__ ) )
     return
     
 if __name__ == "__main__":
     main()
-        
-

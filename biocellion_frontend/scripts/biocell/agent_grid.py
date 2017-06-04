@@ -1,4 +1,4 @@
-from agent_species import Param, ParamHolder
+from biocell import *
 
 class AgentGrid( ParamHolder ):
 
@@ -54,12 +54,11 @@ class AgentGrid( ParamHolder ):
 
     def __repr__(self):
         return str(self)
-        
+
+    
 def main():
-    print("Untested")
+    print( "FIXME: no tester for " + str( __file__ ) )
     return
     
 if __name__ == "__main__":
     main()
-        
-
