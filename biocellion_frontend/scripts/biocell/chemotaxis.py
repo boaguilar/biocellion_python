@@ -11,10 +11,10 @@ class Chemotaxis( ParamHolder ):
         self.addAttribute( Param( "withSolute", "str", "", True ) )
         self.addAttribute( Param( "contactInhibition", "int", 0, False ) )
 
-        self.mPrivateNumberHiddenParams = [ "strength", "withSolute", "contactInhibition" ]
+        self.mPrivateNumberHiddenParams = [ "strength", "contactInhibition" ]
         self.mPrivateBoolHiddenParams = [  ]
         self.mPrivateStringHiddenParams = [  ]
-        self.mPrivateHiddenParams = self.mPrivateNumberHiddenParams + self.mPrivateBoolHiddenParams + self.mPrivateStringHiddenParams
+        self.mPrivateHiddenParams = [ "withSolute", ] + self.mPrivateNumberHiddenParams + self.mPrivateBoolHiddenParams + self.mPrivateStringHiddenParams
         self.mHiddenParams = self.mHiddenParams + self.mPrivateHiddenParams
         return
 
@@ -35,6 +35,12 @@ class Chemotaxis( ParamHolder ):
                                                       self.mPrivateNumberHiddenParams,
                                                       self.mPrivateStringHiddenParams )
         lines.append( s )
+
+        if self.mReference:
+            token = self.mReference.getEnumToken( )
+        else:
+            token = "-1"
+        lines.append( (depth*indent) + "%s->setSolute( %s );" % ( varname, token ) )
         
         lines.append( (depth*indent) + "%s.push_back( %s );" % (container_name, varname, ) )
         depth -= 1;

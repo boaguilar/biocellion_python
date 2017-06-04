@@ -213,6 +213,24 @@ class ModelScanner:
         else:
             raise Exception( "ERROR : Bad scan mode." )
             return False
+
+    def findAllKeyedItems( self, root ):
+        """Find all lists of items that need to have keys generated, and generate their keys"""
+
+        # loop over all children
+        for child in list( root ):
+            if child.tag in ( 'simulator', 'input', 'world', 'solver', 'agentGrid' ):
+                # not a list element
+                pass
+            elif child.tag in ( 'solute', 'particle', 'reaction', 'molecularReactions', 'species' ):
+                tag = child.tag
+                name = child.get( 'name' )
+                class_name = child.get( 'class' )
+                item = self.mModel.getItemAddIfNeeded( tag, name, class_name )
+            else:
+                raise Exception( "Unexpected child of the XML root: " + str( child.tag ) )
+        
+        return
         
     def scanIdynomicsXML( self, node, parent_object=None ):
         may_children = ( "simulator", "input", "solute", "particle", "world", "reaction", "molecularReactions", "solver", "agentGrid", "species", )
@@ -236,6 +254,7 @@ class ModelScanner:
             "species": self.scanSpeciesXML,
         }
 
+        self.findAllKeyedItems( node )
         ok = self.scanNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
 
         return ok
@@ -283,9 +302,7 @@ class ModelScanner:
     def scanSoluteXML( self, node, parent_object=None ):
         may_children = ( "param", )
         required_children = (  )
-        if not self.mModel.getIDynoMiCS( ).getSolutes().addItem( node.get('name') ):
-            raise Exception( "ERROR : couldn't add a solute." )
-        node_object = self.mModel.getIDynoMiCS( ).getSolutes().getLastItem( )
+        node_object = self.mModel.getItemAddIfNeeded( node.tag, node.get( 'name' ), node.get( 'class' ) )
         may_attributes = node_object.getMayAttributes( )
         required_attributes = node_object.getRequiredAttributes( )
         may_params = node_object.getMayParams( )
@@ -296,15 +313,13 @@ class ModelScanner:
         }
         
         ok = self.scanNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
-        
+
         return ok
 
     def scanParticleXML( self, node, parent_object=None ):
         may_children = ( "param", )
         required_children = (  )
-        if not self.mModel.getIDynoMiCS( ).getParticles().addItem( node.get('name') ):
-            raise Exception( "ERROR : couldn't add a particle." )
-        node_object = self.mModel.getIDynoMiCS( ).getParticles().getLastItem( )
+        node_object = self.mModel.getItemAddIfNeeded( node.tag, node.get( 'name' ), node.get( 'class' ) )
         may_attributes = node_object.getMayAttributes( )
         required_attributes = node_object.getRequiredAttributes( )
         may_params = node_object.getMayParams( )
@@ -367,6 +382,7 @@ class ModelScanner:
             if not parent_object.getSolutes().addItem( node.get('name') ):
                 raise Exception( "ERROR : couldn't add a bulk solute." )
             node_object = parent_object.getSolutes().getLastItem( )
+            node_object.setReference( self.mModel.getItem( node.tag, node.get( 'name' ) ) )
             parent_object = None
         may_attributes = node_object.getMayAttributes( )
         required_attributes = node_object.getRequiredAttributes( )
@@ -436,9 +452,7 @@ class ModelScanner:
     def scanReactionXML( self, node, parent_object=None ):
         may_children = ( "param", "kineticFactor", "yield", )
         required_children = (  )
-        if not self.mModel.getIDynoMiCS( ).getReactions().addItem( node.get('name') ):
-            raise Exception( "ERROR : couldn't add a reaction." )
-        node_object = self.mModel.getIDynoMiCS( ).getReactions().getLastItem()
+        node_object = self.mModel.getItemAddIfNeeded( node.tag, node.get( 'name' ), node.get( 'class' ) )
         may_attributes = node_object.getMayAttributes( )
         required_attributes = node_object.getRequiredAttributes( )
         may_params = node_object.getMayParams( )
@@ -463,6 +477,8 @@ class ModelScanner:
             if not parent_object.getKineticFactors().addItem(  ):
                 raise Exception( "ERROR : couldn't add a reaction kinetic factor." )
             node_object = parent_object.getKineticFactors().getLastItem()
+            if node.get( 'solute' ):
+                node_object.setReference( self.mModel.getItem( 'solute', node.get( 'solute' ) ) )
             parent_object = None # don't need to add this as a child
         may_attributes = node_object.getMayAttributes( )
         required_attributes = node_object.getRequiredAttributes( )
@@ -495,6 +511,20 @@ class ModelScanner:
         }
         
         ok = self.scanNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
+
+        for yield_key in node_object.getKeys( ):
+            if yield_key == '*': continue
+            yield_item = node_object.getItem( yield_key )
+            yield_name = yield_item.getName( )
+            if self.mModel.getIDynoMiCS( ).getParticles( ).hasKey( yield_name ):
+                node_object.setParticle( yield_name, self.mModel.getItem( 'particle', yield_name ) )
+            elif self.mModel.getIDynoMiCS( ).getSolutes( ).hasKey( yield_name ):
+                node_object.setSolute( yield_name, self.mModel.getItem( 'solute', yield_name ) )
+            else:
+                msg  = "ERROR: Reaction.Yield.Param should name a solute or a particle. " + str( yield_name ) + " is not in either list.\n"
+                msg += "ERROR: Known solutes: " + ", ".join( self.mModel.getIDynoMiCS.getSolutes( ).getKeys( ) ) + ".\n"
+                msg += "ERROR: Known particles: " + ", ".join( self.mModel.getIDynoMiCS.getParticles.getKeys( ) ) + ".\n"
+                raise Exception( msg )
         
         return ok
     
@@ -529,9 +559,7 @@ class ModelScanner:
     def scanSpeciesXML( self, node, parent_object=None ):
         may_children = ( "param", "particle", "reaction", "tightJunctions", "adhesions", "initArea", "entryConditions", "chemotaxis", "switchingLags",  )
         required_children = (  )
-        if not self.mModel.getIDynoMiCS( ).getAgentSpecies().addSpecies( node.get('class'), node.get('name') ):
-            raise Exception( "ERROR : couldn't add a species." )
-        node_object = self.mModel.getIDynoMiCS( ).getAgentSpecies().getLastItem()
+        node_object = self.mModel.getItemAddIfNeeded( node.tag, node.get( 'name' ), node.get( 'class' ) )
         may_attributes = node_object.getMayAttributes( )
         required_attributes = node_object.getRequiredAttributes( )
         may_params = node_object.getMayParams( )
@@ -781,6 +809,8 @@ class ModelScanner:
             if not parent_object.addItem(  ):
                 raise Exception( "ERROR : couldn't add a species chemotactic." )
             node_object = parent_object.getLastItem( )
+            if node.get( 'withSolute' ):
+                node_object.setReference( self.mModel.getItem( 'solute', node.get( 'withSolute' ) ) )
             parent_object = None # don't need to add this as a child
         may_attributes = node_object.getMayAttributes( )
         required_attributes = node_object.getRequiredAttributes( )

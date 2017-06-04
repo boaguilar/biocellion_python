@@ -84,6 +84,9 @@
   <reaction catalyzedBy="biomass" catalyst="AttractorCells" class="ReactionFactor" name="AttractantSecretion">
     <param name="muMax" unit="hour-1">3.6</param>
     <kineticFactor class="FirstOrderKinetic"/>
+    <kineticFactor class="SimpleInhibition" solute="Attractant">
+      <param name="Ki" unit="g.L-1">1.11</param>
+    </kineticFactor>
     <yield>
       <param name="Attractant" unit="g.g-1">0.1</param>
     </yield>

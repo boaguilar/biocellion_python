@@ -17,6 +17,48 @@ class IDynoMiCS( ParamHolder ):
         
         return
 
+    def getItemAddIfNeeded( self, tag, name, class_name ):
+        if tag == "solute":
+            collection = self.getSolutes( )
+        elif tag == "particle":
+            collection = self.getParticles( )
+        elif tag == "reaction":
+            collection = self.getReactions( )
+        elif tag == "molecularReactions":
+            collection = self.getMolecularReactions( )
+        elif tag == "species":
+            collection = self.getAgentSpecies( )
+        else:
+            raise Exception( "Unexpected tag: " + str( tag ) )
+
+        if not collection.hasKey( name ):
+            if tag == 'species':
+                ok = collection.addSpecies( class_name, name )
+            else:
+                ok = collection.addItem( name )
+                
+            if not ok:
+                raise Exception( "ERROR: could not add " + str( tag ) + " " + str( name )  )
+        return collection.getItem( name )
+
+    def getItem( self, tag, name ):
+        if tag == "solute":
+            collection = self.getSolutes( )
+        elif tag == "particle":
+            collection = self.getParticles( )
+        elif tag == "reaction":
+            collection = self.getReactions( )
+        elif tag == "molecularReactions":
+            collection = self.getMolecularReactions( )
+        elif tag == "species":
+            collection = self.getAgentSpecies( )
+        else:
+            raise Exception( "Unexpected tag: " + str( tag ) )
+
+        if not collection.hasKey( name ):
+            raise Exception( "ERROR: could not get " + str( tag ) + " " + str( name )  )
+        return collection.getItem( name )
+
     def getBioModelH( self, indent, depth ):
         lines = [ ]
         lines.append( self.mSimulator.getBioModelH( indent, depth ) )
@@ -103,7 +145,6 @@ class IDynoMiCS( ParamHolder ):
             print( "Still have children of type: " + str( t ) )
             raise Exception( "ERROR: children should not be here." )
 
-        print( "FIXME: Warning, *->Solutes need to be connected by enumtoken." )
         print( "FIXME: Warning, *->Reactions need to be connected by enumtoken." )
 
         ### These must happen before enums are used to like items
@@ -120,52 +161,9 @@ class IDynoMiCS( ParamHolder ):
         ## Solutes->ComputationDomains
         self.linkAttributeToEnumToken( self.mSolutes, 'domain', self.mWorld.getComputationDomains( ) )
 
-        ## Bulks.BulkSolutes->Solutes
-        for bulk_key in self.mWorld.getBulks( ).getKeys( ):
-            bulk_solutes = self.mWorld.getBulks( ).getItem( bulk_key ).getSolutes( )
-            for bulk_solute_key in bulk_solutes.getKeys( ):
-                bulk_solute = bulk_solutes.getItem( bulk_solute_key )
-                solute_key = bulk_solute.getAttribute( 'name' ).getValue( )
-                if self.mSolutes.hasKey( solute_key ):
-                    bulk_solute.getAttribute( 'solute' ).setValue( self.mSolutes.getItem( solute_key).getEnumToken( ) )
-                else:
-                    msg  = "ERROR: World.Bulk.Solute.name should name a solute. " + str( solute_key ) + " is not in the list.\n"
-                    msg += "ERROR: Known solutes: " + ", ".join( self.mSolutes.getKeys( ) ) + ".\n"
-                    raise Exception( msg )
-
-
         ## Reactions.*->others
         for reaction_key in self.mReactions.getKeys( ):
             reaction = self.mReactions.getItem( reaction_key )
-            ## Reactions.yield->AgentSpecies/Solutes
-            yields = reaction.getYields( )
-            for yield_key in yields.getKeys( ):
-                if yield_key == '*': continue
-                yield_name = yields.getItem( yield_key ).getName( )
-                if self.mParticles.hasKey( yield_name ):
-                    yields.setParticle( yield_name, self.mParticles.getItem( yield_name ).getEnumToken( ) )
-                elif self.mSolutes.hasKey( yield_name ):
-                    yields.setSolute( yield_name, self.mSolutes.getItem( yield_name ).getEnumToken( ) )
-                else:
-                    msg  = "ERROR: Reaction.Yield.Param should name a solute or a particle. " + str( yield_name ) + " is not in either list.\n"
-                    msg += "ERROR: Known solutes: " + ", ".join( self.mSolutes.getKeys( ) ) + ".\n"
-                    msg += "ERROR: Known particles: " + ", ".join( self.mParticles.getKeys( ) ) + ".\n"
-                    raise Exception( msg )
-
-            ## Reactions.KineticFactors->Solutes
-            kinetic_factors = reaction.getKineticFactors()
-            for kinetic_factor_key in kinetic_factors.getKeys( ):
-                kinetic_factor = kinetic_factors.getItem( kinetic_factor_key )
-                solute_key = kinetic_factor.getAttribute( 'solute' ).getValue( )
-                if self.mSolutes.hasKey( solute_key ):
-                    kinetic_factor.getAttribute( 'solute' ).setValue( self.mSolutes.getItem( solute_key).getEnumToken( ) )
-                elif solute_key == "":
-                    # no solute is allowed
-                    kinetic_factor.getAttribute( 'solute' ).setValue( -1 )
-                else:
-                    msg  = "ERROR: Reaction.KineticFactor.solute should name a solute. " + str( solute_key ) + " is not in the list.\n"
-                    msg += "ERROR: Known solutes: " + ", ".join( self.mSolutes.getKeys( ) ) + ".\n"
-                    raise Exception( msg )
 
             ## Reactions.KineticFactors->Molecules
             kinetic_factors = reaction.getKineticFactors()
@@ -215,9 +213,6 @@ class IDynoMiCS( ParamHolder ):
                 
             ## AgentSpecies.TightJunctions->AgentSpecies
             self.linkAttributeToEnumToken( species.getTightJunctions( ), 'withSpecies', self.mAgentSpecies )
-                
-            ## AgentSpecies.Chemotaxis->Solute
-            self.linkAttributeToEnumToken( species.getChemotaxis( ), 'withSolute', self.mSolutes )
                 
             ## AgentSpecies.DistanaceJuctions need to be created
             species.createDistanceJunctions( )

@@ -12,10 +12,10 @@ class KineticFactor( ParamHolder ):
         self.addParam( Param( "Ki", "g.L-1", 0.0, False ) )
         self.addParam( Param( "Ks", "g.L-1", 0.0, False ) )
 
-        self.mPrivateNumberHiddenParams = [ "solute", "molecule", "Ki", "Ks", ]
+        self.mPrivateNumberHiddenParams = [ "molecule", "Ki", "Ks", ]
         self.mPrivateBoolHiddenParams = [  ]
         self.mPrivateStringHiddenParams = [ "class", ]
-        self.mPrivateHiddenParams = self.mPrivateNumberHiddenParams + self.mPrivateBoolHiddenParams + self.mPrivateStringHiddenParams
+        self.mPrivateHiddenParams = [ "solute", ] + self.mPrivateNumberHiddenParams + self.mPrivateBoolHiddenParams + self.mPrivateStringHiddenParams
         self.mHiddenParams = self.mHiddenParams + self.mPrivateHiddenParams
         
         return
@@ -36,6 +36,13 @@ class KineticFactor( ParamHolder ):
                                                       self.mPrivateStringHiddenParams )
         if s:
             lines.append( s )
+            
+        if self.mReference:
+            token = self.mReference.getEnumToken( )
+        else:
+            token = "-1"
+        lines.append( (depth*indent) + "%s->setSolute( %s );" % ( varname, token ) )
+
         if container_name:
             lines.append( (depth*indent) + "%s.push_back( %s );" % (container_name, varname, ) )
         depth -= 1;

@@ -15,8 +15,7 @@ class BulkSolute( ParamHolder ):
         self.addParam( Param( "Spulse", "g.L-1", 0.0, False ) )
         self.addParam( Param( "pulseRate", "h-1", 0.0, False ) )
 
-        self.addAttribute( Param( "solute", "str", "", False ) )    # Solute reference
-        self.mPrivateNumberHiddenParams = [ "solute", ]
+        self.mPrivateNumberHiddenParams = [  ]
         self.mPrivateBoolHiddenParams = [  ]
         self.mPrivateStringHiddenParams = [  ]
         self.mPrivateHiddenParams = self.mPrivateNumberHiddenParams + self.mPrivateBoolHiddenParams + self.mPrivateStringHiddenParams
@@ -43,6 +42,13 @@ class BulkSolute( ParamHolder ):
                                                       self.mPrivateStringHiddenParams )
         if s:
             lines.append( s )
+            
+        if self.mReference:
+            token = self.mReference.getEnumToken( )
+        else:
+            token = "-1"
+        lines.append( (depth*indent) + "%s->setSolute( %s );" % ( varname, token ) )
+        
         if container_name:
             lines.append( (depth*indent) + "%s.push_back( %s );" % (container_name, varname, ) )
         depth -= 1;

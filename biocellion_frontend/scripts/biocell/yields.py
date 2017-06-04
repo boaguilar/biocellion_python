@@ -5,19 +5,19 @@ class Yields( ParamHolder ):
     def __init__( self ):
         ParamHolder.__init__( self )
         self.addParam( Param( "*", "g.g-1", 0.0, False ) )
-        self.mSolutes = [ ]
-        self.mParticles = [ ]
-        self.mIdxs = { }
+        self.mSolutes = { }
+        self.mParticles = { }
+        self.mItems = { }
         return
 
-    def setSolute( self, name, idx ):
-        self.mSolutes.append( name )
-        self.mIdxs[ name ] = idx
+    def setSolute( self, name, solute ):
+        self.mSolutes[ name ] = solute
+        self.mItems[ name ] = solute
         return
 
-    def setParticle( self, name, idx ):
-        self.mParticles.append( name )
-        self.mIdxs[ name ] = idx
+    def setParticle( self, name, particle ):
+        self.mParticles[ name ] = particle
+        self.mItems[ name ] = particle
         return
     
     def getKeys( self ):
@@ -44,7 +44,7 @@ class Yields( ParamHolder ):
             else:
                 raise Exception( "ERROR: Yield must be solute or particle" )
 
-            lines.append( (depth*indent) + "%s.setItemIdx( %s );" % ( varname, self.mIdxs[ n ] ) )
+            lines.append( (depth*indent) + "%s.setItemIdx( %s );" % ( varname, self.mItems[ n ].getEnumToken( ) ) )
             lines.append( (depth*indent) + "%s.setValue( %s );" % ( varname, param.getValue( ) ) )
             
             lines.append( (depth*indent) + "%s.push_back( %s );" % (container_name, varname, ) )

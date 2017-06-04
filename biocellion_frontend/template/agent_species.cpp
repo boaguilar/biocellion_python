@@ -446,7 +446,7 @@ void AgentSpecies::adjustSpAgentChemotaxis( const VIdx& vIdx, const JunctionData
       return;
     }
 
-    findChemoTaxisDirectionAndConcentration( mChemotaxis[ i ]->getWithSolute( ),  vOffset, nbrUBEnv, state, dir, delta );
+    findChemoTaxisDirectionAndConcentration( mChemotaxis[ i ]->getSolute( ),  vOffset, nbrUBEnv, state, dir, delta );
     if( delta > 0 ) {
       VReal chemDisp = dir * ( mChemotaxis[ i ]->getStrength( ) * delta );
       disp += chemDisp;

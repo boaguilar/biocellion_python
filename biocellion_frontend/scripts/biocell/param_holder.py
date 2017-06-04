@@ -11,6 +11,7 @@ class ParamHolder:
         self.mChildren = {  }
         self.mHiddenParams = [ ]
         self.mPrefix = ""
+        self.mReference = None
         return
 
     def getPrefix( self ):
@@ -22,6 +23,13 @@ class ParamHolder:
             self.mAttributes[ n ].setPrefix( prefix )
         for n in self.mParams:
             self.mParams[ n ].setPrefix( prefix )
+        return
+
+    def getReference( self ):
+        return self.mReference
+
+    def setReference( self, value ):
+        self.mReference = value
         return
 
     def addChild( self, child ):

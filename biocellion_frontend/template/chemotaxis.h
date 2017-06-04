@@ -5,15 +5,15 @@
 class Chemotaxis {
 public:
     Chemotaxis( );
-    S32 getWithSolute() const { return mWithSolute; };
+    S32 getSolute() const { return mSolute; };
     REAL getStrength() const { return mStrength; };
     S32 getContactInhibition() const { return mContactInhibition; };
-    void setWithSolute(const S32& withSolute);
+    void setSolute(const S32& solute);
     void setStrength(const REAL& strength);
     void setContactInhibition(const S32& contactInhibition);
     
 protected:
-  S32 mWithSolute;
+  S32 mSolute;
   REAL mStrength;
   S32 mContactInhibition;
 };

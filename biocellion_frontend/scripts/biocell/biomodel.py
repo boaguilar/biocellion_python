@@ -14,6 +14,12 @@ class BioModel:
     def getIDynoMiCS( self ):
         return self.mIDynoMiCS
 
+    def getItemAddIfNeeded( self, tag, name, class_name ):
+        return self.mIDynoMiCS.getItemAddIfNeeded( tag, name, class_name )
+
+    def getItem( self, tag, name ):
+        return self.mIDynoMiCS.getItem( tag, name )
+
     def getDistanceJunctionsEnabled( self ):
         return self.mDistanceJunctionsEnabled
 
