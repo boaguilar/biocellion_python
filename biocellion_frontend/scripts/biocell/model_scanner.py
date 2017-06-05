@@ -522,8 +522,8 @@ class ModelScanner:
                 node_object.setSolute( yield_name, self.mModel.getItem( 'solute', yield_name ) )
             else:
                 msg  = "ERROR: Reaction.Yield.Param should name a solute or a particle. " + str( yield_name ) + " is not in either list.\n"
-                msg += "ERROR: Known solutes: " + ", ".join( self.mModel.getIDynoMiCS.getSolutes( ).getKeys( ) ) + ".\n"
-                msg += "ERROR: Known particles: " + ", ".join( self.mModel.getIDynoMiCS.getParticles.getKeys( ) ) + ".\n"
+                msg += "ERROR: Known solutes: " + ", ".join( self.mModel.getIDynoMiCS( ).getSolutes( ).getKeys( ) ) + ".\n"
+                msg += "ERROR: Known particles: " + ", ".join( self.mModel.getIDynoMiCS( ).getParticles( ).getKeys( ) ) + ".\n"
                 raise Exception( msg )
         
         return ok
