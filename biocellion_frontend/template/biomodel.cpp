@@ -302,14 +302,12 @@ void BioModel::updatePDEBufferNeumannBCVal( const S32 elemIdx, const VReal& star
   return;
 }
 
-
-
 void initializeBioModel() {
   if( gBioModelInitialized ) {
     return;
   }
-  // AGENT SPECIES AUTO BEGIN
-  // AGENT SPECIES AUTO END
+
+  initializeBioModelAuto();
 
   S32 i, j;
   gMechIntrctShoveEnabled.resize( NUM_AGENT_SPECIES ); 

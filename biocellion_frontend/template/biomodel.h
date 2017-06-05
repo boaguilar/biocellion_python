@@ -20,6 +20,8 @@
 #include "agar.h"
 #include "world.h"
 
+#include "biomodel_auto.h"
+
 class BioModel {
 public:
   BioModel( );
@@ -85,9 +87,6 @@ extern Vector< Vector<BOOL> > gMechIntrctShoveEnabled;
 
 extern void initializeBioModel();
 extern void terminateBioModel();
-
-// AGENT SPECIES AUTO BEGIN
-// AGENT SPECIES AUTO END
 
 typedef enum _junction_type_e {
   JUNCTION_TYPE_DISTANCE,

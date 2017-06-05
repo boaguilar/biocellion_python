@@ -175,48 +175,39 @@ class ModelWriter:
 
 
     def write_biomodel_h( self, biomodel, directory, source_directory ):
-        filename = 'biomodel.h'
+        filename = 'biomodel_auto.h'
         name = directory + '/' + filename
         fout = open(name, 'w')
         if not fout:
             raise Exception( 'ERROR: unable to open ' + name )
         
-        name = source_directory + '/template/' + filename
-        fin  = open(name, 'r')
-        if not fin:
-            raise Exception( 'ERROR: unable to open ' + name )
-        
-        for line in fin:
-            fout.write(line)
-            if re.search(r'AGENT SPECIES AUTO BEGIN', line):
-                lines = biomodel.getBioModelH( "  ", 0 )
-                fout.write(lines)
-                fout.write("\n")
-            
-        fin.close()
+        lines = [ ]
+        lines.append( "#ifndef _BIOMODEL_AUTO_H_" )
+        lines.append( "#define _BIOMODEL_AUTO_H_" )
+        lines.append( "extern void initializeBioModelAuto( );" )
+        lines.append( biomodel.getBioModelH( "  ", 0 ) )
+        lines.append( "#endif /* _BIOMODEL_AUTO_H_ */" )
+        fout.write( "\n".join( lines ) )
+        fout.write( "\n" )
         fout.close()
         return
 
     def write_biomodel_cpp( self, biomodel, directory, source_directory ):
-        filename = 'biomodel.cpp'
+        filename = 'biomodel_auto.cpp'
         name = directory + '/' + filename
         fout = open(name, 'w')
         if not fout:
             raise Exception( 'ERROR: unable to open ' + name )
         
-        name = source_directory + '/template/' + filename
-        fin  = open(name, 'r')
-        if not fin:
-            raise Exception( 'ERROR: unable to open ' + name )
-        
-        for line in fin:
-            fout.write(line)
-            if re.search(r'AGENT SPECIES AUTO BEGIN', line):
-                lines = biomodel.getInitializeBioModel( "  ", 1 )
-                fout.write(lines)
-                fout.write("\n")
-            
-        fin.close()
+
+        lines = [ ]
+        lines.append( '#include "biomodel.h"' )
+        lines.append( "" )
+        lines.append( "void initializeBioModelAuto( ) {" )
+        lines.append( biomodel.getInitializeBioModel( "  ", 1 ) )
+        lines.append( "}" )
+        fout.write( "\n".join( lines ) )
+        fout.write( "\n" )
         fout.close()
         return
 
@@ -243,6 +234,7 @@ class ModelWriter:
                   'agar.cpp', 'agar.h',
                   'agent_grid.cpp', 'agent_grid.h',
                   'agent_species.cpp', 'agent_species.h',
+                  'biomodel.cpp', 'biomodel.h',
                   'bulk.cpp', 'bulk.h',
                   'chemotaxis.cpp', 'chemotaxis.h',
                   'computation_domain.cpp', 'computation_domain.h',
