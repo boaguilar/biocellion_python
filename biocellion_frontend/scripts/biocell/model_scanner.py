@@ -102,7 +102,12 @@ class ModelScanner:
                 param = Param( child.get('name'), child.get('unit'), child.text )
                 if not param_validator.validateParam( param ):
                     ok = False
-                    print( "Param ( " + str( param ) + " ) of ( " + node.tag + " ) not valid, check name, units, and value." )
+                    default_param = param_validator.getParam( name )
+                    msg  = "Param ( " + str( param ) + " ) of ( " + node.tag + " ) not valid, check name, units, and value."
+                    msg += " Expected param is " + str( default_param )
+                    print( msg )
+
+
 
 
         for name in required_children:
@@ -165,7 +170,12 @@ class ModelScanner:
 
                 if not node_object.validateParam( child_param ):
                     ok = False
-                    raise Exception( "ERROR : ( " + str( child_param ) + " ) of ( " + node.tag + " ) not valid, check name, unit, and value." )
+                    default_param = node_object.getParam( name )
+                    msg  = "ERROR: "
+                    msg += " Param ( " + str( param ) + " ) of ( " + node.tag + " ) not valid, check name, units, and value."
+                    msg += " Expected param is " + str( default_param )
+                    raise Exception( msg )
+
                 if not node_object.updateParam( child_param ):
                     ok = False
                     raise Exception("ERROR : Unknown param (" + str( child_param ) + ") for tag (" + node.tag + ") : check name, unit, and value.")

@@ -47,6 +47,7 @@ class AllUnits:
         } ) )
         # diffusion area/time
         self.addUnit( Unit( "um2.hr-1", { "um2.hr-1": 1.0,
+                                          "um2.hour-1": 1.0,
                                           "m2.day-1": 1.0e6*1.0e6/24.0,
         } ) )
         # density
