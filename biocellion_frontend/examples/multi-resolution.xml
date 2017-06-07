@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?><!--
+
+#########################################################################
+ iDynoMiCS: individual-based Dynamics of Microbial Communities Simulator
+#########################################################################
+
+-->
+<idynomics>
+  <!--#####################################################################
+		SIMULATOR SECTION
+	######################################################################-->
+  <simulator>
+    <param name="restartPreviousRun">false</param>
+    <param name="randomSeed">5515</param>
+    <param name="outputPeriod" unit="hour">0.01</param>
+
+    <timeStep>
+      <param name="adaptive">false</param>
+      <param name="timeStepIni" unit="hour">0.01</param>
+      <param name="timeStepMin" unit="hour">0.01</param>
+      <param name="timeStepMax" unit="hour">0.01</param>
+      <param name="endOfSimulation" unit="hour">0.20</param>
+    </timeStep>
+    <!-- The AGENTTIMESTEP which should always be EQUAL or LOWER than the global time step -->
+    <param name="agentTimeStep" unit="hour">0.01</param>
+  </simulator>
+  <!--#####################################################################
+		INPUT SECTION
+	######################################################################-->
+  <input>
+    <param name="useAgentFile">false</param>
+    <param name="useBulkFile">false</param>
+  </input>
+  <!--#####################################################################
+		SOLUTES AND BIOMASS TYPES SECTION
+	######################################################################-->
+  <solute domain="MyProducerColony" name="Product">
+    <param name="diffusivity" unit="m2.day-1">8.64e-9</param>
+    <param name="airDiffusivity" unit="m2.day-1">8.64e-9</param>
+    <param name="decayRate">0.01</param>
+    <param name="writeOutput">true</param>
+    <param name="concentration" unit="g.L-1">0.0</param>
+    <param name="resolution" unit="um">2.0</param>
+  </solute>
+  
+  <solute domain="MyProducerColony" name="Nutrient">
+    <param name="diffusivity" unit="m2.day-1">8.64e-9</param>
+    <param name="airDiffusivity" unit="m2.day-1">8.64e-9</param>
+    <param name="decayRate">0.0001</param>
+    <param name="writeOutput">true</param>
+    <param name="concentration" unit="g.L-1">30.0</param>
+    <param name="resolution" unit="um">4.0</param>
+  </solute>
+  
+  <particle name="biomass">
+    <param name="density" unit="g.L-1">150</param>
+  </particle>
+  <particle name="inert">
+    <param name="density" unit="g.L-1">150</param>
+  </particle>
+  <!--#####################################################################
+		WORLD SECTION
+	######################################################################-->
+  <world>
+    <bulk name="MyTank">
+      <param name="isConstant">true</param>
+      <param name="D" unit="h-1">0.6</param>
+      <solute name="Product">
+	<param name="Sbulk" unit="g.L-1">0.0</param>
+	<param name="Sin" unit="g.L-1">0</param>
+	<param name="isConstant">true</param>
+	<param name="Spulse" unit="g.L-1">0.0</param>
+	<param name="pulseRate" unit="h-1">0.0</param>
+      </solute>
+      <solute name="Nutrient">
+	<param name="Sbulk" unit="g.L-1">0.314</param>
+      </solute>
+    </bulk>
+    <bulk name="MySecondTank">
+      <param name="isConstant">true</param>
+      <param name="D" unit="h-1">0.0</param>
+    </bulk>
+    <computationDomain name="MyProducerColony">
+      <!-- this is the grid size, counts of UBs -->
+      <grid nDim="3" nI="32" nJ="32" nK="4"/>
+      <!-- this is the UB size -->
+      <param name="resolution" unit="um">4.0</param>
+      <param name="refineRatio">2</param><!--biocellion only-->
+      <param name="AMRLevels">3</param><!--biocellion only-->
+      <param name="boundaryLayer" unit="um">1</param>
+      <param name="biofilmDiffusivity">0.8</param>
+      <param name="specificArea" unit="m2.m-3">80</param>
+    </computationDomain>
+  </world>
+  <!--#####################################################################
+		REACTION SECTION
+	######################################################################-->
+  <reaction catalyzedBy="biomass" catalyst="ProducerCells" class="ReactionFactor" name="ProductSecretion">
+    <param name="muMax" unit="hour-1">3.0</param>
+    <kineticFactor class="MonodKinetic" solute="Nutrient">
+      <param name="Ks" unit="g.L-1">25.0</param>
+    </kineticFactor>
+    <kineticFactor class="SimpleInhibition" solute="Product">
+      <param name="Ki" unit="g.L-1">0.1</param>
+    </kineticFactor>
+    <yield>
+      <param name="Nutrient" unit="g.g-1">-0.1</param>
+      <param name="Product" unit="g.g-1">0.1</param>
+    </yield>
+  </reaction>
+  
+  <!--#####################################################################
+      MOLECULAR REACTION SECTION
+      ######################################################################-->
+
+  <!--#####################################################################
+		SOLVER SECTION
+	######################################################################-->
+
+  <!--#####################################################################
+		AGENT GRID SECTION
+	######################################################################-->
+   <agentGrid>
+    <param name="computationDomain">MyProducerColony</param>
+    <param name="resolution" unit="um">4</param>
+  </agentGrid>
+
+  <!--#####################################################################
+		SPECIES SECTION
+	######################################################################-->
+
+  <species class="Yeast" name="ProducerCells">
+    <particle name="biomass">
+      <param name="mass" unit="fg">500</param>
+    </particle>
+    <particle name="inert">
+      <param name="mass" unit="fg">0</param>
+    </particle>
+    <param name="computationDomain">MyProducerColony</param>
+    <initArea number="1">
+      <param name="birthday" unit="hour">0</param>
+      <coordinates x="36.01" y="46.01" z="7.9"/>
+      <coordinates x="36.02" y="46.02" z="7.9"/>
+    </initArea>
+  </species>
+  
+</idynomics>

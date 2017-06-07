@@ -269,10 +269,22 @@ const Vector< S32 >& AgentSpecies::getReactions() const
 {
   return mReactions;
 }
+
 Vector< S32 >& AgentSpecies::getReactions()
 {
   return mReactions;
 }
+
+const Vector< EntryCondition* >& AgentSpecies::getEntryConditions( ) const
+{
+  return mEntryConditions;
+}
+
+Vector< EntryCondition* >& AgentSpecies::getEntryConditions( )
+{
+  return mEntryConditions;
+}
+
 void AgentSpecies::setName(const std::string& name)
 {
   mName = name;

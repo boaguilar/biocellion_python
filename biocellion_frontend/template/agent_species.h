@@ -60,6 +60,8 @@ public:
   Vector<TightJunction *>& getTightJunctions( );
   const Vector< AgentSpeciesParticle >& getParticles( ) const;
   Vector< AgentSpeciesParticle >& getParticles( );
+  const Vector< EntryCondition* >& getEntryConditions( ) const;
+  Vector< EntryCondition* >& getEntryConditions( );
 
   // these routines make an index, if there isn't one.
   // they are not efficient for inside tight loops
@@ -114,6 +116,7 @@ protected:
   Vector<AgentSpeciesParticle> mParticles;
   Vector <Chemotaxis * > mChemotaxis;
   Vector < S32 > mReactions;
+  Vector < EntryCondition* > mEntryConditions;
 };
 
 #endif /* _AGENT_SPECIES_H_ */

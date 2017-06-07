@@ -248,25 +248,52 @@ REAL Reaction::getKineticFactor( const UBEnv& ubEnv, const VIdx& subgridVOffset 
  * Finds the total yield this agent produces for this solute, due
  * to this reaction.
  */
-REAL Reaction::getYield( const S32& solute_idx, const SpAgent& spAgent ) const {
+REAL Reaction::getSoluteYield( const S32& solute_idx, const SpAgent& spAgent ) const {
   S32 i, j;
   REAL yield = 0.0;
-  for( i = 0; i < (S32) mYields.size( ) ; i++ ) {
-    if( mYields[ i ].isSolute( ) && mYields[ i ].getItemIdx( ) == solute_idx ) {
-      // Yield matches solute
-      S32 agentType = spAgent.state.getType( );
-      if( getCatalyst( ) == -1 || getCatalyst( ) == agentType ) {
-        // Agent's type matches catalyst
+  S32 agentType = spAgent.state.getType( );
+  if( getCatalyst( ) == -1 || getCatalyst( ) == agentType ) {
+    // Agent's type matches catalyst
+    for( i = 0; i < (S32) mYields.size( ) ; i++ ) {
+      if( mYields[ i ].isSolute( ) && mYields[ i ].getItemIdx( ) == solute_idx ) {
+        // Yield matches solute
         const Vector< AgentSpeciesParticle >& particles = gAgentSpecies[ agentType ]->getParticles( );
         for( j = 0 ; j < (S32) particles.size( ) ; j++ ) {
           if( particles[ j ].getParticleIdx( ) == getCatalyzedBy( ) ) {
             // Agent's particle matches catalyzed by.
             REAL mass = spAgent.state.getModelReal( particles[ j ].getModelRealIdx( ) );
             yield += mYields[ i ].getValue( ) * mass;
-          }
-        }
-      }
-    }
-  }
+          } // if particle matches catalyzedby
+        } // for all particles of agent
+      } // if yield matches solute_idx
+    } // for all yields
+  } // if agent matches catalyst
+  return yield;
+}
+
+/*
+ * Finds the total yield this agent produces for this particle_idx, due
+ * to this reaction.
+ */
+REAL Reaction::getParticleYield( const S32& particle_idx, const SpAgent& spAgent ) const {
+  S32 i, j;
+  REAL yield = 0.0;
+  S32 agentType = spAgent.state.getType( );
+  if( getCatalyst( ) == -1 || getCatalyst( ) == agentType ) {
+    // Agent's type matches catalyst
+    for( i = 0; i < (S32) mYields.size( ) ; i++ ) {
+      if( mYields[ i ].isParticle( ) && mYields[ i ].getItemIdx( ) == particle_idx ) {
+        // Yield matches solute
+        const Vector< AgentSpeciesParticle >& particles = gAgentSpecies[ agentType ]->getParticles( );
+        for( j = 0 ; j < (S32) particles.size( ) ; j++ ) {
+          if( particles[ j ].getParticleIdx( ) == getCatalyzedBy( ) ) {
+            // Agent's particle matches catalyzed by.
+            REAL mass = spAgent.state.getModelReal( particles[ j ].getModelRealIdx( ) );
+            yield += mYields[ i ].getValue( ) * mass;
+          } // if particle matches catalyzedby
+        } // for all particles in agent
+      } // if yield is correct particle
+    } // for all yields
+  } // catalyst matches
   return yield;
 }

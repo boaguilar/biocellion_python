@@ -283,7 +283,7 @@ void Solute::updateIfSubgridRHSLinear( const VIdx& vIdx, const VIdx& subgridVOff
       getSubgridOffset( spAgent.vOffset, sgridVOffset );
       if( sgridVOffset == subgridVOffset ) {
         // agent is in the subgrid
-        yield += reactions[ i ]->getYield( getSoluteIdx( ), spAgent );
+        yield += reactions[ i ]->getSoluteYield( getSoluteIdx( ), spAgent );
         if( false ) {
           std::stringstream y;
           S32 ii;

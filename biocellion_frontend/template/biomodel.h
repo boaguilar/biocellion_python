@@ -4,10 +4,11 @@
 #include "biocellion.h"
 #include "init_area.h"
 #include "chemotaxis.h"
+#include "param_holder.h"
+#include "entry_condition.h"
 #include "agent_species.h"
 #include "simulator.h"
 #include "agent_grid.h"
-#include "param_holder.h"
 #include "particle.h"
 #include "model_mechanisms.h"
 #include "adhesion.h"
@@ -103,6 +104,21 @@ typedef enum _junction_int_type_e {
   JUNCTION_INT_TOUCHED, // 0 == no, 1 == yes
   NUM_JUNCTION_INT_TYPES
 } junction_int_type_e;
+
+typedef enum _entry_condition_type_e {
+ ENTRY_CONDITION_solute,
+ ENTRY_CONDITION_biomass,
+ ENTRY_CONDITION_aging,
+ ENTRY_CONDITION_timing,
+ ENTRY_CONDITION_distance,
+ ENTRY_CONDITION_location,
+ ENTRY_CONDITION_random,
+ ENTRY_CONDITION_CDP,
+ ENTRY_CONDITION_geometry,
+ ENTRY_CONDITION_turingValue,
+ ENTRY_CONDITION_soluteCompare,
+ NUM_ENTRY_CONDITIONS
+} entry_condition_type_e;
 
 #endif /* _BIOMODEL_H_ */
 /* Local Variables: */

@@ -104,7 +104,8 @@ public:
   void setMuMax(const REAL& value);
 
   REAL getKineticFactor( const UBEnv& ubEnv, const VIdx& subgridVOffset ) const;
-  REAL getYield( const S32& solute_idx, const SpAgent& spAgent ) const;
+  REAL getSoluteYield( const S32& solute_idx, const SpAgent& spAgent ) const;
+  REAL getParticleYield( const S32& particle_idx, const SpAgent& spAgent ) const;
 
 protected:
   std::string mName;
