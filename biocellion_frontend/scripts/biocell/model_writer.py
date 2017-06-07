@@ -239,6 +239,7 @@ class ModelWriter:
                   'chemotaxis.cpp', 'chemotaxis.h',
                   'computation_domain.cpp', 'computation_domain.h',
                   'distance_junction.cpp', 'distance_junction.h',
+                  'entry_condition.cpp', 'entry_condition.h',
                   'init_area.cpp', 'init_area.h',
                   'model_define.h',
                   'model_mechanisms.cpp', 'model_mechanisms.h',
