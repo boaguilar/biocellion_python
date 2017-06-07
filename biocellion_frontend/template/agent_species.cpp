@@ -356,6 +356,13 @@ void AgentSpecies::setInitialAgentState( SpAgentState& state ) const {
   REAL radius = cbrt( 3.0 * volume / (4.0 * MODEL_PI ) );
 
   // if radius is too big, then agent-agent interactions will be missed.
+  if( false ) {
+    OUTPUT( 0, ""
+            << " radius: " << radius
+            << " mDMax: " << mDMax
+            << " mDMax/3.0: " << mDMax/3.0
+            );
+  }
   CHECK( radius <= mDMax / 3.0 );
 
   state.setRadius( radius );

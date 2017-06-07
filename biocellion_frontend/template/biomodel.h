@@ -77,7 +77,8 @@ protected:
   World mWorld;
 };
 
-extern BioModel *gBioModel;
+extern const BioModel *gBioModel;
+extern BioModel *gBioModelRW;
 extern Simulator *gSimulator;
 extern AgentGrid *gAgentGrid;
 extern Vector<AgentSpecies *> gAgentSpecies;

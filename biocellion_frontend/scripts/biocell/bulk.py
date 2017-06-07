@@ -47,7 +47,7 @@ class Bulk( ParamHolder ):
         if s:
             lines.append( s )
 
-        lines.append( (depth*indent) + "gBioModel->getWorld( ).getBulks( ).push_back( %s );" % ( varname, ) )
+        lines.append( (depth*indent) + "gBioModelRW->getWorld( ).getBulks( ).push_back( %s );" % ( varname, ) )
         depth -= 1;
         lines.append( (depth*indent) + "}" )
         return "\n".join( lines )

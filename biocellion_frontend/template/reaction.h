@@ -1,6 +1,7 @@
 #ifndef _REACTION_H_
 #define _REACTION_H_
 #include "biomodel.h"
+#include <iostream>
 
 class Reaction {
 public:
@@ -116,6 +117,12 @@ protected:
   Vector< KineticFactor* > mKineticFactors;
 };
 
+std::ostream& operator<<( std::ostream& os, const Reaction::Yield& rhs );
+std::ostream& operator<<( std::ostream& os, const Reaction::KineticFactor& rhs );
+// std::ostream& operator<<( std::ostream& os, const Reaction::FirstOrderKinetic& rhs );
+// std::ostream& operator<<( std::ostream& os, const Reaction::SimpleInhibition& rhs );
+// std::ostream& operator<<( std::ostream& os, const Reaction::MonodKinetic& rhs );
+// std::ostream& operator<<( std::ostream& os, const Reaction::LinearKinetic& rhs );
 
 #endif /* _REACTION_H_ */
 /* Local Variables: */

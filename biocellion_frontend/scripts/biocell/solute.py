@@ -24,7 +24,7 @@ class Solute( ParamHolder ):
         self.addParam( Param( "refineRatio", "int", 0, False ) )
         self.addParam( Param( "AMRLevels", "int", 0, False ) )
         self.addParam( Param( "interfaceAMRLevel", "int", 0, False ) )
-        self.addParam( Param( "numTimeSteps", "int", 0, False ) )
+        self.addParam( Param( "numTimeSteps", "int", 1, False ) )
 
         self.mPrivateNumberHiddenParams = [ "AMRLevels", "interfaceAMRLevel", "numTimeSteps", ]
         self.mPrivateBoolHiddenParams = [  ]
@@ -157,7 +157,7 @@ class Solute( ParamHolder ):
                                                       self.mPrivateStringHiddenParams )
         lines.append( s )
 
-        lines.append( (depth*indent) + "gBioModel->getSolutes( ).push_back( %s );" % ( varname, ) )
+        lines.append( (depth*indent) + "gBioModelRW->getSolutes( ).push_back( %s );" % ( varname, ) )
         depth -= 1;
         lines.append( (depth*indent) + "}" )
         return "\n".join( lines )

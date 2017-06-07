@@ -13,7 +13,7 @@ class Reaction( ParamHolder ):
         self.addAttribute( Param( "class", "str", "", True ) )
         self.addAttribute( Param( "catalyzedBy", "str", "", True ) )  # Particle reference
         self.addAttribute( Param( "catalyst", "str", "", False ) )    # Species reference
-        self.addParam( Param( "muMax", "hr-1", 0.0, True ) )
+        self.addParam( Param( "muMax", "hour-1", 0.0, True ) )
 
         self.mPrivateNumberHiddenParams = [ "catalyzedBy", "catalyst", "muMax", ]
         self.mPrivateBoolHiddenParams = [  ]
@@ -62,7 +62,7 @@ class Reaction( ParamHolder ):
         if s:
             lines.append( s )
         
-        lines.append( (depth*indent) + "gBioModel->getReactions( ).push_back( %s );" % ( varname, ) )
+        lines.append( (depth*indent) + "gBioModelRW->getReactions( ).push_back( %s );" % ( varname, ) )
         depth -= 1;
         lines.append( (depth*indent) + "}" )
         return "\n".join( lines )

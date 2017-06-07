@@ -1,7 +1,8 @@
 #include "biomodel.h"
 
 static bool gBioModelInitialized = false;
-BioModel *gBioModel = 0;
+const BioModel *gBioModel = 0;
+BioModel *gBioModelRW = 0;
 Simulator *gSimulator = 0;
 AgentGrid *gAgentGrid = 0;
 Vector<AgentSpecies *> gAgentSpecies;
@@ -368,9 +369,10 @@ void terminateBioModel() {
   }
   gMechIntrctSpAgent.clear();
 
-  if( gBioModel ) {
-    delete gBioModel;
+  if( gBioModelRW ) {
+    delete gBioModelRW;
     gBioModel = 0;
+    gBioModelRW = 0;
   }
 
   gBioModelInitialized = false;

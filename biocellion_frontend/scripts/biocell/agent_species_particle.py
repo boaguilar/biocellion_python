@@ -8,7 +8,7 @@ class AgentSpeciesParticle(ParamHolder):
     def __init__( self ):
         ParamHolder.__init__( self )        
         self.addAttribute( Param( "name", "str", "", True ) )
-        self.addParam( Param( "mass", "pg", 0.0, True ) )
+        self.addParam( Param( "mass", "fg", 0.0, True ) )
         self.mParticle = None
         return
 

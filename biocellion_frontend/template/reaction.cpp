@@ -54,6 +54,11 @@ void Reaction::Yield::setValue( const REAL& value) {
   mValue = value;
 }
 
+std::ostream& operator<<( std::ostream& os, const Reaction::Yield& rhs ) {
+  os << rhs.getType( ) << "," << rhs.getItemIdx( ) << "," << rhs.getValue( );
+  return os;
+}
+
 // Reaction::KineticFactor
 
 Reaction::KineticFactor::KineticFactor( )
@@ -120,10 +125,6 @@ REAL Reaction::SimpleInhibition::kineticValue( const REAL& solute_value ) const 
   return mKi / ( mKi + solute_value );
 }
 
-REAL Reaction::LinearKinetic::kineticValue( const REAL& solute_value ) const {
-  return mKs * solute_value;
-}
-
 REAL Reaction::MonodKinetic::kineticValue( const REAL& solute_value ) const {
   if( ( mKs + solute_value ) < 1.0e-7 ) {
     return 0.0;
@@ -131,6 +132,26 @@ REAL Reaction::MonodKinetic::kineticValue( const REAL& solute_value ) const {
   return solute_value / ( mKs + solute_value );
 }
 
+REAL Reaction::LinearKinetic::kineticValue( const REAL& solute_value ) const {
+  return mKs * solute_value;
+}
+
+std::ostream& operator<<( std::ostream& os, const Reaction::KineticFactor& rhs ) {
+  os << rhs.getClass( ) << "," << rhs.getSolute( ) << "," << rhs.getMolecule( ) << "," << rhs.getKi( ) << "," << rhs.getKs( );
+  return os;
+}
+std::ostream& operator<<( std::ostream& os, const Reaction::FirstOrderKinetic& rhs ) {
+  return os << dynamic_cast< const Reaction::KineticFactor& >( rhs );
+}
+std::ostream& operator<<( std::ostream& os, const Reaction::SimpleInhibition& rhs ) {
+  return os << dynamic_cast< const Reaction::KineticFactor& >( rhs );
+}
+std::ostream& operator<<( std::ostream& os, const Reaction::MonodKinetic& rhs ) {
+  return os << dynamic_cast< const Reaction::KineticFactor& >( rhs );
+}
+std::ostream& operator<<( std::ostream& os, const Reaction::LinearKinetic& rhs ) {
+  return os << dynamic_cast< const Reaction::KineticFactor& >( rhs );
+}
 
 // Reaction
 Reaction::Reaction( )

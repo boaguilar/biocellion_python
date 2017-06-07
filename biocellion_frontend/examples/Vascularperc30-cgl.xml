@@ -277,7 +277,7 @@
 	######################################################################-->
    <agentGrid>
     <param name="computationDomain">MyYeastColony</param>
-    <param name="resolution" unit="um">4</param>
+    <param name="resolution" unit="um">8</param>
     <param name="shovingFraction">0.0025</param>
     <param name="shovingMaxIter">1000</param>
     <param name="shovingMutual">true</param>

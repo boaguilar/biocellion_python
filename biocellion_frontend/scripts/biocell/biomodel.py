@@ -35,11 +35,12 @@ class BioModel:
         return
 
     def getInitializeBioModel( self, indent, depth ):
-        varname = "gBioModel"
+        varname_ro = "gBioModel"
+        varname = "gBioModelRW"
         lines = []
         lines.append( (depth*indent) + "{" )
         depth += 1
-        lines.append( (depth*indent) + "%s = new BioModel( );" % (varname, ) )
+        lines.append( (depth*indent) + "%s = %s = new BioModel( );" % ( varname_ro, varname, ) )
         lines.append( (depth*indent) + "%s->setDistanceJunctionsEnabled( %s );" % ( varname, "true" if self.mDistanceJunctionsEnabled else "false", ) )
         depth -= 1;
         lines.append( (depth*indent) + "}" )

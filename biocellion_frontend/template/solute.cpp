@@ -251,10 +251,29 @@ void Solute::updateIfSubgridRHSLinear( const VIdx& vIdx, const VIdx& subgridVOff
   // RHS = _specRate * mass * yield_rate
 
   gridRHS = 0.0;
+  //   hour.um-3
+  REAL unit_correction = gSimulator->getAgentTimeStep( ) / getParamReal( getIdxReal ( SOLUTE_resolution ) );
   S32 i;
   const Vector< Reaction * >& reactions = gBioModel->getReactions( );
   for( i = 0 ; i < (S32) reactions.size( ) ; i++ ) {
     REAL factor = reactions[ i ]->getKineticFactor( ubEnv, subgridVOffset );
+    if( false ) {
+      std::stringstream kf;
+      S32 ii;
+      for( ii = 0 ; ii < (S32) reactions[ i ]->getKineticFactors( ).size( ) ; ii++ ) {
+        kf << "  KF:" << ii << " " << *(reactions[ i ]->getKineticFactors( )[ ii ]);
+      }
+      
+      OUTPUT( 0, ""
+              << " loc: " << vIdx[ 0 ] << "," << vIdx[ 1 ] << "," << vIdx[ 2 ]
+              << " " << subgridVOffset[ 0 ] << "," << subgridVOffset[ 1 ] << "," << subgridVOffset[ 2 ]
+              << " solute: " << getSoluteIdx( )
+              << " reaction: " << i
+              << " factor: " << factor
+              << " muMax: " << reactions[ i ]->getMuMax( )
+              << " KF: " << kf.str( )
+              );
+    }
     
     // Check for all agents that apply
     REAL yield = 0;
@@ -265,10 +284,43 @@ void Solute::updateIfSubgridRHSLinear( const VIdx& vIdx, const VIdx& subgridVOff
       if( sgridVOffset == subgridVOffset ) {
         // agent is in the subgrid
         yield += reactions[ i ]->getYield( getSoluteIdx( ), spAgent );
+        if( false ) {
+          std::stringstream y;
+          S32 ii;
+          for( ii = 0 ; ii < (S32) reactions[ i ]->getYields( ).size( ) ; ii++ ) {
+            y << "  YLD:" << ii << " " << reactions[ i ]->getYields( )[ ii ];
+          }
+          REAL mass = spAgent.state.getModelReal( reactions[ i ]->getCatalyzedBy( ) );
+          OUTPUT( 0, ""
+                  << " loc: " << vIdx[ 0 ] << "," << vIdx[ 1 ] << "," << vIdx[ 2 ]
+                  << " " << subgridVOffset[ 0 ] << "," << subgridVOffset[ 1 ] << "," << subgridVOffset[ 2 ]
+                  << " solute: " << getSoluteIdx( )
+                  << " reaction: " << i
+                  << " agent: " << l
+                  << " yield: " << yield
+                  << " YIELDS: " << y.str( )
+                  << " mass: " << mass
+                  );
+        }
       }
     }
-    gridRHS += yield * factor;
+    //(fg.um-3) =(fg)  * (hour-1) * (hour.um-3)
+    gridRHS += yield * factor * unit_correction;
   }
+  if( false ) {
+    if( true || !( gridRHS >= 0. || ( ubEnv.getSubgridPhi( subgridVOffset, getSoluteIdx() ) >= -gridRHS ) ) ) {
+      OUTPUT( 0, ""
+              << " loc: " << vIdx[ 0 ] << "," << vIdx[ 1 ] << "," << vIdx[ 2 ]
+              << " " << subgridVOffset[ 0 ] << "," << subgridVOffset[ 1 ] << "," << subgridVOffset[ 2 ]
+              << " solute: " << getSoluteIdx( )
+              << " unit_correction: " << unit_correction
+              << " gridRHS: " << gridRHS
+              << " currentValue: " << ubEnv.getSubgridPhi( subgridVOffset, getSoluteIdx() )
+              );
+    }
+  }
+  // This check is over-zealous.  Need to understand PDE solver better
+  //CHECK( gridRHS >= 0. || ( ubEnv.getSubgridPhi( subgridVOffset, getSoluteIdx() ) >= -gridRHS ) );
 }
 
 void Solute::adjustIfSubgridRHSTimeDependentLinear( const VIdx& vIdx, const VIdx& subgridVOffset, const UBAgentData& ubAgentData, const UBEnvModelVar& ubEnvModelVar, const REAL gridPhi, REAL& gridRHS/* INOUT */ ) const {

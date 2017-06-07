@@ -21,8 +21,8 @@ class Simulator( ParamHolder ):
         return
 
     def getNumBaselineSteps( self ):
-        self.getTimeStep().getParam( 'endOfSimulation' ).checkUnit( 'hr' )
-        self.getParam( 'agentTimeStep' ).checkUnit( 'hr' )
+        self.getTimeStep().getParam( 'endOfSimulation' ).checkUnit( 'hour' )
+        self.getParam( 'agentTimeStep' ).checkUnit( 'hour' )
 
         end_of_simulation = self.getTimeStep().getParam( 'endOfSimulation' ).getValue()
         agent_time_step = self.getParam( 'agentTimeStep' ).getValue()
