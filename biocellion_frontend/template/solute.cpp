@@ -150,6 +150,10 @@ REAL Solute::getSubgridVolume( ) const {
   return volume;
 }
 
+REAL Solute::getPDETimeStepDuration( ) const {
+  return gSimulator->getAgentTimeStep( ) / NUM_STATE_AND_GRID_TIME_STEPS_PER_BASELINE / mNumTimeSteps;
+}
+
 
 // support for model_routine_config.cpp
 void Solute::setPDEInfo( PDEInfo& pdeInfo ) const {
@@ -340,6 +344,10 @@ void Solute::updateIfSubgridRHSLinear( const VIdx& vIdx, const VIdx& subgridVOff
               << " currentValue: " << ubEnv.getSubgridPhi( subgridVOffset, getSoluteIdx() )
               );
     }
+  }
+  // Can't uptake more than exists.
+  if( gridRHS < 0. && getSubgridValue( ubEnv, subgridVOffset ) < -gridRHS * getPDETimeStepDuration( ) ) {
+    gridRHS = -getSubgridValue( ubEnv, subgridVOffset );
   }
   // This check is over-zealous.  Need to understand PDE solver better
   //CHECK( gridRHS >= 0. || ( ubEnv.getSubgridPhi( subgridVOffset, getSoluteIdx() ) >= -gridRHS ) );
