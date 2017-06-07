@@ -34,6 +34,7 @@ public:
   REAL getSubgridValue( const NbrUBEnv& nbrUBEnv, const VReal& vOffset ) const;
   REAL getSubgridValue( const UBEnv& ubEnv, const VReal& vOffset ) const;
   REAL getSubgridValue( const UBEnv& ubEnv, const VIdx& subgridVOffset ) const;
+  REAL getSubgridVolume( ) const;
 
   // support for model_routine_config.cpp
   void setPDEInfo( PDEInfo& pdeInfo ) const;

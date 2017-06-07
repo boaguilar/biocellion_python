@@ -18,7 +18,8 @@
       <param name="timeStepIni" unit="hour">0.01</param>
       <param name="timeStepMin" unit="hour">0.01</param>
       <param name="timeStepMax" unit="hour">0.01</param>
-      <param name="endOfSimulation" unit="hour">2.0</param>
+      <param name="endOfSimulation" unit="hour">0.03</param>
+      <!-- <param name="endOfSimulation" unit="hour">2.0</param> -->
     </timeStep>
     <!-- The AGENTTIMESTEP which should always be EQUAL or LOWER than the global time step -->
     <param name="agentTimeStep" unit="hour">0.01</param>
@@ -129,7 +130,7 @@
     </bulk>
      <computationDomain name="MyYeastColony">
       <grid nDim="2" nI="129" nJ="257" nK="1"/>
-      <param name="resolution" unit="um">4</param>
+      <param name="resolution" unit="um">8</param>
       <param name="boundaryLayer" unit="um">1</param>
       <param name="biofilmDiffusivity">0.8</param>
       <param name="specificArea" unit="m2.m-3">80</param>

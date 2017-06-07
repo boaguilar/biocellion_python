@@ -138,10 +138,16 @@ REAL Solute::getSubgridValue( const UBEnv& ubEnv, const VReal& vOffset ) const {
 }
 
 REAL Solute::getSubgridValue( const UBEnv& ubEnv, const VIdx& subgridVOffset ) const {
+  return ubEnv.getSubgridPhi( subgridVOffset, mSoluteIdx );
+}
+
+REAL Solute::getSubgridVolume( ) const {
+  REAL volume = 1.0;
   S32 dim;
   for( dim = 0 ; dim < 3 ; dim++ ) {
+    volume *= getParamReal( getIdxReal ( SOLUTE_resolution ) );
   }
-  return ubEnv.getSubgridPhi( subgridVOffset, mSoluteIdx );
+  return volume;
 }
 
 
@@ -267,8 +273,6 @@ void Solute::updateIfSubgridRHSLinear( const VIdx& vIdx, const VIdx& subgridVOff
   // RHS = _specRate * mass * yield_rate
 
   gridRHS = 0.0;
-  //   hour.um-3
-  REAL unit_correction = gSimulator->getAgentTimeStep( ) / getParamReal( getIdxReal ( SOLUTE_resolution ) );
   S32 i;
   VReal vOffset;
   getSubgridCenter( subgridVOffset, vOffset );
@@ -322,8 +326,8 @@ void Solute::updateIfSubgridRHSLinear( const VIdx& vIdx, const VIdx& subgridVOff
         }
       }
     }
-    //(fg.um-3) =(fg)  * (hour-1) * (hour.um-3)
-    gridRHS += yield * factor * unit_correction;
+    //(fg.um-3.hour-1) =(fg)  * (hour-1) * (um-3)
+    gridRHS += yield * factor / getSubgridVolume();
   }
   if( false ) {
     if( true || !( gridRHS >= 0. || ( ubEnv.getSubgridPhi( subgridVOffset, getSoluteIdx() ) >= -gridRHS ) ) ) {
@@ -331,7 +335,7 @@ void Solute::updateIfSubgridRHSLinear( const VIdx& vIdx, const VIdx& subgridVOff
               << " loc: " << vIdx[ 0 ] << "," << vIdx[ 1 ] << "," << vIdx[ 2 ]
               << " " << subgridVOffset[ 0 ] << "," << subgridVOffset[ 1 ] << "," << subgridVOffset[ 2 ]
               << " solute: " << getSoluteIdx( )
-              << " unit_correction: " << unit_correction
+              << " volume: " << getSubgridVolume()
               << " gridRHS: " << gridRHS
               << " currentValue: " << ubEnv.getSubgridPhi( subgridVOffset, getSoluteIdx() )
               );
