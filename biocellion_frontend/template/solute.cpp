@@ -85,9 +85,16 @@ void Solute::calcSubgridDimension() {
 }
 
 void Solute::getSubgridOffset( const VReal& vOffset, VIdx& subgridVOffset ) const {
-  for( S32 dim = 0; dim < DIMENSION; dim++ ) {
-    REAL offset  = 0.5 + vOffset[ dim ] / gAgentGrid->getResolution( );
-    subgridVOffset[ dim ] = offset * getSubgridDimension();
+  for( S32 dim = 0; dim < 3; dim++ ) {
+    REAL fractional_offset  = vOffset[ dim ] / gAgentGrid->getResolution( );
+    subgridVOffset[ dim ] = fractional_offset * getSubgridDimension();
+  }
+}
+
+void Solute::getSubgridCenter( const VIdx& subgridVOffset, VReal& vOffset ) const {
+  S32 dim;
+  for( dim = 0 ; dim < 3 ; dim++ ) {
+    vOffset[ dim ] = ( subgridVOffset[ dim ] + 0.5 ) * gAgentGrid->getResolution( ) / mSubgridDimension;
   }
 }
 
@@ -104,7 +111,7 @@ REAL Solute::getSubgridValue(const NbrUBEnv& nbrUBEnv, const VReal& vOffset) con
   S32 dim;
   VIdx vidx, vsubidx;
   REAL step = gAgentGrid->getResolution( ) / subgrid_dimension;
-  for( dim = 0 ; dim < DIMENSION ; dim++ ) {
+  for( dim = 0 ; dim < 3 ; dim++ ) {
     vidx[ dim ] = 0;
     vsubidx[ dim ] = (idx_t)( vOffset[ dim ] + 0.5 ) / step;
     while( vsubidx[ dim ] < 0 ) {
@@ -124,7 +131,16 @@ REAL Solute::getSubgridValue(const NbrUBEnv& nbrUBEnv, const VReal& vOffset) con
   return nbrUBEnv.getSubgridPhi( vidx, vsubidx, mSoluteIdx );
 }
 
+REAL Solute::getSubgridValue( const UBEnv& ubEnv, const VReal& vOffset ) const {
+  VIdx subgridVOffset;
+  getSubgridOffset( vOffset, subgridVOffset );
+  return getSubgridValue( ubEnv, subgridVOffset );
+}
+
 REAL Solute::getSubgridValue( const UBEnv& ubEnv, const VIdx& subgridVOffset ) const {
+  S32 dim;
+  for( dim = 0 ; dim < 3 ; dim++ ) {
+  }
   return ubEnv.getSubgridPhi( subgridVOffset, mSoluteIdx );
 }
 
@@ -254,9 +270,11 @@ void Solute::updateIfSubgridRHSLinear( const VIdx& vIdx, const VIdx& subgridVOff
   //   hour.um-3
   REAL unit_correction = gSimulator->getAgentTimeStep( ) / getParamReal( getIdxReal ( SOLUTE_resolution ) );
   S32 i;
+  VReal vOffset;
+  getSubgridCenter( subgridVOffset, vOffset );
   const Vector< Reaction * >& reactions = gBioModel->getReactions( );
   for( i = 0 ; i < (S32) reactions.size( ) ; i++ ) {
-    REAL factor = reactions[ i ]->getKineticFactor( ubEnv, subgridVOffset );
+    REAL factor = reactions[ i ]->getKineticFactor( ubEnv, vOffset );
     if( false ) {
       std::stringstream kf;
       S32 ii;

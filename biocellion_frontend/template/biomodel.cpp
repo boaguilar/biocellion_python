@@ -72,6 +72,10 @@ REAL BioModel::getSubgridValue( const S32& elemIdx, const NbrUBEnv& nbrUBEnv, co
   return mSolutes[ elemIdx ]->getSubgridValue( nbrUBEnv, vOffset );
 }
 
+REAL BioModel::getSubgridValue( const S32& elemIdx, const UBEnv& ubEnv, const VReal& vOffset ) const {
+  return mSolutes[ elemIdx ]->getSubgridValue( ubEnv, vOffset );
+}
+
 REAL BioModel::getSubgridValue( const S32& elemIdx, const UBEnv& ubEnv, const VIdx& subgridVOffset ) const {
   return mSolutes[ elemIdx ]->getSubgridValue( ubEnv, subgridVOffset );
 }

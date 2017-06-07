@@ -39,6 +39,7 @@ public:
 
   // general grid support
   REAL getSubgridValue( const S32& elemIdx, const NbrUBEnv& nbrUBEnv, const VReal& vOffset ) const;
+  REAL getSubgridValue( const S32& elemIdx, const UBEnv& ubEnv, const VReal& vOffset ) const;
   REAL getSubgridValue( const S32& elemIdx, const UBEnv& ubEnv, const VIdx& subgridVOffset ) const;
 
   // support for model_routine_config.cpp

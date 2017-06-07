@@ -224,13 +224,13 @@ void Reaction::setMuMax(const REAL& value) {
   mMuMax = value;
 }
 
-REAL Reaction::getKineticFactor( const UBEnv& ubEnv, const VIdx& subgridVOffset ) const {
+REAL Reaction::getKineticFactor( const UBEnv& ubEnv, const VReal& vOffset ) const {
   REAL factor = mMuMax;
   REAL solute_value = 0;
   S32 i;
   for( i = 0 ; i < (S32) mKineticFactors.size( ) ; i++ ) {
     if( mKineticFactors[ i ]->getSolute( ) >= 0 ) {
-      solute_value = gBioModel->getSubgridValue( mKineticFactors[ i ]->getSolute( ), ubEnv, subgridVOffset );
+      solute_value = gBioModel->getSubgridValue( mKineticFactors[ i ]->getSolute( ), ubEnv, vOffset );
     } else if( mKineticFactors[ i ]->getMolecule( ) >= 0 ) {
       ERROR( "unimplemented" );
     } else if( mKineticFactors[ i ]->getSolute( ) == -1 && mKineticFactors[ i ]->getMolecule( ) == -1 ) {
