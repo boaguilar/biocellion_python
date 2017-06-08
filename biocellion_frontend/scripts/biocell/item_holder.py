@@ -3,7 +3,7 @@
 #####################################################
 class ItemHolder:
 
-    def __init__(self, item_class):
+    def __init__( self, item_class ):
         self.mItems = {}
         self.mOrder = []
         self.mIndex = 0 # used for nameless items
@@ -48,6 +48,38 @@ class ItemHolder:
 
     def __getitem__( self, idx ):
         return self.mItems[ self.mOrder[ idx ] ]
+
+    def getMayAttributes( self ):
+        names = [ ]
+        return names
+        
+    def getRequiredAttributes( self ):
+        names = [ ]
+        return names
+        
+    def getMayParams( self ):
+        names = [ ]
+        return names
+        
+    def getRequiredParams( self ):
+        names = [ ]
+        return names
+
+    def getAllParamNames(self, indent, depth):
+        all_params = { }
+        all_order = [ ]
+        for name in self.mOrder:
+            params = self.mItems[ name ].getParams( )
+            for param_name in params:
+                if param_name not in all_params:
+                    all_params[ param_name ] = params[ param_name ]
+                    all_order.append( param_name )
+        lines = []
+        for n in all_order:
+            s = (depth*indent) + "const std::string %s = \"%s\";" % ( all_params[ n ].getConstName( ), n, )
+            lines.append( s )
+        return "\n".join( lines )
+
 
     def __str__( self ):
         s = "<ITEM_HOLDER_ITEMS_" + str( self.mItemClass ) + "\n"

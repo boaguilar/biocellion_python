@@ -57,10 +57,15 @@ class ModelScanner:
             
         return
 
-    def validateNodeXML( self, node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, param_validator ):
+    def validateNodeXML( self, node, may_children, required_children, child_methods, param_validator ):
         found_attributes = set()
         found_children = set()
         found_params = set()
+        
+        may_attributes = param_validator.getMayAttributes( )
+        required_attributes = param_validator.getRequiredAttributes( )
+        may_params = param_validator.getMayParams( )
+        required_params = param_validator.getRequiredParams( )
         
         ok = True
         for (name, value) in node.items():
@@ -125,11 +130,16 @@ class ModelScanner:
 
         return ok
 
-    def parseNodeXML( self, node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object ):
+    def parseNodeXML( self, node, may_children, required_children, child_methods, node_object, parent_object ):
 
         found_attributes = set()
         found_children = set()
         found_params = set()
+        
+        may_attributes = node_object.getMayAttributes( )
+        required_attributes = node_object.getRequiredAttributes( )
+        may_params = node_object.getMayParams( )
+        required_params = node_object.getRequiredParams( )
         
         ok = True
         for (name, value) in node.items():
@@ -200,26 +210,21 @@ class ModelScanner:
 
 
     def scanGenericParamXML( self, node, parent_object=None ):
-        may_attributes = ( "name", "unit", )
-        required_attributes = ( "name", )
         may_children = (  )
         required_children = (  )
-        required_children = (  )
-        may_params = (  )
-        required_params = (  )
         node_object = Param( node.get('name'), node.get('unit'), node.text )
         child_methods = {
         }
 
-        ok = self.scanNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
+        ok = self.scanNodeXML( node, may_children, required_children, child_methods, node_object, parent_object )
         
         return ok
 
-    def scanNodeXML( self, node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object ):
+    def scanNodeXML( self, node, may_children, required_children, child_methods, node_object, parent_object ):
         if self.mScanMode == self.SCAN_VALIDATE_MODE:
-            return self.validateNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object )
+            return self.validateNodeXML( node, may_children, required_children, child_methods, node_object )
         elif self.mScanMode == self.SCAN_PARSE_MODE:
-            return self.parseNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
+            return self.parseNodeXML( node, may_children, required_children, child_methods, node_object, parent_object )
         else:
             raise Exception( "ERROR : Bad scan mode." )
             return False
@@ -229,10 +234,10 @@ class ModelScanner:
 
         # loop over all children
         for child in list( root ):
-            if child.tag in ( 'simulator', 'input', 'world', 'solver', 'agentGrid' ):
+            if child.tag in ( 'simulator', 'input', 'world', 'agentGrid' ):
                 # not a list element
                 pass
-            elif child.tag in ( 'solute', 'particle', 'reaction', 'molecularReactions', 'species' ):
+            elif child.tag in ( 'solute', 'particle', 'reaction', 'solver', 'molecularReactions', 'species' ):
                 tag = child.tag
                 name = child.get( 'name' )
                 class_name = child.get( 'class' )
@@ -247,10 +252,6 @@ class ModelScanner:
         required_children = ( "simulator", )
         self.mModel.resetIDynoMiCS( )
         node_object = self.mModel.getIDynoMiCS( )
-        may_attributes = node_object.getMayAttributes( )
-        required_attributes = node_object.getRequiredAttributes( )
-        may_params = node_object.getMayParams( )
-        required_params = node_object.getRequiredParams( )
         child_methods = {
             "simulator": self.scanSimulatorXML,
             "input": self.scanInputXML,
@@ -265,7 +266,7 @@ class ModelScanner:
         }
 
         self.findAllKeyedItems( node )
-        ok = self.scanNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
+        ok = self.scanNodeXML( node, may_children, required_children, child_methods, node_object, parent_object )
 
         return ok
 
@@ -273,17 +274,13 @@ class ModelScanner:
         may_children = ( "param", "timeStep", )
         required_children = (  )
         node_object = self.mModel.getIDynoMiCS( ).getSimulator()
-        may_attributes = node_object.getMayAttributes( )
-        required_attributes = node_object.getRequiredAttributes( )
-        may_params = node_object.getMayParams( )
-        required_params = node_object.getRequiredParams( )
         parent_object = None
         child_methods = {
             "param": self.scanGenericParamXML,
             "timeStep": self.scanSimulatorTimeStepXML,
         }
         
-        ok = self.scanNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
+        ok = self.scanNodeXML( node, may_children, required_children, child_methods, node_object, parent_object )
 
         return ok
 
@@ -291,16 +288,12 @@ class ModelScanner:
         may_children = ( "param", )
         required_children = (  )
         node_object = self.mModel.getIDynoMiCS( ).getSimulator().getTimeStep()
-        may_attributes = node_object.getMayAttributes( )
-        required_attributes = node_object.getRequiredAttributes( )
-        may_params = node_object.getMayParams( )
-        required_params = node_object.getRequiredParams( )
         parent_object = None
         child_methods = {
             "param": self.scanGenericParamXML,
         }
         
-        ok = self.scanNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
+        ok = self.scanNodeXML( node, may_children, required_children, child_methods, node_object, parent_object )
         
         return ok
 
@@ -313,16 +306,12 @@ class ModelScanner:
         may_children = ( "param", )
         required_children = (  )
         node_object = self.mModel.getItemAddIfNeeded( node.tag, node.get( 'name' ), node.get( 'class' ) )
-        may_attributes = node_object.getMayAttributes( )
-        required_attributes = node_object.getRequiredAttributes( )
-        may_params = node_object.getMayParams( )
-        required_params = node_object.getRequiredParams( )
         parent_object = None # don't need to add this as a child
         child_methods = {
             "param": self.scanGenericParamXML,
         }
         
-        ok = self.scanNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
+        ok = self.scanNodeXML( node, may_children, required_children, child_methods, node_object, parent_object )
 
         return ok
 
@@ -330,16 +319,12 @@ class ModelScanner:
         may_children = ( "param", )
         required_children = (  )
         node_object = self.mModel.getItemAddIfNeeded( node.tag, node.get( 'name' ), node.get( 'class' ) )
-        may_attributes = node_object.getMayAttributes( )
-        required_attributes = node_object.getRequiredAttributes( )
-        may_params = node_object.getMayParams( )
-        required_params = node_object.getRequiredParams( )
         parent_object = None # don't need to add this as a child
         child_methods = {
             "param": self.scanGenericParamXML,
         }
         
-        ok = self.scanNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
+        ok = self.scanNodeXML( node, may_children, required_children, child_methods, node_object, parent_object )
         
         return ok
 
@@ -347,10 +332,6 @@ class ModelScanner:
         may_children = ( "bulk", "agar", "computationDomain", )
         required_children = (  )
         node_object = self.mModel.getIDynoMiCS( ).getWorld( )
-        may_attributes = node_object.getMayAttributes( )
-        required_attributes = node_object.getRequiredAttributes( )
-        may_params = node_object.getMayParams( )
-        required_params = node_object.getRequiredParams( )
         parent_object = None # don't need to add this as a child
         child_methods = {
             "bulk": self.scanWorldBulkXML,
@@ -358,7 +339,7 @@ class ModelScanner:
             "computationDomain": self.scanWorldComputationDomainXML,
         }
         
-        ok = self.scanNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
+        ok = self.scanNodeXML( node, may_children, required_children, child_methods, node_object, parent_object )
         
         return ok
 
@@ -368,17 +349,13 @@ class ModelScanner:
         if not self.mModel.getIDynoMiCS( ).getWorld().getBulks().addItem( node.get('name') ):
             raise Exception( "ERROR : couldn't add a bulk." )
         node_object = self.mModel.getIDynoMiCS( ).getWorld().getBulks().getLastItem( )
-        may_attributes = node_object.getMayAttributes( )
-        required_attributes = node_object.getRequiredAttributes( )
-        may_params = node_object.getMayParams( )
-        required_params = node_object.getRequiredParams( )
         parent_object = None # don't need to add this as a child
         child_methods = {
             "param": self.scanGenericParamXML,
             "solute": self.scanWorldBulkSoluteXML,
         }
 
-        ok = self.scanNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
+        ok = self.scanNodeXML( node, may_children, required_children, child_methods, node_object, parent_object )
         
         return ok
 
@@ -394,16 +371,12 @@ class ModelScanner:
             node_object = parent_object.getSolutes().getLastItem( )
             node_object.setReference( self.mModel.getItem( node.tag, node.get( 'name' ) ) )
             parent_object = None
-        may_attributes = node_object.getMayAttributes( )
-        required_attributes = node_object.getRequiredAttributes( )
-        may_params = node_object.getMayParams( )
-        required_params = node_object.getRequiredParams( )
         parent_object = None # don't need to add this as a child
         child_methods = {
             "param": self.scanGenericParamXML,
         }
         
-        ok = self.scanNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
+        ok = self.scanNodeXML( node, may_children, required_children, child_methods, node_object, parent_object )
         
         return ok
 
@@ -418,10 +391,6 @@ class ModelScanner:
         if not self.mModel.getIDynoMiCS( ).getWorld().getComputationDomains().addItem( node.get('name') ):
             raise Exception( "ERROR : couldn't add a computation domain." )
         node_object = self.mModel.getIDynoMiCS( ).getWorld().getComputationDomains().getLastItem( )
-        may_attributes = node_object.getMayAttributes( )
-        required_attributes = node_object.getRequiredAttributes( )
-        may_params = node_object.getMayParams( )
-        required_params = node_object.getRequiredParams( )
         parent_object = None # don't need to add this as a child
         child_methods = {
             "param": self.scanGenericParamXML,
@@ -429,7 +398,7 @@ class ModelScanner:
             "boundaryCondition": self.scanWorldComputationDomainBoundaryConditionXML,
         }
 
-        ok = self.scanNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
+        ok = self.scanNodeXML( node, may_children, required_children, child_methods, node_object, parent_object )
         
         return ok
 
@@ -442,15 +411,11 @@ class ModelScanner:
             node_object = parent_object.getGrid( )
             parent_object = None # don't need to add this as a child
             
-        may_attributes = node_object.getMayAttributes( )
-        required_attributes = node_object.getRequiredAttributes( )
-        may_params = node_object.getMayParams( )
-        required_params = node_object.getRequiredParams( )
         
         child_methods = {
         }
 
-        ok = self.scanNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
+        ok = self.scanNodeXML( node, may_children, required_children, child_methods, node_object, parent_object )
         
         return ok
 
@@ -463,10 +428,6 @@ class ModelScanner:
         may_children = ( "param", "kineticFactor", "yield", )
         required_children = (  )
         node_object = self.mModel.getItemAddIfNeeded( node.tag, node.get( 'name' ), node.get( 'class' ) )
-        may_attributes = node_object.getMayAttributes( )
-        required_attributes = node_object.getRequiredAttributes( )
-        may_params = node_object.getMayParams( )
-        required_params = node_object.getRequiredParams( )
         parent_object = None # don't need to add this as a child
         child_methods = {
             "param": self.scanGenericParamXML,
@@ -474,7 +435,7 @@ class ModelScanner:
             "yield": self.scanReactionYieldXML,
         }
         
-        ok = self.scanNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
+        ok = self.scanNodeXML( node, may_children, required_children, child_methods, node_object, parent_object )
         
         return ok
 
@@ -490,15 +451,11 @@ class ModelScanner:
             if node.get( 'solute' ):
                 node_object.setReference( self.mModel.getItem( 'solute', node.get( 'solute' ) ) )
             parent_object = None # don't need to add this as a child
-        may_attributes = node_object.getMayAttributes( )
-        required_attributes = node_object.getRequiredAttributes( )
-        may_params = node_object.getMayParams( )
-        required_params = node_object.getRequiredParams( )
         child_methods = {
             "param": self.scanGenericParamXML,
         }
         
-        ok = self.scanNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
+        ok = self.scanNodeXML( node, may_children, required_children, child_methods, node_object, parent_object )
         
         return ok
     
@@ -511,16 +468,12 @@ class ModelScanner:
             node_object = parent_object.getYields( )
             parent_object = None
         
-        may_attributes = node_object.getMayAttributes( )
-        required_attributes = node_object.getRequiredAttributes( )
-        may_params = node_object.getMayParams( )
-        required_params = node_object.getRequiredParams( )
         parent_object = None # don't need to add this as a child
         child_methods = {
             "param": self.scanGenericParamXML,
         }
         
-        ok = self.scanNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
+        ok = self.scanNodeXML( node, may_children, required_children, child_methods, node_object, parent_object )
 
         for yield_key in node_object.getKeys( ):
             if yield_key == '*': continue
@@ -544,25 +497,49 @@ class ModelScanner:
         return ok
 
     def scanSolverXML( self, node, parent_object=None ):
-        ok = True
-        print( "solver not scaned yet" )
+        may_children = ( "param", "reaction", )
+        required_children = (  )
+        node_object = self.mModel.getItemAddIfNeeded( node.tag, node.get( 'name' ), node.get( 'class' ) )
+        parent_object = None # don't need to add this as a child
+        child_methods = {
+            "param": self.scanGenericParamXML,
+            "reaction": self.scanSolverReactionXML,
+        }
+        
+        ok = self.scanNodeXML( node, may_children, required_children, child_methods, node_object, parent_object )
+        
+        return ok
+
+    def scanSolverReactionXML( self, node, parent_object=None ):
+        may_children = (  )
+        required_children = (  )
+        if parent_object is None:
+            node_object = SolverReaction( node.get( 'name' ) )
+        else:
+            if not parent_object.getReactions( ).addItem( node.get('name') ):
+                raise Exception( "ERROR : couldn't add a solver reaction." )
+            node_object = parent_object.getReactions().getLastItem( )
+            node_object.setReference( self.mModel.getItem( node.tag, node.get( 'name' ) ) )
+            parent_object = None
+        parent_object = None # don't need to add this as a child
+        child_methods = {
+        }
+        
+        ok = self.scanNodeXML( node, may_children, required_children, child_methods, node_object, parent_object )
+        
         return ok
 
     def scanAgentGridXML( self, node, parent_object=None ):
         may_children = ( "param", )
         required_children = ( "param", )
         node_object = self.mModel.getIDynoMiCS( ).getAgentGrid()
-        may_attributes = node_object.getMayAttributes( )
-        required_attributes = node_object.getRequiredAttributes( )
-        may_params = node_object.getMayParams( )
-        required_params = node_object.getRequiredParams( )
         parent_object = None # don't need to add this as a child
 
         child_methods = {
             "param": self.scanGenericParamXML,
         }
         
-        ok = self.scanNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
+        ok = self.scanNodeXML( node, may_children, required_children, child_methods, node_object, parent_object )
         
         return ok
 
@@ -570,10 +547,6 @@ class ModelScanner:
         may_children = ( "param", "particle", "reaction", "tightJunctions", "adhesions", "initArea", "entryConditions", "chemotaxis", "switchingLags",  )
         required_children = (  )
         node_object = self.mModel.getItemAddIfNeeded( node.tag, node.get( 'name' ), node.get( 'class' ) )
-        may_attributes = node_object.getMayAttributes( )
-        required_attributes = node_object.getRequiredAttributes( )
-        may_params = node_object.getMayParams( )
-        required_params = node_object.getRequiredParams( )
         parent_object = None # don't need to add this as a child
         child_methods = {
             "param": self.scanGenericParamXML,
@@ -588,7 +561,7 @@ class ModelScanner:
             #"": self.scanSpeciesXML,
         }
         
-        ok = self.scanNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
+        ok = self.scanNodeXML( node, may_children, required_children, child_methods, node_object, parent_object )
         
         return ok
 
@@ -602,15 +575,11 @@ class ModelScanner:
                 raise Exception( "ERROR : couldn't add a species particle." )
             node_object = parent_object.getParticles().getLastItem()
             parent_object = None # don't need to add this as a child
-        may_attributes = node_object.getMayAttributes( )
-        required_attributes = node_object.getRequiredAttributes( )
-        may_params = node_object.getMayParams( )
-        required_params = node_object.getRequiredParams( )
         child_methods = {
             "param": self.scanGenericParamXML,
         }
         
-        ok = self.scanNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
+        ok = self.scanNodeXML( node, may_children, required_children, child_methods, node_object, parent_object )
         
         return ok
 
@@ -624,14 +593,10 @@ class ModelScanner:
                 raise Exception( "ERROR : couldn't add a species reaction." )
             node_object = parent_object.getReactions().getLastItem()
             parent_object = None # don't need to add this as a child
-        may_attributes = node_object.getMayAttributes( )
-        required_attributes = node_object.getRequiredAttributes( )
-        may_params = node_object.getMayParams( )
-        required_params = node_object.getRequiredParams( )
         child_methods = {
         }
         
-        ok = self.scanNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
+        ok = self.scanNodeXML( node, may_children, required_children, child_methods, node_object, parent_object )
         
         return ok
 
@@ -643,15 +608,11 @@ class ModelScanner:
         else:
             node_object = parent_object.getTightJunctions( )
             parent_object = None # don't need to add this as a child
-        may_attributes = ( )
-        required_attributes = ( )
-        may_params = ( )
-        required_params = ( )
         child_methods = {
             "tightJunction": self.scanSpeciesTightJunctionXML,
         }
         
-        ok = self.scanNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
+        ok = self.scanNodeXML( node, may_children, required_children, child_methods, node_object, parent_object )
         
         return ok
 
@@ -665,14 +626,10 @@ class ModelScanner:
                 raise Exception( "ERROR : couldn't add a species tight junction." )
             node_object = parent_object.getLastItem( )
             parent_object = None # don't need to add this as a child
-        may_attributes = node_object.getMayAttributes( )
-        required_attributes = node_object.getRequiredAttributes( )
-        may_params = node_object.getMayParams( )
-        required_params = node_object.getRequiredParams( )
         child_methods = {
         }
         
-        ok = self.scanNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
+        ok = self.scanNodeXML( node, may_children, required_children, child_methods, node_object, parent_object )
         
         return ok
 
@@ -685,15 +642,11 @@ class ModelScanner:
         else:
             node_object = parent_object.getAdhesions( )
             parent_object = None # don't need to add this as a child
-        may_attributes = ( )
-        required_attributes = ( )
-        may_params = ( )
-        required_params = ( )
         child_methods = {
             "adhesion": self.scanSpeciesAdhesionXML,
         }
         
-        ok = self.scanNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
+        ok = self.scanNodeXML( node, may_children, required_children, child_methods, node_object, parent_object )
         
         return ok
 
@@ -707,14 +660,10 @@ class ModelScanner:
                 raise Exception( "ERROR : couldn't add a species adhesion." )
             node_object = parent_object.getLastItem( )
             parent_object = None # don't need to add this as a child
-        may_attributes = node_object.getMayAttributes( )
-        required_attributes = node_object.getRequiredAttributes( )
-        may_params = node_object.getMayParams( )
-        required_params = node_object.getRequiredParams( )
         child_methods = {
         }
         
-        ok = self.scanNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
+        ok = self.scanNodeXML( node, may_children, required_children, child_methods, node_object, parent_object )
         
         return ok
     
@@ -729,17 +678,13 @@ class ModelScanner:
                 raise Exception( "ERROR : couldn't add a species initArea." )
             node_object = parent_object.getInitAreas().getLastItem()
             parent_object = None # don't need to add this as a child
-        may_attributes = node_object.getMayAttributes( )
-        required_attributes = node_object.getRequiredAttributes( )
-        may_params = node_object.getMayParams( )
-        required_params = node_object.getRequiredParams( )
         child_methods = {
             "param": self.scanGenericParamXML,
             "coordinates": self.scanCoordinatesXML,
             "blocks": self.scanBlocksXML,
         }
         
-        ok = self.scanNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
+        ok = self.scanNodeXML( node, may_children, required_children, child_methods, node_object, parent_object )
         
         return ok
 
@@ -753,14 +698,10 @@ class ModelScanner:
                 raise Exception( "ERROR : couldn't add a coordinates." )
             node_object = parent_object.getCoordinates().getLastItem()
             parent_object = None # don't need to add this as a child
-        may_attributes = node_object.getMayAttributes( )
-        required_attributes = node_object.getRequiredAttributes( )
-        may_params = node_object.getMayParams( )
-        required_params = node_object.getRequiredParams( )
         child_methods = {
         }
         
-        ok = self.scanNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
+        ok = self.scanNodeXML( node, may_children, required_children, child_methods, node_object, parent_object )
         
         return ok
 
@@ -774,14 +715,10 @@ class ModelScanner:
                 raise Exception( "ERROR : couldn't add a blocks." )
             node_object = parent_object.getBlocks().getLastItem()
             parent_object = None # don't need to add this as a child
-        may_attributes = node_object.getMayAttributes( )
-        required_attributes = node_object.getRequiredAttributes( )
-        may_params = node_object.getMayParams( )
-        required_params = node_object.getRequiredParams( )
         child_methods = {
         }
         
-        ok = self.scanNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
+        ok = self.scanNodeXML( node, may_children, required_children, child_methods, node_object, parent_object )
         
         return ok
 
@@ -798,15 +735,11 @@ class ModelScanner:
         else:
             node_object = parent_object.getChemotaxis( )
             parent_object = None # don't need to add this as a child
-        may_attributes = ( )
-        required_attributes = ( )
-        may_params = ( )
-        required_params = ( )
         child_methods = {
             "chemotactic": self.scanSpeciesChemotacticXML,
         }
         
-        ok = self.scanNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
+        ok = self.scanNodeXML( node, may_children, required_children, child_methods, node_object, parent_object )
         
         return ok
 
@@ -822,14 +755,10 @@ class ModelScanner:
             if node.get( 'withSolute' ):
                 node_object.setReference( self.mModel.getItem( 'solute', node.get( 'withSolute' ) ) )
             parent_object = None # don't need to add this as a child
-        may_attributes = node_object.getMayAttributes( )
-        required_attributes = node_object.getRequiredAttributes( )
-        may_params = node_object.getMayParams( )
-        required_params = node_object.getRequiredParams( )
         child_methods = {
         }
         
-        ok = self.scanNodeXML( node, may_attributes, required_attributes, may_children, required_children, child_methods, may_params, required_params, node_object, parent_object )
+        ok = self.scanNodeXML( node, may_children, required_children, child_methods, node_object, parent_object )
         
         return ok
 

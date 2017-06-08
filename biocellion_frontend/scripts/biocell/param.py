@@ -129,6 +129,23 @@ class Param:
             return False
         return True
 
+
+    def getMayAttributes( self ):
+        names = [ "name", "unit", ]
+        return names
+        
+    def getRequiredAttributes( self ):
+        names = [ "name", ]
+        return names
+        
+    def getMayParams( self ):
+        names = [ ]
+        return names
+        
+    def getRequiredParams( self ):
+        names = [ ]
+        return names
+
     def __str__(self):
         s = '<param name="%s" unit="%s">%s</param>' % (str(self.mName), str(self.mUnit), str(self.mValue))
         return s

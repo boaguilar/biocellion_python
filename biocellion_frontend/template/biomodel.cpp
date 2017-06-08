@@ -33,6 +33,14 @@ BioModel::~BioModel( ) {
     }
   }
   mReactions.clear();
+
+  for( i = 0; i < (S32) mSolvers.size(); i++ ) {
+    if( mSolvers[i] ) {
+      delete mSolvers[i];
+      mSolvers[i] = 0;
+    }
+  }
+  mSolvers.clear();
 }
 
 const Vector< Solute * >& BioModel::getSolutes( ) const {
@@ -49,6 +57,14 @@ const Vector< Reaction * >& BioModel::getReactions( ) const {
 
 Vector< Reaction * >& BioModel::getReactions( ) {
   return mReactions;
+}
+
+const Vector< Solver * >& BioModel::getSolvers( ) const {
+  return mSolvers;
+}
+
+Vector< Solver * >& BioModel::getSolvers( ) {
+  return mSolvers;
 }
 
 BOOL BioModel::getDistanceJunctionsEnabled( ) const {

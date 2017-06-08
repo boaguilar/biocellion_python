@@ -12,8 +12,8 @@ class Solute( ParamHolder ):
         
         self.addAttribute( Param( "name", "str", "", True ) )
         self.addAttribute( Param( "domain", "str", "", True ) )
-        self.addParam( Param( "diffusivity", "m2.day-1", 0.0, True ) )
-        self.addParam( Param( "airDiffusivity", "m2.day-1", 0.0, False ) )
+        self.addParam( Param( "diffusivity", "um2.hour-1", 0.0, True ) )
+        self.addParam( Param( "airDiffusivity", "um2.hour-1", 0.0, False ) )
         self.addParam( Param( "decayRate", "float", 0.0, False ) )
         self.addParam( Param( "resolution", "um", -1.0, False ) )
         self.addParam( Param( "concentration", "g.L-1", -1.0, False ) )
@@ -201,26 +201,11 @@ class AllSolutes( ItemHolder ):
 
     def getBioModelH( self, indent, depth ):
         lines = [ ]
-        lines.append( self.getSoluteParamNames( indent, depth ) )
+        lines.append( self.getAllParamNames( indent, depth ) )
         lines.append( "" )
         lines.append( self.getSolutesEnum( indent, depth ) )
         return "\n".join( lines )
 
-    def getSoluteParamNames(self, indent, depth):
-        all_params = { }
-        all_order = [ ]
-        for name in self.mOrder:
-            params = self.mItems[ name ].getParams()
-            for param_name in params:
-                if param_name not in all_params:
-                    all_params[ param_name ] = params[ param_name ]
-                    all_order.append( param_name )
-        lines = []
-        for n in all_order:
-            s = (depth*indent) + "const std::string %s = \"%s\";" % (all_params[ n ].getConstName( ), n, )
-            lines.append( s )
-        return "\n".join( lines )
-    
     def getSolutesEnum(self, indent, depth):
         lines = []
         lines.append( (depth*indent) + "typedef enum _solute_type_e {" )

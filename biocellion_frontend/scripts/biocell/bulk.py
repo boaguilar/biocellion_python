@@ -78,7 +78,7 @@ class AllBulks( ItemHolder ):
 
     def getBioModelH( self, indent, depth ):
         lines = [ ]
-        lines.append( self.getBulkParamNames( indent, depth ) )
+        lines.append( self.getAllParamNames( indent, depth ) )
         lines.append( "" )
         lines.append( self.getBulkSoluteParamNames( indent, depth ) )
         lines.append( "" )
@@ -88,21 +88,6 @@ class AllBulks( ItemHolder ):
             lines.append( self.mItems[ name ].getBioModelH( indent, depth ) )
         return "\n".join( lines )
 
-    def getBulkParamNames(self, indent, depth):
-        all_params = { }
-        all_order = [ ]
-        for name in self.mOrder:
-            params = self.mItems[ name ].getParams()
-            for param_name in params:
-                if param_name not in all_params:
-                    all_params[ param_name ] = params[ param_name ]
-                    all_order.append( param_name )
-        lines = []
-        for n in all_order:
-            s = (depth*indent) + "const std::string %s = \"%s\";" % ( all_params[ n ].getConstName( ), n, )
-            lines.append( s )
-        return "\n".join( lines )
- 
     def getBulkSoluteParamNames(self, indent, depth):
         all_params = { }
         all_order = [ ]

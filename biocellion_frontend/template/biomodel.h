@@ -20,6 +20,7 @@
 #include "bulk.h"
 #include "agar.h"
 #include "world.h"
+#include "solver.h"
 
 #include "biomodel_auto.h"
 
@@ -32,6 +33,8 @@ public:
   Vector< Solute * >& getSolutes( );
   const Vector< Reaction * >& getReactions( ) const;
   Vector< Reaction * >& getReactions( );
+  const Vector< Solver * >& getSolvers( ) const;
+  Vector< Solver * >& getSolvers( );
   BOOL getDistanceJunctionsEnabled( ) const;
   const World& getWorld( ) const;
   World& getWorld( );
@@ -73,8 +76,9 @@ public:
   void updatePDEBufferNeumannBCVal( const S32 elemIdx, const VReal& startPos, const VReal& pdeBufferFaceSize, const S32 dim, const BOOL lowSide, REAL& bcVal ) const;
 
 protected:
-  Vector<Solute *> mSolutes;
-  Vector<Reaction *> mReactions;
+  Vector< Solute* > mSolutes;
+  Vector< Reaction* > mReactions;
+  Vector< Solver* > mSolvers;
   BOOL mDistanceJunctionsEnabled;
   World mWorld;
 };

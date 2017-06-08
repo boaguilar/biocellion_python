@@ -23,27 +23,31 @@ from simulator import Simulator
 from .agar import Agar, AllAgars
 from .bulk_solute import BulkSolute, AllBulkSolutes
 from .bulk import Bulk, AllBulks
-from computation_domain_grid import ComputationDomainGrid
-from computation_domain_boundary_condition import ComputationDomainBoundaryCondition
-from computation_domain import ComputationDomain, AllComputationDomains
-from world import World
+from .computation_domain_grid import ComputationDomainGrid
+from .computation_domain_boundary_condition import ComputationDomainBoundaryCondition
+from .computation_domain import ComputationDomain, AllComputationDomains
+from .world import World
 
 # reactions
-from kinetic_factor import KineticFactor
-from yields import Yields
-from reaction import Reaction, AllReactions
+from .kinetic_factor import KineticFactor
+from .yields import Yields
+from .reaction import Reaction, AllReactions
+
+# solvers
+from .solver_reaction import SolverReaction, AllSolverReactions
+from .solver import Solver, AllSolvers
 
 # particles
-from particle import Particle, AllParticles
+from .particle import Particle, AllParticles
 
 # solutes
-from solute import Solute, AllSolutes
+from .solute import Solute, AllSolutes
 
 # agent grid
 from .agent_grid import AgentGrid
 
 # top-level classes
-from idynomics import IDynoMiCS
-from biomodel import BioModel
-from model_writer import ModelWriter
-from model_scanner import ModelScanner
+from .idynomics import IDynoMiCS
+from .biomodel import BioModel
+from .model_writer import ModelWriter
+from .model_scanner import ModelScanner

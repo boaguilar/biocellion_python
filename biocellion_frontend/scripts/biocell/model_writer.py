@@ -253,6 +253,7 @@ class ModelWriter:
                   'reaction.cpp', 'reaction.h',
                   'simulator.cpp', 'simulator.h',
                   'solute.cpp', 'solute.h',
+                  'solver.cpp', 'solver.h',
                   'tight_junction.cpp', 'tight_junction.h',
                   'world.cpp', 'world.h',
                   'Makefile', 

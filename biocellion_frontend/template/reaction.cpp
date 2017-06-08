@@ -224,6 +224,25 @@ void Reaction::setMuMax(const REAL& value) {
   mMuMax = value;
 }
 
+REAL Reaction::getKineticFactor( const NbrUBEnv& nbrUBEnv, const VReal& vOffset ) const {
+  REAL factor = mMuMax;
+  REAL solute_value = 0;
+  S32 i;
+  for( i = 0 ; i < (S32) mKineticFactors.size( ) ; i++ ) {
+    if( mKineticFactors[ i ]->getSolute( ) >= 0 ) {
+      solute_value = gBioModel->getSubgridValue( mKineticFactors[ i ]->getSolute( ), nbrUBEnv, vOffset );
+    } else if( mKineticFactors[ i ]->getMolecule( ) >= 0 ) {
+      ERROR( "unimplemented" );
+    } else if( mKineticFactors[ i ]->getSolute( ) == -1 && mKineticFactors[ i ]->getMolecule( ) == -1 ) {
+      solute_value = 0;
+    } else {
+      ERROR( "Should be unreachable." );
+    }
+    factor *= mKineticFactors[ i ]->kineticValue( solute_value );
+  }
+  return factor;
+}
+
 REAL Reaction::getKineticFactor( const UBEnv& ubEnv, const VReal& vOffset ) const {
   REAL factor = mMuMax;
   REAL solute_value = 0;
@@ -275,10 +294,10 @@ REAL Reaction::getSoluteYield( const S32& solute_idx, const SpAgent& spAgent ) c
  * Finds the total yield this agent produces for this particle_idx, due
  * to this reaction.
  */
-REAL Reaction::getParticleYield( const S32& particle_idx, const SpAgent& spAgent ) const {
+REAL Reaction::getParticleYield( const S32& particle_idx, const SpAgentState& spAgentState ) const {
   S32 i, j;
   REAL yield = 0.0;
-  S32 agentType = spAgent.state.getType( );
+  S32 agentType = spAgentState.getType( );
   if( getCatalyst( ) == -1 || getCatalyst( ) == agentType ) {
     // Agent's type matches catalyst
     for( i = 0; i < (S32) mYields.size( ) ; i++ ) {
@@ -288,7 +307,7 @@ REAL Reaction::getParticleYield( const S32& particle_idx, const SpAgent& spAgent
         for( j = 0 ; j < (S32) particles.size( ) ; j++ ) {
           if( particles[ j ].getParticleIdx( ) == getCatalyzedBy( ) ) {
             // Agent's particle matches catalyzed by.
-            REAL mass = spAgent.state.getModelReal( particles[ j ].getModelRealIdx( ) );
+            REAL mass = spAgentState.getModelReal( particles[ j ].getModelRealIdx( ) );
             yield += mYields[ i ].getValue( ) * mass;
           } // if particle matches catalyzedby
         } // for all particles in agent

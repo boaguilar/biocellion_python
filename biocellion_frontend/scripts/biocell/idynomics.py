@@ -10,6 +10,7 @@ class IDynoMiCS( ParamHolder ):
         self.mSimulator = Simulator( )
         self.mWorld = World( self )
         self.mReactions = AllReactions( self )
+        self.mSolvers = AllSolvers( self )
         self.mAgentGrid = AgentGrid()
         self.mAgentSpecies = AllAgentSpecies( self )
         self.mSolutes = AllSolutes( self )
@@ -24,6 +25,8 @@ class IDynoMiCS( ParamHolder ):
             collection = self.getParticles( )
         elif tag == "reaction":
             collection = self.getReactions( )
+        elif tag == "solver":
+            collection = self.getSolvers( )
         elif tag == "molecularReactions":
             collection = self.getMolecularReactions( )
         elif tag == "species":
@@ -48,6 +51,8 @@ class IDynoMiCS( ParamHolder ):
             collection = self.getParticles( )
         elif tag == "reaction":
             collection = self.getReactions( )
+        elif tag == "solver":
+            collection = self.getSolvers( )
         elif tag == "molecularReactions":
             collection = self.getMolecularReactions( )
         elif tag == "species":
@@ -67,6 +72,8 @@ class IDynoMiCS( ParamHolder ):
         lines.append( "" )
         lines.append( self.mReactions.getBioModelH( indent, depth ) )
         lines.append( "" )
+        lines.append( self.mSolvers.getBioModelH( indent, depth ) )
+        lines.append( "" )
         lines.append( self.mAgentGrid.getBioModelH( indent, depth ) )
         lines.append( "" )
         lines.append( self.mAgentSpecies.getBioModelH( indent, depth ) )
@@ -81,6 +88,7 @@ class IDynoMiCS( ParamHolder ):
         lines.append( self.mSimulator.getInitializeBioModel( indent, depth ) )
         lines.append( self.mWorld.getInitializeBioModel( indent, depth ) )
         lines.append( self.mReactions.getInitializeBioModel( indent, depth ) )
+        lines.append( self.mSolvers.getInitializeBioModel( indent, depth ) )
         lines.append( self.mAgentGrid.getInitializeBioModel( indent, depth ) )
         lines.append( self.mAgentSpecies.getInitializeBioModel( indent, depth ) )
         lines.append( self.mSolutes.getInitializeBioModel( indent, depth ) )
@@ -95,6 +103,9 @@ class IDynoMiCS( ParamHolder ):
         
     def getReactions( self ):
         return self.mReactions
+        
+    def getSolvers( self ):
+        return self.mSolvers
         
     def getAgentGrid( self ):
         return self.mAgentGrid
@@ -130,6 +141,9 @@ class IDynoMiCS( ParamHolder ):
 
     def getReactionEnumToken( self, item_key ):
         return self.getItemEnumToken( self.mReactions, item_key )
+
+    def getSolverEnumToken( self, item_key ):
+        return self.getItemEnumToken( self.mSolvers, item_key )
 
     def getAgentSpeciesEnumToken( self, item_key ):
         return self.getItemEnumToken( self.mAgentSpecies, item_key )
@@ -236,6 +250,7 @@ class IDynoMiCS( ParamHolder ):
         s += str( self.mSimulator ) + "\n"
         s += str( self.mWorld ) + "\n"
         s += str( self.mReactions ) + "\n"
+        s += str( self.mSolvers ) + "\n"
         s += str( self.mAgentGrid ) + "\n"
         s += str( self.mAgentSpecies ) + "\n"
         s += str( self.mSolutes )  + "\n"

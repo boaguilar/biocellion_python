@@ -7,7 +7,9 @@ class ParamHolder:
 
     def __init__(self):
         self.mAttributes = {  }
+        self.mAttributeOrder = [ ]
         self.mParams = {  }
+        self.mParamOrder = [ ]
         self.mChildren = {  }
         self.mHiddenParams = [ ]
         self.mPrefix = ""
@@ -87,7 +89,7 @@ class ParamHolder:
         
     def paramNamesToCpp(self, indent, depth):
         lines = []
-        for n in self.mParams:
+        for n in self.mParamOrder:
             if n in self.mHiddenParams:
                 continue
             s = (depth*indent) + "const std::string %s = \"%s\";" % (self.mParams[ n ].getConstName( ), n, )
@@ -96,7 +98,7 @@ class ParamHolder:
         
     def getInitializeBioModel(self, varname, indent, depth):
         lines = []
-        for n in self.mParams:
+        for n in self.mParamOrder:
             if n in self.mHiddenParams:
                 continue
             param = self.mParams[ n ]
@@ -156,6 +158,7 @@ class ParamHolder:
         if n in self.mAttributes:
             return False
         else:
+            self.mAttributeOrder.append( n )
             self.mAttributes[ n ] = attr.copy()
             self.mAttributes[ n ].setPrefix( self.getPrefix( ) )
         return
@@ -198,7 +201,7 @@ class ParamHolder:
         return self.mParams
 
     def getParamKeys( self ):
-        return list( self.mParams )
+        return self.mParamOrder
 
     def paramExists( self, name ):
         return name in self.mParams
@@ -211,6 +214,7 @@ class ParamHolder:
         if n in self.mParams:
             return False
         else:
+            self.mParamOrder.append( n )
             self.mParams[n] = param.copy()
             self.mParams[ n ].setPrefix( self.getPrefix( ) )
         return
@@ -259,7 +263,7 @@ class ParamHolder:
 
     def formatAttributes( self ):
         s = ''
-        for a in self.mAttributes:
+        for a in self.mAttributeOrder:
             s += ' %s="%s"' % ( self.mAttributes[ a ].getName(), self.mAttributes[ a ].getValue() )
         return s
 
