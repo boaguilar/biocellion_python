@@ -18,8 +18,8 @@
       <param name="timeStepIni" unit="hour">0.01</param>
       <param name="timeStepMin" unit="hour">0.01</param>
       <param name="timeStepMax" unit="hour">0.01</param>
-      <param name="endOfSimulation" unit="hour">0.03</param>
-      <!-- <param name="endOfSimulation" unit="hour">2.0</param> -->
+      <!-- <param name="endOfSimulation" unit="hour">0.03</param> -->
+      <param name="endOfSimulation" unit="hour">2.0</param>
     </timeStep>
     <!-- The AGENTTIMESTEP which should always be EQUAL or LOWER than the global time step -->
     <param name="agentTimeStep" unit="hour">0.01</param>
@@ -129,7 +129,7 @@
 		</solute> 
     </bulk>
      <computationDomain name="MyYeastColony">
-      <grid nDim="2" nI="129" nJ="257" nK="1"/>
+      <grid nDim="2" nI="65" nJ="129" nK="1"/>
       <param name="resolution" unit="um">8</param>
       <param name="boundaryLayer" unit="um">1</param>
       <param name="biofilmDiffusivity">0.8</param>
@@ -195,7 +195,7 @@
 	######################################################################-->
  
  <!--Replaced the monod kinetic factor to chemotactic nutrient which provides the nutrition for the chemotactic cells initially-->
-  <reaction catalyzedBy="biomass" class="ReactionFactor" name="AttractSecretion">
+  <reaction catalyzedBy="biomass" catalyst="MovingCells" class="ReactionFactor" name="AttractSecretion1">
     <param name="muMax" unit="hour-1">3.6</param>
     <kineticFactor class="MonodKinetic" solute="ChemotacticNutrient"><!--Monod kinetic because there are protein transporters that have affinity towards the attractants they transport for secretion-->
     <param name="Ks" unit="g.L-1">0.12e-3</param>
@@ -206,7 +206,38 @@
     </yield>
   </reaction>
 
-  <reaction catalyzedBy="biomass" class="ReactionFactor" name="GradientSecretion"> <!--leaving First Order Kinetic since long range attractant comes from the sink-->
+  <reaction catalyzedBy="biomass" catalyst="PipeCellsLeft" class="ReactionFactor" name="AttractSecretion2">
+    <param name="muMax" unit="hour-1">3.6</param>
+    <kineticFactor class="MonodKinetic" solute="ChemotacticNutrient"><!--Monod kinetic because there are protein transporters that have affinity towards the attractants they transport for secretion-->
+    <param name="Ks" unit="g.L-1">0.12e-3</param>
+  </kineticFactor>
+    <yield>
+	  <param name="ChemotacticNutrient" unit="g.g-1">-0.1</param>
+	  <param name="Attract" unit="g.g-1">0.1</param>
+    </yield>
+  </reaction>
+
+  <reaction catalyzedBy="biomass" catalyst="PipeCellsRight" class="ReactionFactor" name="AttractSecretion3">
+    <param name="muMax" unit="hour-1">3.6</param>
+    <kineticFactor class="MonodKinetic" solute="ChemotacticNutrient"><!--Monod kinetic because there are protein transporters that have affinity towards the attractants they transport for secretion-->
+    <param name="Ks" unit="g.L-1">0.12e-3</param>
+  </kineticFactor>
+    <yield>
+	  <param name="ChemotacticNutrient" unit="g.g-1">-0.1</param>
+	  <param name="Attract" unit="g.g-1">0.1</param>
+    </yield>
+  </reaction>
+
+  <reaction catalyzedBy="biomass" catalyst="PipeCellsLeft" class="ReactionFactor" name="GradientSecretion1"> <!--leaving First Order Kinetic since long range attractant comes from the sink-->
+    <param name="muMax" unit="hour-1">3.6</param>
+    <kineticFactor class="FirstOrderKinetic"/>
+    <yield>
+	  <param name="ChemotacticNutrient" unit="g.g-1">-0.1</param> 
+	  <param name="Gradient" unit="g.g-1">0.1</param>
+    </yield>
+  </reaction>
+  
+  <reaction catalyzedBy="biomass" catalyst="PipeCellsRight" class="ReactionFactor" name="GradientSecretion2"> <!--leaving First Order Kinetic since long range attractant comes from the sink-->
     <param name="muMax" unit="hour-1">3.6</param>
     <kineticFactor class="FirstOrderKinetic"/>
     <yield>
@@ -266,8 +297,11 @@
     <param name="postStep">150</param>
     <param name="coarseStep">1500</param>
     <param name="nCycles">5</param>
-    <reaction name="AttractSecretion"/>
-    <reaction name="GradientSecretion"/>
+    <reaction name="AttractSecretion1"/>
+    <reaction name="AttractSecretion2"/>
+    <reaction name="AttractSecretion3"/>
+    <reaction name="GradientSecretion1"/>
+    <reaction name="GradientSecretion2"/>
 	<reaction name="NutrientSecretion"/>
     <reaction name="ProductSecretion"/>
 	<reaction name="ProductUptake"/>
@@ -304,7 +338,7 @@
     <param name="kHyd" unit="hr-1">0.1</param> 
      <param name="attachCreateFactor">1.0</param>
     <param name="attachDestroyFactor">2</param>
-    <reaction name="AttractSecretion" status="active"/>
+    <reaction name="AttractSecretion1" status="active"/>
 	<reaction name="NutrientSecretion" status="active"/>
 	<reaction name="ProductUptake" status="active"/>
     <chemotaxis>
@@ -397,8 +431,8 @@
 	<param name="tightJunctionToBoundaryStrength">0.5</param>
 	<param name="attachToBoundaryCreateFactor">1.1</param>
 	<param name="attachToBoundaryDestroyFactor">1.8</param>
-    <reaction name="AttractSecretion" status="active"/>
-    <reaction name="GradientSecretion" status="active"/>
+    <reaction name="AttractSecretion2" status="active"/>
+    <reaction name="GradientSecretion1" status="active"/>
 	<reaction name="NutrientSecretion" status="active"/>
 	<reaction name="ProductUptake" status="active"/>
     <tightJunctions>
@@ -433,8 +467,8 @@
 	<param name="tightJunctionToBoundaryStrength">0.5</param>
 	<param name="attachToBoundaryCreateFactor">1.1</param>
 	<param name="attachToBoundaryDestroyFactor">1.8</param>
-     <reaction name="AttractSecretion" status="active"/>
-    <reaction name="GradientSecretion" status="active"/>
+     <reaction name="AttractSecretion3" status="active"/>
+    <reaction name="GradientSecretion2" status="active"/>
 	<reaction name="NutrientSecretion" status="active"/>
 	<reaction name="ProductUptake" status="active"/>
     <tightJunctions>
