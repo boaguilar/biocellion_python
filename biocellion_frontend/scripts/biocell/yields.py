@@ -10,6 +10,14 @@ class Yields( ParamHolder ):
         self.mItems = { }
         return
 
+    def isSolute( self, name ):
+        return name in self.mSolutes
+
+    def getSolute( self, name ):
+        if self.isSolute( name ):
+            return self.mSolutes[ name ]
+        return None
+
     def setSolute( self, name, solute ):
         self.mSolutes[ name ] = solute
         self.mItems[ name ] = solute

@@ -166,6 +166,8 @@ class IDynoMiCS( ParamHolder ):
         self.mSolutes.calcRefineRatio( )
         ## Set up solute initial concentrations
         self.mSolutes.calcConcentrations( )
+        ## Link solutes to solvers
+        self.mSolutes.chooseSolvers( )
         
         ### These are linking with enums
         ## Reactions.catalyzedBy->Particles 

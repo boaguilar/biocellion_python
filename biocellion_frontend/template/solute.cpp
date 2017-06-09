@@ -2,7 +2,7 @@
 
 Solute::Solute()
   : ParamHolder( ),
-    mName( "" ), mSoluteIdx( -1 ), mDomainIdx( -1 ),
+    mName( "" ), mSoluteIdx( -1 ), mDomainIdx( -1 ), mSolverIdx( -1 ),
     mAMRLevels( 3 ), mInterfaceAMRLevel( 2 ),
     mNumTimeSteps( 1 ), mSubgridDimension(-1)
 {
@@ -11,7 +11,7 @@ Solute::Solute()
 
 Solute::Solute(const std::string& name, const S32& solute_idx, const S32& domain_idx, const S32& num_real_param, const S32& num_int_param, const S32& num_bool_param, const S32& num_string_param) 
   : ParamHolder( num_real_param, num_int_param, num_bool_param, num_string_param ),
-    mName( name ), mSoluteIdx( solute_idx ), mDomainIdx( domain_idx ),
+    mName( name ), mSoluteIdx( solute_idx ), mDomainIdx( domain_idx ), mSolverIdx( -1 ),
     mAMRLevels( 3 ), mInterfaceAMRLevel( 2 ),
     mNumTimeSteps( 1 ), mSubgridDimension(-1)
 {
@@ -28,6 +28,10 @@ S32 Solute::getSoluteIdx() const {
 
 S32 Solute::getDomainIdx() const {
   return mDomainIdx;
+}
+
+S32 Solute::getSolverIdx() const {
+  return mSolverIdx;
 }
 
 S32 Solute::getAMRLevels() const {
@@ -53,6 +57,10 @@ void Solute::setSoluteIdx(const S32& idx) {
 
 void Solute::setDomainIdx(const S32& idx) {
   mDomainIdx = idx;
+}
+
+void Solute::setSolverIdx(const S32& idx) {
+  mSolverIdx = idx;
 }
 
 void Solute::setAMRLevels(const S32& value) {
@@ -167,19 +175,33 @@ void Solute::setPDEInfo( PDEInfo& pdeInfo ) const {
   pdeInfo.ifLevel = mInterfaceAMRLevel;
   pdeInfo.v_tagExpansionSize.assign( mAMRLevels, 0 ); // ???FIXME: Need to configure this correctly
   pdeInfo.numTimeSteps = mNumTimeSteps; // ???FIXME: Need to configure this correctly
-  pdeInfo.callAdjustRHSTimeDependentLinear = false; // ???FIXME: Need to configure this correctly
+  pdeInfo.callAdjustRHSTimeDependentLinear = false;
 
-  // set mgSolveInfo.* here
-  // ???FIXME: Need to configure these correctly
-  
-  pdeInfo.mgSolveInfo.numPre = 3;/* multigrid parameters */
-  pdeInfo.mgSolveInfo.numPost = 3;/* multigrid parameters */
-  pdeInfo.mgSolveInfo.numBottom = 3;/* multigrid parameters */
-  pdeInfo.mgSolveInfo.vCycle = true;/* multigrid parameters */
-  pdeInfo.mgSolveInfo.maxIters = 30;/* multigrid parameters */
-  pdeInfo.mgSolveInfo.epsilon = 1e-8;/* multigrid parameters */
-  pdeInfo.mgSolveInfo.hang = 1e-6;/* multigrid parameters */
-  pdeInfo.mgSolveInfo.normThreshold = 1e-10;/* multigrid parameters */
+
+  { /* this code configures the multi grid part of the CHOMBO solver
+     * see 4.4.4 Class AMRMultiGrid in the CHOMBO documentation */
+    
+    // Directly from the CHOMBO documentation PDF
+    // – pre is the number of smoothings before averaging.
+    // – post is the number of smoothings after averaging.
+    // – bottom is the number of smoothings at the bottom level.
+    // – numMG = 1 for v-cycle, 2 for w-cycle and so on (in most cases, use 1).
+    // – itermax is the max number of v cycles.
+    // – hang is the minimum amount of change per vcycle.
+    // – eps is the solution tolerance.
+    // – normThresh is how close to zero eps*resid is allowed to get.
+    
+    CHECK( mSolverIdx >= 0 && mSolverIdx < NUM_SOLVERS );
+    const Solver* solver = gBioModel->getSolvers( )[ mSolverIdx ];
+    pdeInfo.mgSolveInfo.numPre = solver->getParamInt( solver->getIdxInt( SOLVER_preStep ) );
+    pdeInfo.mgSolveInfo.numPost = solver->getParamInt( solver->getIdxInt( SOLVER_postStep ) );
+    pdeInfo.mgSolveInfo.numBottom = 3;/* multigrid parameters */
+    pdeInfo.mgSolveInfo.vCycle = true;/* multigrid parameters */
+    pdeInfo.mgSolveInfo.maxIters =  solver->getParamInt( solver->getIdxInt( SOLVER_nCycles ) );
+    pdeInfo.mgSolveInfo.epsilon = 1e-8;/* multigrid parameters */
+    pdeInfo.mgSolveInfo.hang = 1e-6;/* multigrid parameters */
+    pdeInfo.mgSolveInfo.normThreshold = 1e-10;/* multigrid parameters */
+  }
 
   // set splittingInfo here
   pdeInfo.splittingInfo = splittingInfo;
@@ -363,7 +385,7 @@ void Solute::updateIfSubgridRHSTimeDependentSplitting( const VIdx& vIdx, const V
 
 void Solute::updateIfGridAMRTags( const VIdx& vIdx, const NbrUBAgentData& nbrUBAgentData, const NbrUBEnv& nbrUBEnv, S32& finestLevel ) const {
   // this is the default maximum.
-  finestLevel = mAMRLevels - 1;
+  finestLevel = mInterfaceAMRLevel;
 }
 
 void Solute::updateIfGridDirichletBCVal( const VReal& pos, const S32 dim, const BOOL lowSide, const UBEnvModelVar a_ubEnvModelVar[3], const Vector<REAL> av_gridPhi[3]/* av_gridPhi[].size() == ratio * raito * ratio (ratio = Info::envAuxDataInfo.v_phiRatioFromIfGridToIfSubgrid[elemIdx]), use VIdx::getIdx3DTo1D() to index */, REAL& bcVal ) const {

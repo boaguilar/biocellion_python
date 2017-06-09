@@ -14,6 +14,7 @@ public:
   const std::string& getName() const;
   S32 getSoluteIdx() const;
   S32 getDomainIdx() const;
+  S32 getSolverIdx() const;
   S32 getAMRLevels() const;
   S32 getInterfaceAMRLevel() const;
   S32 getNumTimeSteps() const;
@@ -21,6 +22,7 @@ public:
   void setName(const std::string& name);
   void setSoluteIdx(const S32& idx);
   void setDomainIdx(const S32& idx);
+  void setSolverIdx(const S32& idx);
   void setAMRLevels( const S32& value );
   void setInterfaceAMRLevel( const S32& value );
   void setNumTimeSteps( const S32& value );
@@ -71,6 +73,7 @@ protected:
   std::string mName;
   S32         mSoluteIdx;
   S32         mDomainIdx;
+  S32         mSolverIdx;
 
   
   S32         mAMRLevels;         // Total number of AMR Levels

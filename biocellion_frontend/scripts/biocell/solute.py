@@ -6,6 +6,7 @@ class Solute( ParamHolder ):
         self.mName = name
         self.mEnumToken = "SOLUTE_%s" % ( name, )
         self.mModel = model
+        self.mSolver = None
         
         ParamHolder.__init__(self)
         self.setPrefix( "SOLUTE" )
@@ -133,6 +134,24 @@ class Solute( ParamHolder ):
 
     def calcConcentration( self ):
         return self.getConcentration( )
+
+    def chooseSolver( self ):
+        # find solver that contains reaction that contains this solute as a yield
+        self.mSolver = None
+        for solver_key in self.mModel.getSolvers( ).getKeys( ):
+            # global solver
+            solver = self.mModel.getSolvers( ).getItem( solver_key )
+            for reaction_key in solver.getReactions( ).getKeys( ):
+                # global reaction
+                reaction = solver.getReactions( ).getItem( reaction_key ).getReference( )
+                # is this solute a yield?
+                solute = reaction.getYields( ).getSolute( self.mName )
+                if solute == self:
+                    if ( self.mSolver is not None ) and ( self.mSolver != solver ):
+                        raise Exception( "ERROR: solute has multiple solvers" )
+                    self.mSolver = solver
+                    break
+        return
         
     def getName(self):
         return self.mName
@@ -156,6 +175,10 @@ class Solute( ParamHolder ):
                                                       self.mPrivateNumberHiddenParams,
                                                       self.mPrivateStringHiddenParams )
         lines.append( s )
+
+        if self.mSolver is not None:
+            s = (depth*indent) + "%s->setSolverIdx( %s );" % ( varname, self.mSolver.getEnumToken( ), )
+            lines.append( s )
 
         lines.append( (depth*indent) + "gBioModelRW->getSolutes( ).push_back( %s );" % ( varname, ) )
         depth -= 1;
@@ -197,6 +220,11 @@ class AllSolutes( ItemHolder ):
     def calcConcentrations( self ):
         for name in self.mOrder:
             self.mItems[ name ].calcConcentration( )
+        return
+
+    def chooseSolvers( self ):
+        for name in self.mOrder:
+            self.mItems[ name ].chooseSolver( )
         return
 
     def getBioModelH( self, indent, depth ):
