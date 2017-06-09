@@ -382,20 +382,19 @@ void AgentSpecies::setInitialAgentState( SpAgentState& state ) const {
 
 void AgentSpecies::updateSpAgentState( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const NbrUBEnv& nbrUBEnv, SpAgentState& state ) const {
   const Vector< Reaction * >& reactions = gBioModel->getReactions( );
-  S32 i;
+  S32 i, pIdx;
   for( i = 0 ; i < (S32) reactions.size( ) ; i++ ) {
     const Reaction* currentReaction = reactions[ i ];
     const REAL currentKineticFactor = currentReaction->getKineticFactor( nbrUBEnv, vOffset );
-    S32 pIdx;
     for ( pIdx = 0; pIdx < (S32) mParticles.size( ); pIdx++) {
       REAL yield = currentReaction->getParticleYield( mParticles[ pIdx ].getParticleIdx( ) , state );
       state.incModelReal( mParticles[ pIdx ].getModelRealIdx( ) , currentKineticFactor * yield );
     }
   }
-  
+
   for ( pIdx = 0; pIdx < (S32) mParticles.size( ); pIdx++) {
     OUTPUT( 0,
-            "Agent particle: " << mParticles[ pIdx ].getParticleIdx( )
+            "Agent particle: " << gParticles[ mParticles[ pIdx ].getParticleIdx( ) ]->getName()
             << " mass: " << state.getModelReal( mParticles[ pIdx ].getModelRealIdx( ) )
             );
   }

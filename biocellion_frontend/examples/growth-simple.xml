@@ -38,7 +38,7 @@ This model attempts to work in biocellion and cDynoMiCS
     <param name="decayRate">0.0</param>
     <param name="writeOutput">true</param>
     <param name="concentration" unit="g.L-1">30.0</param>
-    <param name="numTimeSteps">10</param><!--biocellion only-->
+    <param name="numTimeSteps">1</param><!--biocellion only-->
   </solute>
 
   <particle name="biomass">
