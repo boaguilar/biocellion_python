@@ -21,9 +21,9 @@ MechIntrctSpAgent* MechIntrctSpAgentShove::create()
 
   S32 i;
   for( i = 0 ; i < NUM_AGENT_SPECIES ; i++ ) {
-    intrct->setScale( i , gAgentSpecies[ i ]->getParamReal( gAgentSpecies[ i ]->getIdxReal( SPECIES_shoveScale ) ) );
-    intrct->setFactor( i , gAgentSpecies[ i ]->getParamReal( gAgentSpecies[ i ]->getIdxReal( SPECIES_shoveFactor ) ) );
-    intrct->setLimit( i , gAgentSpecies[ i ]->getParamReal( gAgentSpecies[ i ]->getIdxReal( SPECIES_shoveLimit ) ) );
+    intrct->setScale( i , gBioModel->getAgentSpecies()[ i ]->getParamReal( gBioModel->getAgentSpecies()[ i ]->getIdxReal( SPECIES_shoveScale ) ) );
+    intrct->setFactor( i , gBioModel->getAgentSpecies()[ i ]->getParamReal( gBioModel->getAgentSpecies()[ i ]->getIdxReal( SPECIES_shoveFactor ) ) );
+    intrct->setLimit( i , gBioModel->getAgentSpecies()[ i ]->getParamReal( gBioModel->getAgentSpecies()[ i ]->getIdxReal( SPECIES_shoveLimit ) ) );
   }
   intrct->setDimensions(3);
 
@@ -64,15 +64,15 @@ void MechIntrctSpAgentShove::compute( const S32 iter, const VIdx& vIdx0, const S
     REAL scale = (mScales[ agentType0 ] + mScales[ agentType1 ] ) / 2.0;
     REAL mag = 0.5 * scale * ( R - dist ); // 0.5 to share between the agents
     
-    mechIntrctData0.setModelReal( gAgentSpecies[ agentType0 ]->getIdxMechForceRealX(), dir[0] * mag );
-    mechIntrctData0.setModelReal( gAgentSpecies[ agentType0 ]->getIdxMechForceRealY(), dir[1] * mag );
+    mechIntrctData0.setModelReal( gBioModel->getAgentSpecies()[ agentType0 ]->getIdxMechForceRealX(), dir[0] * mag );
+    mechIntrctData0.setModelReal( gBioModel->getAgentSpecies()[ agentType0 ]->getIdxMechForceRealY(), dir[1] * mag );
 
-    mechIntrctData1.setModelReal( gAgentSpecies[ agentType1 ]->getIdxMechForceRealX(), -dir[0] * mag );
-    mechIntrctData1.setModelReal( gAgentSpecies[ agentType1 ]->getIdxMechForceRealY(), -dir[1] * mag );
+    mechIntrctData1.setModelReal( gBioModel->getAgentSpecies()[ agentType1 ]->getIdxMechForceRealX(), -dir[0] * mag );
+    mechIntrctData1.setModelReal( gBioModel->getAgentSpecies()[ agentType1 ]->getIdxMechForceRealY(), -dir[1] * mag );
 
     if(mDimensions > 2) {
-      mechIntrctData0.setModelReal( gAgentSpecies[ agentType0 ]->getIdxMechForceRealZ(), dir[2] * mag );
-      mechIntrctData1.setModelReal( gAgentSpecies[ agentType1 ]->getIdxMechForceRealZ(), -dir[2] * mag );
+      mechIntrctData0.setModelReal( gBioModel->getAgentSpecies()[ agentType0 ]->getIdxMechForceRealZ(), dir[2] * mag );
+      mechIntrctData1.setModelReal( gBioModel->getAgentSpecies()[ agentType1 ]->getIdxMechForceRealZ(), -dir[2] * mag );
     } else {
       /* No need to set to 0, since DELTA updates are used */
     }
@@ -139,7 +139,7 @@ MechIntrctSpAgent* MechIntrctSpAgentAdhesion::create()
   }
   /* values based on configuration information */
   for( i = 0 ; i < NUM_AGENT_SPECIES ; i++ ) {
-    const Vector< Adhesion * >& adhesions = gAgentSpecies[ i ]->getAdhesions( );
+    const Vector< Adhesion * >& adhesions = gBioModel->getAgentSpecies()[ i ]->getAdhesions( );
     for( j = 0 ; j < (S32)adhesions.size( ) ; j++ ) {
       intrct->setScale( i, adhesions[ j ]->getWithSpecies( ), adhesions[ j ]->getScale( ) );
       intrct->setDistanceScale( i, adhesions[ j ]->getWithSpecies( ), adhesions[ j ]->getStrength( ) );
@@ -175,13 +175,13 @@ void MechIntrctSpAgentAdhesion::compute( const S32 iter, const VIdx& vIdx0, cons
     REAL d = mDistanceScales[ agentType0 ][ agentType1 ];
     REAL mag = -a * ( dist - R ) * exp( -1.0 * ( x - 1.0 ) * ( x - 1.0 ) / d );
     
-    mechIntrctData0.setModelReal( gAgentSpecies[ agentType0 ]->getIdxMechForceRealX(), dir[0] * mag );
-    mechIntrctData0.setModelReal( gAgentSpecies[ agentType0 ]->getIdxMechForceRealY(), dir[1] * mag );
-    mechIntrctData0.setModelReal( gAgentSpecies[ agentType0 ]->getIdxMechForceRealZ(), dir[2] * mag );
+    mechIntrctData0.setModelReal( gBioModel->getAgentSpecies()[ agentType0 ]->getIdxMechForceRealX(), dir[0] * mag );
+    mechIntrctData0.setModelReal( gBioModel->getAgentSpecies()[ agentType0 ]->getIdxMechForceRealY(), dir[1] * mag );
+    mechIntrctData0.setModelReal( gBioModel->getAgentSpecies()[ agentType0 ]->getIdxMechForceRealZ(), dir[2] * mag );
 
-    mechIntrctData1.setModelReal( gAgentSpecies[ agentType1 ]->getIdxMechForceRealX(), -dir[0] * mag );
-    mechIntrctData1.setModelReal( gAgentSpecies[ agentType1 ]->getIdxMechForceRealY(), -dir[1] * mag );
-    mechIntrctData1.setModelReal( gAgentSpecies[ agentType1 ]->getIdxMechForceRealZ(), -dir[2] * mag );
+    mechIntrctData1.setModelReal( gBioModel->getAgentSpecies()[ agentType1 ]->getIdxMechForceRealX(), -dir[0] * mag );
+    mechIntrctData1.setModelReal( gBioModel->getAgentSpecies()[ agentType1 ]->getIdxMechForceRealY(), -dir[1] * mag );
+    mechIntrctData1.setModelReal( gBioModel->getAgentSpecies()[ agentType1 ]->getIdxMechForceRealZ(), -dir[2] * mag );
   }
 }
 
@@ -284,12 +284,12 @@ MechIntrctSpAgent* MechIntrctSpAgentDistanceJunction::create()
 
   /* values based on configuration information */
   for( i = 0 ; i < NUM_AGENT_SPECIES ; i++ ) {
-    const Vector< DistanceJunction * >& junctions = gAgentSpecies[ i ]->getDistanceJunctions( );
+    const Vector< DistanceJunction * >& junctions = gBioModel->getAgentSpecies()[ i ]->getDistanceJunctions( );
     for( j = 0 ; j < (S32)junctions.size( ) ; j++ ) {
       intrct->setEnabled( i, junctions[ j ]->getWithSpecies( ), junctions[ j ]->getEnabled( ) );
     }
-    intrct->setLinkScale( i,  gAgentSpecies[ i ]->getParamReal( gAgentSpecies[ i ]->getIdxReal( SPECIES_attachCreateFactor ) ) );
-    intrct->setUnlinkScale( i,  gAgentSpecies[ i ]->getParamReal( gAgentSpecies[ i ]->getIdxReal( SPECIES_attachDestroyFactor ) ) );
+    intrct->setLinkScale( i,  gBioModel->getAgentSpecies()[ i ]->getParamReal( gBioModel->getAgentSpecies()[ i ]->getIdxReal( SPECIES_attachCreateFactor ) ) );
+    intrct->setUnlinkScale( i,  gBioModel->getAgentSpecies()[ i ]->getParamReal( gBioModel->getAgentSpecies()[ i ]->getIdxReal( SPECIES_attachDestroyFactor ) ) );
   }
   intrct->setJunctionIdx( JUNCTION_TYPE_DISTANCE );
   intrct->setRealDistanceIdx( JUNCTION_REAL_DISTANCE );
@@ -472,7 +472,7 @@ MechIntrctSpAgent* MechIntrctSpAgentTightJunction::create()
   }
   /* values based on configuration information */
   for( i = 0 ; i < NUM_AGENT_SPECIES ; i++ ) {
-    const Vector< TightJunction * >& tjunctions = gAgentSpecies[ i ]->getTightJunctions( );
+    const Vector< TightJunction * >& tjunctions = gBioModel->getAgentSpecies()[ i ]->getTightJunctions( );
     for( j = 0 ; j < (S32)tjunctions.size( ) ; j++ ) {
       intrct->setScale( i, tjunctions[ j ]->getWithSpecies( ), tjunctions[ j ]->getScale( ) );
       intrct->setStiffness( i, tjunctions[ j ]->getWithSpecies( ), tjunctions[ j ]->getStiffness( ) );
@@ -525,13 +525,13 @@ void MechIntrctSpAgentTightJunction::compute( const S32 iter, const VIdx& vIdx0,
   REAL hyper = tanh( difference * stiffness );
   REAL mag = - 0.5 * scale * fabs( difference ) * hyper; // 0.5 to share between the agents
   
-  mechIntrctData0.setModelReal( gAgentSpecies[ agentType0 ]->getIdxMechForceRealX(), dir[0] * mag );
-  mechIntrctData0.setModelReal( gAgentSpecies[ agentType0 ]->getIdxMechForceRealY(), dir[1] * mag );
-  mechIntrctData0.setModelReal( gAgentSpecies[ agentType0 ]->getIdxMechForceRealZ(), dir[2] * mag );
+  mechIntrctData0.setModelReal( gBioModel->getAgentSpecies()[ agentType0 ]->getIdxMechForceRealX(), dir[0] * mag );
+  mechIntrctData0.setModelReal( gBioModel->getAgentSpecies()[ agentType0 ]->getIdxMechForceRealY(), dir[1] * mag );
+  mechIntrctData0.setModelReal( gBioModel->getAgentSpecies()[ agentType0 ]->getIdxMechForceRealZ(), dir[2] * mag );
 
-  mechIntrctData1.setModelReal( gAgentSpecies[ agentType1 ]->getIdxMechForceRealX(), -dir[0] * mag );
-  mechIntrctData1.setModelReal( gAgentSpecies[ agentType1 ]->getIdxMechForceRealY(), -dir[1] * mag );
-  mechIntrctData1.setModelReal( gAgentSpecies[ agentType1 ]->getIdxMechForceRealZ(), -dir[2] * mag );
+  mechIntrctData1.setModelReal( gBioModel->getAgentSpecies()[ agentType1 ]->getIdxMechForceRealX(), -dir[0] * mag );
+  mechIntrctData1.setModelReal( gBioModel->getAgentSpecies()[ agentType1 ]->getIdxMechForceRealY(), -dir[1] * mag );
+  mechIntrctData1.setModelReal( gBioModel->getAgentSpecies()[ agentType1 ]->getIdxMechForceRealZ(), -dir[2] * mag );
 }
 
 void MechIntrctSpAgentTightJunction::setScale(const S32& agent_type0, const S32& agent_type1, const REAL& value)

@@ -101,27 +101,27 @@ void ModelRoutine::updateSpAgentInfo( Vector<SpAgentInfo>& v_spAgentInfo ) {/* s
   
   initializeBioModel();
 
-  v_spAgentInfo.resize( gAgentSpecies.size() );
+  v_spAgentInfo.resize( gBioModel->getAgentSpecies().size() );
   S32 i;
-  for( i = 0; i < (S32) gAgentSpecies.size(); i++ ) {
+  for( i = 0; i < (S32) gBioModel->getAgentSpecies().size(); i++ ) {
     MechModelVarInfo mechModelVarInfo;
     mechModelVarInfo.syncMethod = VAR_SYNC_METHOD_DELTA;
     SpAgentInfo info;
     
     // FIXME: DMax not controlled from XML yet
-    info.dMax = gAgentSpecies[ i ]->getDMax();
+    info.dMax = gBioModel->getAgentSpecies()[ i ]->getDMax();
     CHECK( info.dMax <= gAgentGrid->getResolution( ) );
     // FIXME: num*ModelVars not controlled from XML yet
-    info.numBoolVars = gAgentSpecies[ i ]->getNumModelBools();
-    info.numStateModelReals = gAgentSpecies[ i ]->getNumModelReals();
-    info.numStateModelInts = gAgentSpecies[ i ]->getNumModelInts();
-    if( gAgentSpecies[ i ]->getNumMechModelReals() > 0 ) {
-      info.v_mechIntrctModelRealInfo.assign( gAgentSpecies[ i ]->getNumMechModelReals(), mechModelVarInfo );
+    info.numBoolVars = gBioModel->getAgentSpecies()[ i ]->getNumModelBools();
+    info.numStateModelReals = gBioModel->getAgentSpecies()[ i ]->getNumModelReals();
+    info.numStateModelInts = gBioModel->getAgentSpecies()[ i ]->getNumModelInts();
+    if( gBioModel->getAgentSpecies()[ i ]->getNumMechModelReals() > 0 ) {
+      info.v_mechIntrctModelRealInfo.assign( gBioModel->getAgentSpecies()[ i ]->getNumMechModelReals(), mechModelVarInfo );
     } else {
       info.v_mechIntrctModelRealInfo.clear();
     }
-    if( gAgentSpecies[ i ]->getNumMechModelInts() > 0 ) {
-      info.v_mechIntrctModelIntInfo.assign( gAgentSpecies[ i ]->getNumMechModelInts(), mechModelVarInfo );
+    if( gBioModel->getAgentSpecies()[ i ]->getNumMechModelInts() > 0 ) {
+      info.v_mechIntrctModelIntInfo.assign( gBioModel->getAgentSpecies()[ i ]->getNumMechModelInts(), mechModelVarInfo );
     } else {
       info.v_mechIntrctModelIntInfo.clear();
     }

@@ -1,14 +1,6 @@
 #ifndef _AGENT_SPECIES_H_
 #define _AGENT_SPECIES_H_
 #include "biomodel.h"
-#include "model_define.h"
-#include <map>
-class InitArea;
-class Adhesion;
-class DistanceJunction;
-class TightJunction;
-#include <string>
-
 
 class AgentSpeciesParticle {
 public:
@@ -20,7 +12,6 @@ public:
   void setParticleIdx( const S32& value );
   void setModelRealIdx( const S32& value );
   void setInitialValue( const REAL& value );
-
 protected:
   S32 mParticleIdx;
   S32 mModelRealIdx;
@@ -94,7 +85,7 @@ public:
   // support for model_routine_agent.cpp
   void adjustSpAgent( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, SpAgentState& state/* INOUT */, VReal& disp ) const;
   void adjustSpAgentChemotaxis( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, SpAgentState& state/* INOUT */, VReal& disp ) const;
-  
+  void updateSpAgentState( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const NbrUBEnv& nbrUBEnv, SpAgentState& state) const;
 protected:
   std::string mName;
   std::string mSpeciesName;

@@ -26,7 +26,7 @@ public:
   protected:
     enum { TYPE_SOLUTE, TYPE_PARTICLE, NUM_TYPE };
     S32 mType;     // type of yield
-    S32 mItemIdx;  // index into gBioModel->getSolutes() or gAgentSpecies
+    S32 mItemIdx;  // index into gBioModel->getSolutes() or gBioModel->getAgentSpecies()
     REAL mValue;   // yield amount
   };
   

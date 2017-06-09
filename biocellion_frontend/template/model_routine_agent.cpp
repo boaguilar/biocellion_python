@@ -32,13 +32,13 @@ void ModelRoutine::addSpAgents( const BOOL init, const VIdx& startVIdx, const VI
     current_time = gSimulator->getAgentTimeStep() * Info::getCurBaselineTimeStep();
   }
   size_t i, j;
-  for( i = 0 ; i < gAgentSpecies.size() ; i++ ) {
-    for( j = 0 ; j < gAgentSpecies[ i ]->getInitAreas( ).size() ; j++ ) {
-      REAL birth_time = gAgentSpecies[ i ]->getInitAreas( )[ j ]->getBirthday( );
+  for( i = 0 ; i < gBioModel->getAgentSpecies().size() ; i++ ) {
+    for( j = 0 ; j < gBioModel->getAgentSpecies()[ i ]->getInitAreas( ).size() ; j++ ) {
+      REAL birth_time = gBioModel->getAgentSpecies()[ i ]->getInitAreas( )[ j ]->getBirthday( );
       REAL dt = std::abs( birth_time - current_time );
       if(( init && birth_time < gSimulator->getAgentTimeStep() / 2.0 ) ||
          ( !init && birth_time > gSimulator->getAgentTimeStep() / 2.0 && dt < gSimulator->getAgentTimeStep() / 2.0 ) ) {
-        gAgentSpecies[ i ]->getInitAreas( )[ j ]->addSpAgents( init, startVIdx, regionSize, ifGridHabitableBoxData, v_spAgentVIdx, v_spAgentState, v_spAgentOffset );
+        gBioModel->getAgentSpecies()[ i ]->getInitAreas( )[ j ]->addSpAgents( init, startVIdx, regionSize, ifGridHabitableBoxData, v_spAgentVIdx, v_spAgentState, v_spAgentOffset );
       }
     }
   }
@@ -61,7 +61,7 @@ void ModelRoutine::spAgentCRNODERHS( const S32 odeNetIdx, const VIdx& vIdx, cons
 void ModelRoutine::updateSpAgentState( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const NbrUBEnv& nbrUBEnv, SpAgentState& state/* INOUT */ ) {
   /* MODEL START */
 
-  /* nothing to do */
+  gBioModel->updateSpAgentState(vIdx, junctionData, vOffset, nbrUBEnv, state);
 
   /* MODEL END */
 
@@ -95,7 +95,7 @@ static inline void brownianMotion( const VIdx& vIdx, const JunctionData& junctio
     if( dim == 3-1 ) { 
       continue; 
     }
-    disp[dim] += state.getRadius() * ( Util::getModelRand( MODEL_RNG_GAUSSIAN ) ) * gAgentSpecies[ state.getType() ]->getParamReal( gAgentSpecies[ state.getType() ]->getIdxReal( SPECIES_brownianScale ) );
+    disp[dim] += state.getRadius() * ( Util::getModelRand( MODEL_RNG_GAUSSIAN ) ) * gBioModel->getAgentSpecies()[ state.getType() ]->getParamReal( gBioModel->getAgentSpecies()[ state.getType() ]->getIdxReal( SPECIES_brownianScale ) );
   }
 }
 
@@ -236,12 +236,12 @@ static inline void allChemoTaxisMotion( const VIdx& vIdx, const JunctionData& ju
 void ModelRoutine::adjustSpAgent( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, SpAgentState& state/* INOUT */, VReal& disp ) {/* if not dividing or disappearing */
   /* MODEL START */
   S32 agentType = state.getType( );
-  disp[0] = mechIntrctData.getModelReal( gAgentSpecies[ agentType ]->getIdxMechForceRealX() );
-  disp[1] = mechIntrctData.getModelReal( gAgentSpecies[ agentType ]->getIdxMechForceRealY() );
-  disp[2] = mechIntrctData.getModelReal( gAgentSpecies[ agentType ]->getIdxMechForceRealZ() );
+  disp[0] = mechIntrctData.getModelReal( gBioModel->getAgentSpecies()[ agentType ]->getIdxMechForceRealX() );
+  disp[1] = mechIntrctData.getModelReal( gBioModel->getAgentSpecies()[ agentType ]->getIdxMechForceRealY() );
+  disp[2] = mechIntrctData.getModelReal( gBioModel->getAgentSpecies()[ agentType ]->getIdxMechForceRealZ() );
   
   brownianMotion( vIdx, junctionData, vOffset, mechIntrctData, nbrUBEnv, state, disp );
-  gAgentSpecies[ agentType ]->adjustSpAgent( vIdx, junctionData, vOffset, mechIntrctData, nbrUBEnv, state, disp );
+  gBioModel->getAgentSpecies()[ agentType ]->adjustSpAgent( vIdx, junctionData, vOffset, mechIntrctData, nbrUBEnv, state, disp );
   limitMotion(disp);
   
   /* MODEL END */

@@ -86,7 +86,7 @@ class AgentSpecies(ParamHolder):
         s = self.getSpecificInitializeBioModel( varname, indent, depth )
         if s:
             lines.append( s )
-        lines.append( (depth*indent) + "gAgentSpecies.push_back( %s );" % (varname, ) )
+        lines.append( (depth*indent) + "gBioModelRW->getAgentSpecies( ).push_back( %s );" % (varname, ) )
         depth -= 1;
         lines.append( (depth*indent) + "}" )
         return "\n".join( lines )

@@ -276,7 +276,7 @@ REAL Reaction::getSoluteYield( const S32& solute_idx, const SpAgent& spAgent ) c
     for( i = 0; i < (S32) mYields.size( ) ; i++ ) {
       if( mYields[ i ].isSolute( ) && mYields[ i ].getItemIdx( ) == solute_idx ) {
         // Yield matches solute
-        const Vector< AgentSpeciesParticle >& particles = gAgentSpecies[ agentType ]->getParticles( );
+        const Vector< AgentSpeciesParticle >& particles = gBioModel->getAgentSpecies( )[ agentType ]->getParticles( );
         for( j = 0 ; j < (S32) particles.size( ) ; j++ ) {
           if( particles[ j ].getParticleIdx( ) == getCatalyzedBy( ) ) {
             // Agent's particle matches catalyzed by.
@@ -303,7 +303,7 @@ REAL Reaction::getParticleYield( const S32& particle_idx, const SpAgentState& sp
     for( i = 0; i < (S32) mYields.size( ) ; i++ ) {
       if( mYields[ i ].isParticle( ) && mYields[ i ].getItemIdx( ) == particle_idx ) {
         // Yield matches solute
-        const Vector< AgentSpeciesParticle >& particles = gAgentSpecies[ agentType ]->getParticles( );
+        const Vector< AgentSpeciesParticle >& particles = gBioModel->getAgentSpecies( )[ agentType ]->getParticles( );
         for( j = 0 ; j < (S32) particles.size( ) ; j++ ) {
           if( particles[ j ].getParticleIdx( ) == getCatalyzedBy( ) ) {
             // Agent's particle matches catalyzed by.

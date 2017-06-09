@@ -5,7 +5,6 @@ const BioModel *gBioModel = 0;
 BioModel *gBioModelRW = 0;
 Simulator *gSimulator = 0;
 AgentGrid *gAgentGrid = 0;
-Vector<AgentSpecies *> gAgentSpecies;
 Vector<Particle *> gParticles;
 Vector<MechIntrctSpAgent *> gMechIntrctSpAgent;
 Vector< Vector<BOOL> > gMechIntrctShoveEnabled;
@@ -41,6 +40,15 @@ BioModel::~BioModel( ) {
     }
   }
   mSolvers.clear();
+
+  for( i = 0; i < (S32) mAgentSpecies.size(); i++ ) {
+    if( mAgentSpecies[i] ) {
+      delete mAgentSpecies[i];
+      mAgentSpecies[i] = 0;
+    }
+  }
+  mAgentSpecies.clear();
+
 }
 
 const Vector< Solute * >& BioModel::getSolutes( ) const {
@@ -65,6 +73,13 @@ const Vector< Solver * >& BioModel::getSolvers( ) const {
 
 Vector< Solver * >& BioModel::getSolvers( ) {
   return mSolvers;
+}
+
+const Vector< AgentSpecies* >& BioModel::getAgentSpecies( ) const {
+  return mAgentSpecies;
+}
+Vector< AgentSpecies * >& BioModel::getAgentSpecies( ) {
+  return mAgentSpecies;
 }
 
 BOOL BioModel::getDistanceJunctionsEnabled( ) const {
@@ -365,14 +380,6 @@ void terminateBioModel() {
     gAgentGrid = 0;
   }
 
-  for( i = 0; i < (S32) gAgentSpecies.size(); i++ ) {
-    if( gAgentSpecies[i] ) {
-      delete gAgentSpecies[i];
-      gAgentSpecies[i] = 0;
-    }
-  }
-  gAgentSpecies.clear();
-
   for( i = 0; i < (S32) gParticles.size(); i++ ) {
     if( gParticles[i] ) {
       delete gParticles[i];
@@ -398,3 +405,6 @@ void terminateBioModel() {
   gBioModelInitialized = false;
 }
 
+void BioModel::updateSpAgentState( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const NbrUBEnv& nbrUBEnv, SpAgentState& state) const {
+  mAgentSpecies[ state.getType() ]->updateSpAgentState(vIdx, junctionData, vOffset, nbrUBEnv, state);
+}

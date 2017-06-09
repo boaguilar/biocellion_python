@@ -2,18 +2,18 @@
 #define _BIOMODEL_H_
 
 #include "biocellion.h"
+#include "model_define.h"
+#include "model_mechanisms.h"
 #include "init_area.h"
 #include "chemotaxis.h"
 #include "param_holder.h"
 #include "entry_condition.h"
-#include "agent_species.h"
-#include "simulator.h"
-#include "agent_grid.h"
-#include "particle.h"
-#include "model_mechanisms.h"
 #include "adhesion.h"
 #include "distance_junction.h"
 #include "tight_junction.h"
+#include "simulator.h"
+#include "agent_grid.h"
+#include "particle.h"
 #include "computation_domain.h"
 #include "solute.h"
 #include "reaction.h"
@@ -21,6 +21,7 @@
 #include "agar.h"
 #include "world.h"
 #include "solver.h"
+#include "agent_species.h"
 
 #include "biomodel_auto.h"
 
@@ -35,6 +36,8 @@ public:
   Vector< Reaction * >& getReactions( );
   const Vector< Solver * >& getSolvers( ) const;
   Vector< Solver * >& getSolvers( );
+  const Vector< AgentSpecies* >& getAgentSpecies( ) const;
+  Vector< AgentSpecies * >& getAgentSpecies( );
   BOOL getDistanceJunctionsEnabled( ) const;
   const World& getWorld( ) const;
   World& getWorld( );
@@ -74,11 +77,13 @@ public:
   void updatePDEBufferRHSTimeDependentSplitting( const S32 pdeIdx, const VIdx& startVIdx, const VIdx& pdeBufferBoxSize, const Vector<double>& v_gridPhi/* [idx] */, Vector<double>& v_gridRHS/* [idx], uptake(-) and secretion (+) */ ) const;
   void updatePDEBufferDirichletBCVal( const S32 elemIdx, const VReal& startPos, const VReal& pdeBufferFaceSize, const S32 dim, const BOOL lowSide, REAL& bcVal ) const;
   void updatePDEBufferNeumannBCVal( const S32 elemIdx, const VReal& startPos, const VReal& pdeBufferFaceSize, const S32 dim, const BOOL lowSide, REAL& bcVal ) const;
-
+  //support for model_routine_agent.cpp
+  void updateSpAgentState( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const NbrUBEnv& nbrUBEnv, SpAgentState& state) const;
 protected:
   Vector< Solute* > mSolutes;
   Vector< Reaction* > mReactions;
   Vector< Solver* > mSolvers;
+  Vector < AgentSpecies *> mAgentSpecies;
   BOOL mDistanceJunctionsEnabled;
   World mWorld;
 };
@@ -87,7 +92,6 @@ extern const BioModel *gBioModel;
 extern BioModel *gBioModelRW;
 extern Simulator *gSimulator;
 extern AgentGrid *gAgentGrid;
-extern Vector<AgentSpecies *> gAgentSpecies;
 extern Vector<Particle *> gParticles;
 extern Vector<MechIntrctSpAgent *> gMechIntrctSpAgent;
 extern Vector< Vector<BOOL> > gMechIntrctShoveEnabled;
