@@ -164,7 +164,7 @@ class ModelWriter:
         optional_amr.append( Comment( 'amr, controls adaptive mesh refinement' ) )
         optional_amr.append( Comment( 'refine_ratio: adaptive mesh refinement ratio between two consecutive levels, optional, default=2, 2|4|8' ) )
         optional_amr.append( Comment( 'fill_ratio: controls grid efficiency in mesh generation based on model provided tags, large value will generate less filled larger blocks, optional, default=0.5, [0.0,1.0]' ) )
-        refine_ratio = biomodel.getIDynoMiCS( ).getSolutes( ).calcRefineRatio( )
+        refine_ratio = biomodel.getIDynoMiCS( ).getSolvers( ).getRefineRatio( )
         optional_amr.set( 'refine_ratio', str( refine_ratio ) )
         optional_amr.set( 'fill_ratio', "0.5" ) # FIXME: fill_ratio is hard-coded here.  Should add an XML parameter sometime
         

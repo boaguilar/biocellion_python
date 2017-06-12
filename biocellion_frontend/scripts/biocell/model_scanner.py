@@ -234,9 +234,19 @@ class ModelScanner:
 
         # loop over all children
         for child in list( root ):
-            if child.tag in ( 'simulator', 'input', 'world', 'agentGrid' ):
+            if child.tag in ( 'simulator', 'input', 'agentGrid' ):
                 # not a list element
                 pass
+            elif child.tag in ( 'world' ):
+                # need to enumerate computationDomain
+                for child in list( child ):
+                    if child.tag in ( 'computationDomain' ):
+                        tag = child.tag
+                        name = child.get( 'name' )
+                        class_name = child.get( 'class' )
+                        item = self.mModel.getItemAddIfNeeded( tag, name, class_name )
+                    else:
+                        pass
             elif child.tag in ( 'solute', 'particle', 'reaction', 'solver', 'molecularReactions', 'species' ):
                 tag = child.tag
                 name = child.get( 'name' )
@@ -306,6 +316,7 @@ class ModelScanner:
         may_children = ( "param", )
         required_children = (  )
         node_object = self.mModel.getItemAddIfNeeded( node.tag, node.get( 'name' ), node.get( 'class' ) )
+        node_object.setDomainReference( self.mModel.getItem( 'domain', node.get( 'domain' ) ) )
         parent_object = None # don't need to add this as a child
         child_methods = {
             "param": self.scanGenericParamXML,
@@ -388,9 +399,7 @@ class ModelScanner:
     def scanWorldComputationDomainXML( self, node, parent_object=None ):
         may_children = ( "grid", "boundaryCondition", "param", )
         required_children = ( "grid", )
-        if not self.mModel.getIDynoMiCS( ).getWorld().getComputationDomains().addItem( node.get('name') ):
-            raise Exception( "ERROR : couldn't add a computation domain." )
-        node_object = self.mModel.getIDynoMiCS( ).getWorld().getComputationDomains().getLastItem( )
+        node_object = self.mModel.getItemAddIfNeeded( node.tag, node.get( 'name' ), node.get( 'class' ) )
         parent_object = None # don't need to add this as a child
         child_methods = {
             "param": self.scanGenericParamXML,

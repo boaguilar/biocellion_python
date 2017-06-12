@@ -16,6 +16,9 @@ class Solver( ParamHolder ):
         self.addParam( Param( "postStep", "int", 1, True ) )
         self.addParam( Param( "coarseStep", "int", 1, True ) )
         self.addParam( Param( "nCycles", "int", 1, True ) )
+        # biocellion specific
+        self.addParam( Param( "refineRatio", "int", 2, False ) )
+        self.addParam( Param( "AMRLevels", "int", 3, False ) )
 
         self.mPrivateTotallyHiddenParams = [ ] 
         self.mPrivateNumberHiddenParams = [  ]
@@ -35,6 +38,10 @@ class Solver( ParamHolder ):
 
     def getReactions( self ):
         return self.mReactions
+
+    def getRefineRatio( self ):
+        refine_ratio = self.getParam( 'refineRatio' ).getValue( )
+        return refine_ratio
     
     def getInitializeBioModel(self, indent, depth):
         varname = "solver"
@@ -79,6 +86,14 @@ class AllSolvers( ItemHolder ):
         ItemHolder.__init__( self, Solver )
         self.mModel = model
         return
+
+    def getRefineRatio( self ):
+        refine_ratios = set( )
+        for name in self.mOrder:
+            refine_ratios.add( self.mItems[ name ].getRefineRatio( ) )
+        if len( refine_ratios ) != 1:
+            raise Exception( "ERROR: All refine ratios must be the same. These were found: " + str( refine_ratios ) )
+        return refine_ratios.pop( )
 
     def getBioModelH( self, indent, depth ):
         lines = [ ]

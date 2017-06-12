@@ -40,8 +40,8 @@ class World( ParamHolder ):
         return self.mComputationDomains
 
     def makeDomainDimensionValid( self, x ):
-        refine_ratio = self.mModel.getSolutes( ).calcRefineRatio( )
-        interface_grid_level = self.mModel.getSolutes( ).calcInterfaceAMRLevel( )
+        refine_ratio = self.mModel.getSolvers( ).getRefineRatio( )
+        interface_grid_level = self.mModel.getSolutes( ).getInterfaceAMRLevel( )
         amr_multiple = refine_ratio ** interface_grid_level
         # print( "refine_ratio = " + str( refine_ratio ) )
         # print( "interface_grid_level = " + str( interface_grid_level ) )

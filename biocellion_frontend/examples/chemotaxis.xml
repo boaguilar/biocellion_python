@@ -39,10 +39,6 @@
     <param name="airDiffusivity" unit="m2.day-1">8.64e-9</param>
     <param name="decayRate">0.00001</param>
     <param name="writeOutput">true</param>
-    <param name="AMRLevels">3</param><!--biocellion only-->
-    <param name="numTimeSteps">10</param><!--biocellion only-->
-    <param name="concentration" unit="g.L-1">0.0</param>
-    <param name="resolution" unit="um">2.0</param>
   </solute>
 
   <particle name="biomass">
@@ -68,27 +64,73 @@
     </bulk>
     <computationDomain name="MyColony">
       <!-- this is the grid size, counts of UBs -->
-      <grid nDim="3" nI="32" nJ="32" nK="4"/>
+      <grid nDim="2" nI="17" nJ="17" nK="1"/>
       <!-- this is the UB size -->
-      <param name="resolution" unit="um">4</param>
-      <param name="refineRatio">2</param><!--biocellion only-->
-      <param name="AMRLevels">3</param><!--biocellion only-->
+      <param name="resolution" unit="um">8</param>
       <param name="boundaryLayer" unit="um">1</param>
       <param name="biofilmDiffusivity">0.8</param>
       <param name="specificArea" unit="m2.m-3">80</param>
+
+
+      <!-- This makes the two sides of the grid(In the rendered picture, top and bottom continous and making it infinite cyclic)-->
+      <boundaryCondition class="BoundaryCyclic" name="y0z">
+        <shape class="Planar">
+          <param name="pointIn" x="-1" y="0" z="0" />
+          <param name="vectorOut" x="-1" y="0" z="0" />
+        </shape>
+	<shape class="Planar">
+          <param name="pointIn" x="17" y="0" z="0" />
+          <param name="vectorOut" x="1" y="0" z="0" />
+        </shape>
+      </boundaryCondition>
+
+      <boundaryCondition class="BoundaryGasMembrane" name="x0z">
+        <param name="canAttachTo">true</param>
+	<param name="bulk">MyTank</param> 
+	<param detail="Attractant" name="isPermeableTo" unit="m2.day-1">8.64e-9</param>
+        <shape class="Planar">
+          <param name="pointIn" x="0" y="-1" z="0"/>
+          <param name="vectorOut" x="0" y="-1" z="0"/>
+        </shape>
+      </boundaryCondition>
+      
+      <boundaryCondition class="BoundaryGasMembrane" name="xNz">
+        <param name="canAttachTo">true</param>
+	<param name="bulk">MyTank</param> 
+	<param detail="Attractant" name="isPermeableTo" unit="m2.day-1">8.64e-9</param>
+        <shape class="Planar">
+          <param name="pointIn" x="0" y="17" z="0"/>
+          <param name="vectorOut" x="0" y="1" z="0"/>
+        </shape>
+      </boundaryCondition>
+      
+      <boundaryCondition class="BoundaryZeroFlux" name="x0y">
+        <shape class="Planar">
+          <param name="pointIn" x="0" y="0" z="-1"/>
+          <param name="vectorOut" x="0" y="0" z="-1"/>
+        </shape>
+      </boundaryCondition>
+      
+      <boundaryCondition class="BoundaryZeroFlux" name="xNy">
+        <shape class="Planar">
+          <param name="pointIn" x="0" y="0" z="1"/>
+          <param name="vectorOut" x="0" y="0" z="1"/>
+        </shape>
+      </boundaryCondition>
+      
     </computationDomain>
   </world>
+
   <!--#####################################################################
 		REACTION SECTION
 	######################################################################-->
-  <reaction catalyzedBy="biomass" catalyst="AttractorCells" class="ReactionFactor" name="AttractantSecretion">
-    <param name="muMax" unit="hour-1">3.6</param>
-    <kineticFactor class="FirstOrderKinetic"/>
+  <reaction catalyzedBy="biomass" class="ReactionFactor" name="AttractantSecretion">
+    <param name="muMax" unit="hour-1">3.0</param>
     <kineticFactor class="SimpleInhibition" solute="Attractant">
-      <param name="Ki" unit="g.L-1">1.11</param>
+      <param name="Ki" unit="g.L-1">0.5</param>
     </kineticFactor>
     <yield>
-      <param name="Attractant" unit="g.g-1">0.1</param>
+      <param name="Attractant" unit="g.g-1">1.0</param>
     </yield>
   </reaction>
   
@@ -99,13 +141,28 @@
   <!--#####################################################################
 		SOLVER SECTION
 	######################################################################-->
+  
+  <solver class="SolverSimple" domain="MyColony" name="solutes">
+    <param name="active">true</param>
+    <param name="preStep">150</param>
+    <param name="postStep">150</param>
+    <param name="coarseStep">1500</param>
+    <param name="nCycles">5</param>
+    <reaction name="AttractantSecretion"/>
+    
+    <param name="refineRatio">2</param><!--biocellion only-->
+    <param name="AMRLevels">3</param><!--biocellion only-->
+  </solver> 
 
   <!--#####################################################################
 		AGENT GRID SECTION
 	######################################################################-->
    <agentGrid>
     <param name="computationDomain">MyColony</param>
-    <param name="resolution" unit="um">4</param>
+    <param name="resolution" unit="um">8</param>
+    <param name="shovingFraction">0.0025</param>
+    <param name="shovingMaxIter">1000</param>
+    <param name="shovingMutual">true</param>
   </agentGrid>
 
   <!--#####################################################################
@@ -113,39 +170,65 @@
 	######################################################################-->
 
   <species class="Yeast" name="AttractorCells">
+
     <particle name="biomass">
-      <param name="mass" unit="fg">500</param>
+      <param name="mass" unit="fg">1000</param>
     </particle>
     <particle name="inert">
       <param name="mass" unit="fg">0</param>
     </particle>
+
     <param name="color">blue</param>
     <param name="computationDomain">MyColony</param>
+
+    <param name="divRadius" unit="um">3000</param>
+    <param name="deathRadius" unit="um">0</param>
+    <param name="shoveFactor" unit="um">1</param>
+    <param name="shoveLimit" unit="um">0.0</param>
+    <param name="epsMax">0.5</param>
+    <param name="kHyd" unit="hr-1">0.1</param> 
+    <param name="attachCreateFactor">1.0</param>
+    <param name="attachDestroyFactor">2</param>
+
+    <reaction name="AttractantSecretion" status="active"/>
+
     <initArea number="1">
       <param name="birthday" unit="hour">0</param>
-      <coordinates x="50" y="50" z="8.5"/>
-      <coordinates x="51" y="51" z="8.5"/>
+      <coordinates x="50" y="50" z="0"/>
+      <coordinates x="51" y="51" z="0"/>
     </initArea>
   </species>
 
   <species class="Yeast" name="MoverCells">
+
     <particle name="biomass">
-      <param name="mass" unit="fg">500</param>
+      <param name="mass" unit="fg">1000</param>
     </particle>
     <particle name="inert">
       <param name="mass" unit="fg">0</param>
     </particle>
+
     <param name="color">red</param>
     <param name="computationDomain">MyColony</param>
+
+    <param name="divRadius" unit="um">3000</param>
+    <param name="deathRadius" unit="um">0</param>
+    <param name="shoveFactor" unit="um">1</param>
+    <param name="shoveLimit" unit="um">0.0</param>
+    <param name="epsMax">0.5</param>
+    <param name="kHyd" unit="hr-1">0.1</param> 
+    <param name="attachCreateFactor">1.0</param>
+    <param name="attachDestroyFactor">2</param>
+
     <chemotaxis>
-      <chemotactic strength="20.25" withSolute="Attractant" contactInhibition="0"/>
+      <chemotactic strength="2.25" withSolute="Attractant" contactInhibition="0"/>
     </chemotaxis>
+
     <initArea number="1">
       <param name="birthday" unit="hour">0</param>
-      <coordinates x="46" y="50" z="8.5"/>
-      <coordinates x="47" y="51" z="8.5"/>
+      <coordinates x="40" y="50" z="0"/>
+      <coordinates x="41" y="51" z="0"/>
     </initArea>
   </species>
-  
   
 </idynomics>

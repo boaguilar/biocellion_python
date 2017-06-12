@@ -18,8 +18,6 @@ class ComputationDomain( ParamHolder ):
         self.addParam( Param( "hasBulk", "bool", False ) )
         self.addParam( Param( "boundaryLayer", "um", 0 ) )
         self.addParam( Param( "biofilmDiffusivity", "float", 0 ) )
-        self.addParam( Param( "refineRatio", "int", 2, False ) )
-        self.addParam( Param( "AMRLevels", "int", 3, False ) )
         self.mGrid = ComputationDomainGrid( )
         self.mBoundaryConditions = ItemHolder( ComputationDomainBoundaryCondition )
         return

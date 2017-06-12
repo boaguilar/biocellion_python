@@ -31,6 +31,8 @@ class IDynoMiCS( ParamHolder ):
             collection = self.getMolecularReactions( )
         elif tag == "species":
             collection = self.getAgentSpecies( )
+        elif tag in ( "computationDomain", "domain" ):
+            collection = self.getWorld( ).getComputationDomains( )
         else:
             raise Exception( "Unexpected tag: " + str( tag ) )
 
@@ -57,6 +59,8 @@ class IDynoMiCS( ParamHolder ):
             collection = self.getMolecularReactions( )
         elif tag == "species":
             collection = self.getAgentSpecies( )
+        elif tag in ( "computationDomain", "domain" ):
+            collection = self.getWorld( ).getComputationDomains( )
         else:
             raise Exception( "Unexpected tag: " + str( tag ) )
 
@@ -161,11 +165,7 @@ class IDynoMiCS( ParamHolder ):
 
         print( "FIXME: Warning, *->Reactions need to be connected by enumtoken." )
 
-        ### These must happen before enums are used to like items
-        ## Set up AMR related features for the model
-        self.mSolutes.calcRefineRatio( )
-        ## Set up solute initial concentrations
-        self.mSolutes.calcConcentrations( )
+        ### These must happen before enums are used to link items
         ## Link solutes to solvers
         self.mSolutes.chooseSolvers( )
         
@@ -174,8 +174,12 @@ class IDynoMiCS( ParamHolder ):
         self.linkAttributeToEnumToken( self.mReactions, 'catalyzedBy', self.mParticles )
         ## Reactions.catalyst->AgentSpecies
         self.linkAttributeToEnumToken( self.mReactions, 'catalyst', self.mAgentSpecies )
-        ## Solutes->ComputationDomains
-        self.linkAttributeToEnumToken( self.mSolutes, 'domain', self.mWorld.getComputationDomains( ) )
+
+        ## Set up AMR related features for the model
+        self.mSolvers.getRefineRatio( )
+        self.mSolutes.calcInterfaceAMRLevel( )
+        ## Set up solute initial concentrations
+        self.mSolutes.calcConcentrations( )
 
         ## Reactions.*->others
         for reaction_key in self.mReactions.getKeys( ):

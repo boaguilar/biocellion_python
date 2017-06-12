@@ -6,7 +6,6 @@ class Solute( ParamHolder ):
         self.mName = name
         self.mEnumToken = "SOLUTE_%s" % ( name, )
         self.mModel = model
-        self.mSolver = None
         
         ParamHolder.__init__(self)
         self.setPrefix( "SOLUTE" )
@@ -22,40 +21,40 @@ class Solute( ParamHolder ):
         self.addParam( Param( "rndMinConcentration", "g.L-1", 0.0, False ) )
         self.addParam( Param( "rndMaxConcentration", "g.L-1", 0.0, False ) )
         self.addParam( Param( "writeOutput", "bool", False, False ) )
-        self.addParam( Param( "refineRatio", "int", 0, False ) )
         self.addParam( Param( "AMRLevels", "int", 0, False ) )
         self.addParam( Param( "interfaceAMRLevel", "int", 0, False ) )
         self.addParam( Param( "numTimeSteps", "int", 1, False ) )
 
         self.mPrivateNumberHiddenParams = [ "AMRLevels", "interfaceAMRLevel", "numTimeSteps", ]
-        self.mPrivateBoolHiddenParams = [  ]
+        self.mPrivateBoolHiddenParams = [ ]
         self.mPrivateStringHiddenParams = [ ]
-        self.mPrivateHiddenParams = self.mPrivateNumberHiddenParams + self.mPrivateBoolHiddenParams + self.mPrivateStringHiddenParams
+        self.mPrivateHiddenParams = [ "domain" ] + self.mPrivateNumberHiddenParams + self.mPrivateBoolHiddenParams + self.mPrivateStringHiddenParams
         self.mHiddenParams = self.mHiddenParams + self.mPrivateHiddenParams
 
+        self.mDomainReference = None
+        self.mSolverReference = None
         return
 
+    def getDomainReference( self ):
+        return self.mDomainReference
 
-    def getRefineRatio( self ):
-        refine_ratio = self.getParam( 'refineRatio' ).getValue( )
-        if refine_ratio == 0:
-            domain_key = self.getAttribute( 'domain' ).getValue( )
-            domain = self.mModel.getWorld( ).getComputationDomains( ).getItem( domain_key )
-            refine_ratio = domain.getParam( 'refineRatio' ).getValue( )
-        if refine_ratio == 0:
-            refine_ratio = 2
+    def setDomainReference( self, domain ):
+        self.mDomainReference = domain
+        return
 
-        self.getParam( 'refineRatio' ).setValue( refine_ratio )
-        return refine_ratio
-    
+    def getSolverReference( self ):
+        return self.mSolverReference
+
+    def setSolverReference( self, solver ):
+        self.mSolverReference = solver
+        return
+
     def getAMRLevels( self ):
         amr_levels = self.getParam( 'AMRLevels' ).getValue( )
         if amr_levels == 0:
-            domain_key = self.getAttribute( 'domain' ).getValue( )
-            domain = self.mModel.getWorld( ).getComputationDomains( ).getItem( domain_key )
-            amr_levels = domain.getParam( 'AMRLevels' ).getValue( )
+            amr_levels = self.mSolverReference.getParam( 'AMRLevels' ).getValue( )
         if amr_levels == 0:
-            amr_levels = 3
+            raise Exception( "ERROR: solute needs an AMRLevel specified.  Usually via <solver>." )
 
         self.getParam( 'AMRLevels' ).setValue( amr_levels )
         return amr_levels
@@ -64,17 +63,13 @@ class Solute( ParamHolder ):
         self.getResolution( )
         return self.getParam( 'interfaceAMRLevel' ).getValue( )
 
-    def calcRefineRatio( self ):
-        # should result in AMRLevels, refineRatio and interfaceAMRLevel being set correctly
-        self.getResolution( )
-        return self.getRefineRatio( )
-    
+    def getInterfaceAMRLevel( self ):
+        return self.getParam( 'interfaceAMRLevel' ).getValue( )
+
     def getResolution( self ):
         resolution = self.getParam( 'resolution' ).getValue( )
         if resolution <= 0.0:
-            domain_key = self.getAttribute( 'domain' ).getValue( )
-            domain = self.mModel.getWorld( ).getComputationDomains( ).getItem( domain_key )
-            resolution = domain.getParam( 'resolution' ).getValue( )
+            resolution = self.mDomainReference.getParam( 'resolution' ).getValue( )
         if resolution <= 0.0:
             resolution = self.mModel.getAgentGrid( ).getParam( 'resolution' ).getValue( )
             
@@ -83,7 +78,7 @@ class Solute( ParamHolder ):
             resolution = unit_box_resolution
 
         amr_levels = self.getAMRLevels( )
-        refine_ratio = self.getRefineRatio( )
+        refine_ratio = self.mModel.getSolvers( ).getRefineRatio( )
 
         n = 0
         tmp_resolution = unit_box_resolution * ( refine_ratio ** n )
@@ -137,7 +132,7 @@ class Solute( ParamHolder ):
 
     def chooseSolver( self ):
         # find solver that contains reaction that contains this solute as a yield
-        self.mSolver = None
+        self.mSolverReference = None
         for solver_key in self.mModel.getSolvers( ).getKeys( ):
             # global solver
             solver = self.mModel.getSolvers( ).getItem( solver_key )
@@ -147,9 +142,9 @@ class Solute( ParamHolder ):
                 # is this solute a yield?
                 solute = reaction.getYields( ).getSolute( self.mName )
                 if solute == self:
-                    if ( self.mSolver is not None ) and ( self.mSolver != solver ):
+                    if ( self.mSolverReference is not None ) and ( self.mSolverReference != solver ):
                         raise Exception( "ERROR: solute has multiple solvers" )
-                    self.mSolver = solver
+                    self.mSolverReference = solver
                     break
         return
         
@@ -164,7 +159,7 @@ class Solute( ParamHolder ):
         lines = []
         lines.append( (depth*indent) + "{" )
         depth += 1
-        lines.append( (depth*indent) + "Solute *%s = new Solute( \"%s\", %s, %s, %s, %s, %s, %s );" % ( varname, self.mName, self.mEnumToken, self.getAttribute( 'domain' ).getValue( ),
+        lines.append( (depth*indent) + "Solute *%s = new Solute( \"%s\", %s, %s, %s, %s, %s, %s );" % ( varname, self.mName, self.mEnumToken, self.mDomainReference.getEnumToken( ),
                                                                                                         self.countReal(), self.countInt(), self.countBool(), self.countString(), ) )
         s = ParamHolder.getInitializeBioModel( self, varname, indent, depth )
         if s:
@@ -176,8 +171,8 @@ class Solute( ParamHolder ):
                                                       self.mPrivateStringHiddenParams )
         lines.append( s )
 
-        if self.mSolver is not None:
-            s = (depth*indent) + "%s->setSolverIdx( %s );" % ( varname, self.mSolver.getEnumToken( ), )
+        if self.mSolverReference is not None:
+            s = (depth*indent) + "%s->setSolverIdx( %s );" % ( varname, self.mSolverReference.getEnumToken( ), )
             lines.append( s )
 
         lines.append( (depth*indent) + "gBioModelRW->getSolutes( ).push_back( %s );" % ( varname, ) )
@@ -201,18 +196,18 @@ class AllSolutes( ItemHolder ):
         self.mModel = model
         return
 
-    def calcRefineRatio( self ):
-        refine_ratios = set( )
-        for name in self.mOrder:
-            refine_ratios.add( self.mItems[ name ].calcRefineRatio( ) )
-        if len( refine_ratios ) != 1:
-            raise Exception( "ERROR: All refine ratios must be the same. These were found: " + str( refine_ratios ) )
-        return refine_ratios.pop( )
-
     def calcInterfaceAMRLevel( self ):
         levels = [ ]
         for name in self.mOrder:
             levels.append( self.mItems[ name ].calcInterfaceAMRLevel( ) )
+        if len( levels ) < 1:
+            raise Exception( "ERROR: Need at least 1 interface AMR level." )
+        return max( levels )
+
+    def getInterfaceAMRLevel( self ):
+        levels = [ ]
+        for name in self.mOrder:
+            levels.append( self.mItems[ name ].getInterfaceAMRLevel( ) )
         if len( levels ) < 1:
             raise Exception( "ERROR: Need at least 1 interface AMR level." )
         return max( levels )
