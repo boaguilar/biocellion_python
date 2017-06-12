@@ -15,7 +15,7 @@ This model attempts to work in biocellion and cDynoMiCS
   <simulator>
     <param name="restartPreviousRun">false</param>
     <param name="randomSeed">5515</param>
-    <param name="outputPeriod" unit="hour">0.020</param>
+    <param name="outputPeriod" unit="hour">0.010</param>
     <timeStep>
       <param name="adaptive">false</param>
       <param name="timeStepIni" unit="hour">0.01</param>
@@ -39,10 +39,10 @@ This model attempts to work in biocellion and cDynoMiCS
        SOLUTES AND BIOMASS TYPES SECTION
        ###################################################################-->
   <solute name="GrowthNutrient" domain="MyColony">
-    <param name="diffusivity" unit="um2.hour-1" >0.1</param>
+    <param name="diffusivity" unit="m2.day-1" >8.64e-9</param>
     <param name="decayRate">0.0</param>
     <param name="writeOutput">true</param>
-    <param name="concentration" unit="g.L-1">30.0</param>
+    <param name="concentration" unit="g.L-1">300.0</param>
   </solute>
 
   <particle name="biomass">
@@ -75,7 +75,6 @@ This model attempts to work in biocellion and cDynoMiCS
       <param name="biofilmDiffusivity">0.8</param>
       <param name="specificArea" unit="m2.m-3">80</param>
 
-
       <boundaryCondition class="BoundaryCyclic" name="y0z">
         <shape class="Planar">
           <param name="pointIn" x="-1" y="0" z="0" />
@@ -87,20 +86,14 @@ This model attempts to work in biocellion and cDynoMiCS
         </shape>
       </boundaryCondition>
 
-      <boundaryCondition class="BoundaryGasMembrane" name="x0z">
-        <param name="canAttachTo">true</param>
-	<param name="bulk">MyTank</param> 
-	<param detail="GrowthNutrient" name="isPermeableTo" unit="m2.day-1">8.64e-9</param>
+      <boundaryCondition class="BoundaryZeroFlux" name="x0z">
         <shape class="Planar">
           <param name="pointIn" x="0" y="-1" z="0"/>
           <param name="vectorOut" x="0" y="-1" z="0"/>
         </shape>
       </boundaryCondition>
       
-      <boundaryCondition class="BoundaryGasMembrane" name="xNz">
-        <param name="canAttachTo">true</param>
-	<param name="bulk">MyTank</param> 
-	<param detail="GrowthNutrient" name="isPermeableTo" unit="m2.day-1">8.64e-9</param>
+      <boundaryCondition class="BoundaryZeroFlux" name="xNz">
         <shape class="Planar">
           <param name="pointIn" x="0" y="17" z="0"/>
           <param name="vectorOut" x="0" y="1" z="0"/>
@@ -120,8 +113,6 @@ This model attempts to work in biocellion and cDynoMiCS
           <param name="vectorOut" x="0" y="0" z="1"/>
         </shape>
       </boundaryCondition>
-      
-
 
     </computationDomain>
   </world>   
@@ -211,4 +202,3 @@ This model attempts to work in biocellion and cDynoMiCS
   </species>
 
 </idynomics>
-
