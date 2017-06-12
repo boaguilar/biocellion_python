@@ -368,14 +368,14 @@ void AgentSpecies::setInitialAgentState( SpAgentState& state ) const {
   REAL radius = cbrt( 3.0 * volume / (4.0 * MODEL_PI ) );
 
   // if radius is too big, then agent-agent interactions will be missed.
-  if( false ) {
+  if( true ) {
     OUTPUT( 0, ""
             << " radius: " << radius
             << " mDMax: " << mDMax
-            << " mDMax/3.0: " << mDMax/3.0
+            << " mDMax/2.0: " << mDMax/2.0
             );
   }
-  CHECK( radius <= mDMax / 3.0 );
+  CHECK( radius <= mDMax / 2.0 );
 
   state.setRadius( radius );
 }
@@ -386,9 +386,21 @@ void AgentSpecies::updateSpAgentState( const VIdx& vIdx, const JunctionData& jun
   for( i = 0 ; i < (S32) reactions.size( ) ; i++ ) {
     const Reaction* currentReaction = reactions[ i ];
     const REAL currentKineticFactor = currentReaction->getKineticFactor( nbrUBEnv, vOffset );
+    if( true ) {
+      OUTPUT( 0,
+              "AgentSpecies:: Reaction:: kineticFactor: " << currentKineticFactor
+              );
+    }
     for ( pIdx = 0; pIdx < (S32) mParticles.size( ); pIdx++) {
       REAL yield = currentReaction->getParticleYield( mParticles[ pIdx ].getParticleIdx( ) , state );
-      state.incModelReal( mParticles[ pIdx ].getModelRealIdx( ) , currentKineticFactor * yield );
+      if( true ) {
+        OUTPUT( 0,
+                "AgentSpecies:: Reaction:: yield: " << yield
+                << "  total-change: " << currentKineticFactor * yield
+                << "  delta-t: " << gSimulator->getAgentTimeStep()
+                );
+      }
+      state.incModelReal( mParticles[ pIdx ].getModelRealIdx( ) , currentKineticFactor * yield * gSimulator->getAgentTimeStep() );
     }
   }
 
