@@ -9,7 +9,12 @@ This model attempts to work in biocellion and cDynoMiCS
 
 <idynomics> 
 
+  <!--#####################################################################
+		SIMULATOR SECTION
+	######################################################################-->
   <simulator>
+    <param name="restartPreviousRun">false</param>
+    <param name="randomSeed">5515</param>
     <param name="outputPeriod" unit="hour">0.020</param>
     <timeStep>
       <param name="adaptive">false</param>
@@ -19,7 +24,7 @@ This model attempts to work in biocellion and cDynoMiCS
       <param name="endOfSimulation" unit="hour">1.00</param>
     </timeStep>
     <!-- The AGENTTIMESTEP which should always be EQUAL or LOWER than the global time step -->
-    <param name="agentTimeStep" unit="hour">0.01</param><!--3.6sec-->
+    <param name="agentTimeStep" unit="hour">0.01</param>
   </simulator>
 
   <!--#####################################################################
@@ -38,7 +43,6 @@ This model attempts to work in biocellion and cDynoMiCS
     <param name="decayRate">0.0</param>
     <param name="writeOutput">true</param>
     <param name="concentration" unit="g.L-1">30.0</param>
-    <param name="numTimeSteps">1</param><!--biocellion only-->
   </solute>
 
   <particle name="biomass">
@@ -52,27 +56,87 @@ This model attempts to work in biocellion and cDynoMiCS
       WORLD SECTION
       ###################################################################-->   
   <world>
+    <bulk name="MyTank">
+      <param name="isConstant">true</param>
+      <param name="D" unit="h-1">0.6</param>
+      <solute name="GrowthNutrient">
+	<param name="Sbulk" unit="g.L-1">0.0</param>
+	<param name="Sin" unit="g.L-1">0</param>
+	<param name="isConstant">true</param>
+	<param name="Spulse" unit="g.L-1">0.0</param>
+	<param name="pulseRate" unit="h-1">0.0</param>
+      </solute>
+    </bulk>
     <computationDomain name="MyColony">
-      <grid nDim="3" nI="16" nJ="16" nK="4" />
+      <!-- this is the grid size, counts of UBs -->
+      <grid nDim="2" nI="17" nJ="17" nK="1"/>
       <param name="resolution" unit="um">8</param>
-      <param name="boundaryLayer" unit="um">0</param>
-      <param name="biofilmDiffusivity">1</param>
-      <param name="refineRatio">2</param><!--biocellion only-->
-      <param name="AMRLevels">3</param><!--biocellion only-->
+      <param name="boundaryLayer" unit="um">1</param>
+      <param name="biofilmDiffusivity">0.8</param>
+      <param name="specificArea" unit="m2.m-3">80</param>
+
+
+      <boundaryCondition class="BoundaryCyclic" name="y0z">
+        <shape class="Planar">
+          <param name="pointIn" x="-1" y="0" z="0" />
+          <param name="vectorOut" x="-1" y="0" z="0" />
+        </shape>
+	<shape class="Planar">
+          <param name="pointIn" x="17" y="0" z="0" />
+          <param name="vectorOut" x="1" y="0" z="0" />
+        </shape>
+      </boundaryCondition>
+
+      <boundaryCondition class="BoundaryGasMembrane" name="x0z">
+        <param name="canAttachTo">true</param>
+	<param name="bulk">MyTank</param> 
+	<param detail="GrowthNutrient" name="isPermeableTo" unit="m2.day-1">8.64e-9</param>
+        <shape class="Planar">
+          <param name="pointIn" x="0" y="-1" z="0"/>
+          <param name="vectorOut" x="0" y="-1" z="0"/>
+        </shape>
+      </boundaryCondition>
+      
+      <boundaryCondition class="BoundaryGasMembrane" name="xNz">
+        <param name="canAttachTo">true</param>
+	<param name="bulk">MyTank</param> 
+	<param detail="GrowthNutrient" name="isPermeableTo" unit="m2.day-1">8.64e-9</param>
+        <shape class="Planar">
+          <param name="pointIn" x="0" y="17" z="0"/>
+          <param name="vectorOut" x="0" y="1" z="0"/>
+        </shape>
+      </boundaryCondition>
+      
+      <boundaryCondition class="BoundaryZeroFlux" name="x0y">
+        <shape class="Planar">
+          <param name="pointIn" x="0" y="0" z="-1"/>
+          <param name="vectorOut" x="0" y="0" z="-1"/>
+        </shape>
+      </boundaryCondition>
+      
+      <boundaryCondition class="BoundaryZeroFlux" name="xNy">
+        <shape class="Planar">
+          <param name="pointIn" x="0" y="0" z="1"/>
+          <param name="vectorOut" x="0" y="0" z="1"/>
+        </shape>
+      </boundaryCondition>
+      
+
+
     </computationDomain>
   </world>   
 
   <!--##############################################################
       REACTION SECTION
       ##############################################################-->
-  <reaction catalyzedBy="biomass" catalyst="MyGrowingCells" class="ReactionFactor" name="Growth">
-    <param name="muMax" unit="hour-1">0.05</param>
+  <reaction catalyzedBy="biomass" class="ReactionFactor" name="Growth">
+    <param name="muMax" unit="hour-1">3.0</param>
     <kineticFactor class="MonodKinetic" solute="GrowthNutrient">
       <param name="Ks" unit="g.L-1">0.1</param>
     </kineticFactor>
     <yield>
-      <param name="GrowthNutrient" unit="g.g-1">-0.1</param>
-      <param name="biomass" unit="g.g-1">0.1</param>
+      <param name="GrowthNutrient" unit="g.g-1">-1.0</param>
+      <param name="biomass" unit="g.g-1">1.0</param>
     </yield>
   </reaction>
 
@@ -83,13 +147,16 @@ This model attempts to work in biocellion and cDynoMiCS
   <!--#####################################################################
 		SOLVER SECTION
 	######################################################################-->
-  <solver class="SolverSimple" domain="MyYeastColony" name="solutes">
+  <solver class="SolverSimple" domain="MyColony" name="solutes">
     <param name="active">true</param>
     <param name="preStep">150</param>
     <param name="postStep">150</param>
     <param name="coarseStep">1500</param>
     <param name="nCycles">5</param>
     <reaction name="Growth"/>
+    
+    <param name="refineRatio">2</param><!--biocellion only-->
+    <param name="AMRLevels">3</param><!--biocellion only-->
   </solver> 
 
   <!--#############################################################
@@ -98,22 +165,34 @@ This model attempts to work in biocellion and cDynoMiCS
   <agentGrid>
     <param name="computationDomain">MyColony</param>
     <param name="resolution" unit="um">8</param>
+    <param name="shovingFraction">0.0025</param>
+    <param name="shovingMaxIter">1000</param>
+    <param name="shovingMutual">true</param>
   </agentGrid>
 
   <!--###########################################################
       SPECIES SECTION
-      ##### ########################################################-->
+      #############################################################-->
   <species class="Yeast" name="MyGrowingCells">
+
     <particle name="biomass">
       <param name="mass" unit="fg">12000</param>
     </particle>
     <particle name="inert">
       <param name="mass" unit="fg">70</param>
     </particle>
+    
+    <param name="color">blue</param>
+    <param name="computationDomain">MyColony</param>
+
     <param name="divRadius" unit="um">2.5</param>
     <param name="deathRadius" unit="um">0.2</param>
     <param name="shoveFactor" unit="um">1.15</param>
     <param name="shoveLimit" unit="um">0.</param>
+    <param name="epsMax">0.5</param>
+    <param name="kHyd" unit="hr-1">0.1</param> 
+    <param name="attachCreateFactor">1.0</param>
+    <param name="attachDestroyFactor">2</param>
     
     <!-- Reactions of biomass(volume) growth   --> 
     <reaction  name="Growth"  status="active"/> 
@@ -123,11 +202,11 @@ This model attempts to work in biocellion and cDynoMiCS
       <adhesion strength=".2" withSpecies="MyGrowingCells"/>
     </adhesions>
     
-    <!-- Will initialize the simulation with one cell of this species at coordinates (0, 130, 0)-->
+    <!-- Will initialize the simulation with one cell of this species near the center -->
     <initArea number="1" shape="default">
       <param name="birthday" unit="hour">0</param>
-      <coordinates x="64.0" y="64.0" z="17.0"/>
-      <coordinates x="65.0" y="65.0" z="17.0"/>
+      <coordinates x="64.0" y="64.0" z="0"/>
+      <coordinates x="65.0" y="65.0" z="0"/>
     </initArea>
   </species>
 

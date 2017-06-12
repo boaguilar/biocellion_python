@@ -1,9 +1,9 @@
-<?xml version="1.0" encoding="utf-8" standalone="no"?><!--
-
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!--
 #########################################################################
- iDynoMiCS: individual-based Dynamics of Microbial Communities Simulator
+Simplified model to demonstrate attractanct secretion and chemotaxis
+This model attempts to work in biocellion and cDynoMiCS
 #########################################################################
-
 -->
 <idynomics>
   <!--#####################################################################
