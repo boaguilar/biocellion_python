@@ -31,24 +31,23 @@ class Simulator( ParamHolder ):
         return number_steps
 
     def getBioModelH( self, indent, depth ):
-        lines  = "// FIXME: Simulator \n"
-        return lines
+        lines = [ ]
+        return "\n".join( lines )
 
     def getInitializeBioModel( self, indent, depth ):
-        varname = "gSimulator"
+        varname = "gBioModelRW->getSimulator( )"
         lines = []
         lines.append( (depth*indent) + "{" )
         depth += 1
-        lines.append( (depth*indent) + "%s = new Simulator( %s, %s, %s, %s, %s, %s );" % (varname, "false", "false", "true", "75321", "0.01", "0.01", ) )
         lines.append( ParamHolder.getInitializeBioModel( self, varname, indent, depth ) )
 
-        s = self.getInitializeBioModelSetDataMembers( varname, "->", indent, depth,
+        s = self.getInitializeBioModelSetDataMembers( varname, ".", indent, depth,
                                                       self.mPrivateBoolHiddenParams,
                                                       self.mPrivateNumberHiddenParams,
                                                       self.mPrivateStringHiddenParams )
         lines.append( s )
         
-        s = self.mTimeStep.getInitializeBioModel( "%s->getTimeStep()" % ( varname, ), indent, depth )
+        s = self.mTimeStep.getInitializeBioModel( "%s.getTimeStep()" % ( varname, ), indent, depth )
         lines.append( s )
         depth -= 1;
         lines.append( (depth*indent) + "}" )

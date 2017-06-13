@@ -761,7 +761,7 @@ void MolecularSpecies::setNumTimeSteps(const S32 value)
 void MolecularSpecies::getSubgridOffset(const VReal& vOffset, VIdx& subgridVOffset)
 {
   for( S32 dim = 0; dim < DIMENSION; dim++ ) {
-    REAL offset  = 0.5 + vOffset[dim] / gBioModel->getAgentGrid()->getResolution( );
+    REAL offset  = 0.5 + vOffset[dim] / gBioModel->getAgentGrid().getResolution( );
     subgridVOffset[dim] = offset * getSubgridDimension();
   }
 }
@@ -780,7 +780,7 @@ REAL MolecularSpecies::getSubgridValue(const NbrUBEnv& nbrUBEnv, const VReal& vO
   idx_t subgrid_dimension = getSubgridDimension();
   S32 dim;
   VIdx vidx, vsubidx;
-  REAL step = gBioModel->getAgentGrid()->getResolution( ) / subgrid_dimension;
+  REAL step = gBioModel->getAgentGrid().getResolution( ) / subgrid_dimension;
   for( dim = 0 ; dim < DIMENSION ; dim++ ) {
     vidx[dim] = 0;
     vsubidx[dim] = (idx_t)(vOffset[dim] + 0.5) / step;

@@ -21,19 +21,18 @@ class AgentGrid( ParamHolder ):
         return
 
     def getBioModelH( self, indent, depth ):
-        lines  = "// FIXME: AgentGrid \n"
-        return lines
+        lines = [ ]
+        return "\n".join( lines )
 
     def getInitializeBioModel( self, indent, depth ):
-        varname = "gAgentGrid"
+        varname = "gBioModelRW->getAgentGrid( )"
         lines = [ ]
         lines.append( (depth*indent) + "{" )
         depth += 1
 
-        lines.append( (depth*indent) + "%s = new AgentGrid( );" % (varname, ) )
         lines.append( ParamHolder.getInitializeBioModel( self, varname, indent, depth ) )
         
-        s = self.getInitializeBioModelSetDataMembers( varname, "->", indent, depth,
+        s = self.getInitializeBioModelSetDataMembers( varname, ".", indent, depth,
                                                       self.mPrivateBoolHiddenParams,
                                                       self.mPrivateNumberHiddenParams,
                                                       self.mPrivateStringHiddenParams )

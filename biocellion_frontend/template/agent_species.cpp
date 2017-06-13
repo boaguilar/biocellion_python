@@ -386,30 +386,32 @@ void AgentSpecies::updateSpAgentState( const VIdx& vIdx, const JunctionData& jun
   for( i = 0 ; i < (S32) reactions.size( ) ; i++ ) {
     const Reaction* currentReaction = reactions[ i ];
     const REAL currentKineticFactor = currentReaction->getKineticFactor( nbrUBEnv, vOffset );
-    if( true ) {
+    if( false ) {
       OUTPUT( 0,
               "AgentSpecies:: Reaction:: kineticFactor: " << currentKineticFactor
               );
     }
     for ( pIdx = 0; pIdx < (S32) mParticles.size( ); pIdx++) {
       REAL yield = currentReaction->getParticleYield( mParticles[ pIdx ].getParticleIdx( ) , state );
-      if( true ) {
+      if( false ) {
         OUTPUT( 0,
                 "AgentSpecies:: Reaction:: yield: " << yield
                 << "  total-change: " << currentKineticFactor * yield
-                << "  delta-t: " << gSimulator->getAgentTimeStep()
+                << "  delta-t: " << gBioModel->getSimulator().getAgentTimeStep()
                 );
       }
-      state.incModelReal( mParticles[ pIdx ].getModelRealIdx( ) , currentKineticFactor * yield * gSimulator->getAgentTimeStep() );
+      state.incModelReal( mParticles[ pIdx ].getModelRealIdx( ) , currentKineticFactor * yield * gBioModel->getSimulator().getAgentTimeStep() );
     }
   }
   //update radius here
   updateSpAgentRadius( state );
-  for ( pIdx = 0; pIdx < (S32) mParticles.size( ); pIdx++) {
-    OUTPUT( 0,
-            "Agent particle: " << gBioModel->getParticles()[ mParticles[ pIdx ].getParticleIdx( ) ]->getName()
-            << " mass: " << state.getModelReal( mParticles[ pIdx ].getModelRealIdx( ) )
-            );
+  if( false ) {
+    for ( pIdx = 0; pIdx < (S32) mParticles.size( ); pIdx++) {
+      OUTPUT( 0,
+              "Agent particle: " << gBioModel->getParticles()[ mParticles[ pIdx ].getParticleIdx( ) ]->getName()
+              << " mass: " << state.getModelReal( mParticles[ pIdx ].getModelRealIdx( ) )
+              );
+    }
   }
   
 }
@@ -485,7 +487,7 @@ static inline void findChemoTaxisDirectionAndConcentration( const S32 elemIdx,  
   bckDir = VReal::ZERO - fwdDir;
 
   // Find solute concentration just ahead and just behind agent
-  REAL offset_magnitude = 1.42 * gBioModel->getAgentGrid()->getResolution( ) / gBioModel->getSolutes( )[ elemIdx ]->getSubgridDimension( );
+  REAL offset_magnitude = 1.42 * gBioModel->getAgentGrid().getResolution( ) / gBioModel->getSolutes( )[ elemIdx ]->getSubgridDimension( );
   VReal curPos = vOffset;
   VReal fwdPos = vOffset + fwdDir * offset_magnitude; // 1.5 * state.getRadius()
   VReal bckPos = vOffset + bckDir * offset_magnitude; // 1.5 * state.getRadius()

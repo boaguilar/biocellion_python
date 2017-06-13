@@ -44,16 +44,6 @@ BioModel::~BioModel( ) {
   }
   mAgentSpecies.clear();
 
-  if( mSimulator ) {
-    delete mSimulator;
-    mSimulator = 0;
-  }
-
-  if( mAgentGrid ) {
-    delete mAgentGrid;
-    mAgentGrid = 0;
-  }
-
   for( i = 0; i < (S32) mParticles.size(); i++ ) {
     if( mParticles[i] ) {
       delete mParticles[i];
@@ -100,6 +90,7 @@ Vector< Solver * >& BioModel::getSolvers( ) {
 const Vector< AgentSpecies* >& BioModel::getAgentSpecies( ) const {
   return mAgentSpecies;
 }
+
 Vector< AgentSpecies * >& BioModel::getAgentSpecies( ) {
   return mAgentSpecies;
 }
@@ -115,23 +106,32 @@ const World& BioModel::getWorld( ) const {
 World& BioModel::getWorld( ) {
   return mWorld;
 }
-const Simulator* BioModel::getSimulator( ) const
+
+const Simulator& BioModel::getSimulator( ) const
 {
   return mSimulator;
 }
 
-Simulator* BioModel::getSimulator( )
+Simulator& BioModel::getSimulator( )
 {
   return mSimulator;
 }
 
-const AgentGrid* BioModel::getAgentGrid( ) const
+const AgentGrid& BioModel::getAgentGrid( ) const
 {
   return mAgentGrid;
 }
-AgentGrid* BioModel::getAgentGrid( )
+AgentGrid& BioModel::getAgentGrid( )
 {
   return mAgentGrid;
+}
+
+const Vector< Particle* >& BioModel::getParticles( ) const {
+  return mParticles;
+}
+
+Vector< Particle * >& BioModel::getParticles( ) {
+  return mParticles;
 }
 
 const Vector<MechIntrctSpAgent *>& BioModel::getMechIntrctSpAgent( ) const
@@ -144,11 +144,11 @@ Vector<MechIntrctSpAgent *>& BioModel::getMechIntrctSpAgent( )
   return mMechIntrctSpAgent;
 }
 
-const Vector< Vector<BOOL> > BioModel::getMechIntrctShoveEnabled( ) const
+const Vector< Vector<BOOL> >& BioModel::getMechIntrctShoveEnabled( ) const
 {
     return mMechIntrctShoveEnabled;
 }
-Vector< Vector<BOOL> > BioModel::getMechIntrctShoveEnabled( )
+Vector< Vector<BOOL> >& BioModel::getMechIntrctShoveEnabled( )
 {
     return mMechIntrctShoveEnabled;
 }

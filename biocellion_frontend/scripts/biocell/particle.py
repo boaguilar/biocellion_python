@@ -29,7 +29,7 @@ class Particle( ParamHolder ):
         s = ParamHolder.getInitializeBioModel( self, "particle", indent, depth )
         if s:
             lines.append( s )
-        lines.append( (depth*indent) + "gParticles.push_back( particle );" )
+        lines.append( (depth*indent) + "gBioModelRW->getParticles( ).push_back( particle );" )
         depth -= 1;
         lines.append( (depth*indent) + "}" )
         return "\n".join( lines )
