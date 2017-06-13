@@ -3,11 +3,6 @@
 static bool gBioModelInitialized = false;
 const BioModel *gBioModel = 0;
 BioModel *gBioModelRW = 0;
-Simulator *gSimulator = 0;
-AgentGrid *gAgentGrid = 0;
-Vector<Particle *> gParticles;
-Vector<MechIntrctSpAgent *> gMechIntrctSpAgent;
-Vector< Vector<BOOL> > gMechIntrctShoveEnabled;
 
 BioModel::BioModel( )
   : mDistanceJunctionsEnabled( false )
@@ -48,6 +43,33 @@ BioModel::~BioModel( ) {
     }
   }
   mAgentSpecies.clear();
+
+  if( mSimulator ) {
+    delete mSimulator;
+    mSimulator = 0;
+  }
+
+  if( mAgentGrid ) {
+    delete mAgentGrid;
+    mAgentGrid = 0;
+  }
+
+  for( i = 0; i < (S32) mParticles.size(); i++ ) {
+    if( mParticles[i] ) {
+      delete mParticles[i];
+      mParticles[i] = 0;
+    }
+  }
+  mParticles.clear();
+
+  for( i = 0; i < (S32) mMechIntrctSpAgent.size(); i++ ) {
+    if( mMechIntrctSpAgent[i] ) {
+      delete mMechIntrctSpAgent[i];
+      mMechIntrctSpAgent[i] = 0;
+    }
+  }
+  mMechIntrctSpAgent.clear();
+
 
 }
 
@@ -92,6 +114,43 @@ const World& BioModel::getWorld( ) const {
 
 World& BioModel::getWorld( ) {
   return mWorld;
+}
+const Simulator* BioModel::getSimulator( ) const
+{
+  return mSimulator;
+}
+
+Simulator* BioModel::getSimulator( )
+{
+  return mSimulator;
+}
+
+const AgentGrid* BioModel::getAgentGrid( ) const
+{
+  return mAgentGrid;
+}
+AgentGrid* BioModel::getAgentGrid( )
+{
+  return mAgentGrid;
+}
+
+const Vector<MechIntrctSpAgent *>& BioModel::getMechIntrctSpAgent( ) const
+{
+  return mMechIntrctSpAgent;
+}
+
+Vector<MechIntrctSpAgent *>& BioModel::getMechIntrctSpAgent( )
+{
+  return mMechIntrctSpAgent;
+}
+
+const Vector< Vector<BOOL> > BioModel::getMechIntrctShoveEnabled( ) const
+{
+    return mMechIntrctShoveEnabled;
+}
+Vector< Vector<BOOL> > BioModel::getMechIntrctShoveEnabled( )
+{
+    return mMechIntrctShoveEnabled;
 }
 
 void BioModel::setDistanceJunctionsEnabled( const BOOL& value ) {
@@ -346,18 +405,18 @@ void initializeBioModel() {
   initializeBioModelAuto();
 
   S32 i, j;
-  gMechIntrctShoveEnabled.resize( NUM_AGENT_SPECIES ); 
+  gBioModelRW->getMechIntrctShoveEnabled().resize( NUM_AGENT_SPECIES ); 
   for( i = 0 ; i < NUM_AGENT_SPECIES ; i++ ) {
-    gMechIntrctShoveEnabled[ i ].resize( NUM_AGENT_SPECIES );
+    gBioModelRW->getMechIntrctShoveEnabled()[ i ].resize( NUM_AGENT_SPECIES );
     for( j = 0 ; j < NUM_AGENT_SPECIES ; j++ ) {
       // FIXME: Should control with a <shoves> field, like tightJunctions and adhesions
-      gMechIntrctShoveEnabled[ i ][ j ] = true;
+      gBioModelRW->getMechIntrctShoveEnabled()[ i ][ j ] = true;
     }
   }
-  gMechIntrctSpAgent.push_back( MechIntrctSpAgentShove::create() );
-  gMechIntrctSpAgent.push_back( MechIntrctSpAgentAdhesion::create() );
+  gBioModelRW->getMechIntrctSpAgent().push_back( MechIntrctSpAgentShove::create() );
+  gBioModelRW->getMechIntrctSpAgent().push_back( MechIntrctSpAgentAdhesion::create() );
   if( gBioModel->getDistanceJunctionsEnabled( ) ) {
-    gMechIntrctSpAgent.push_back( MechIntrctSpAgentDistanceJunction::create() );
+    gBioModelRW->getMechIntrctSpAgent().push_back( MechIntrctSpAgentDistanceJunction::create() );
   }
 
   gBioModelInitialized = true;
@@ -367,34 +426,6 @@ void terminateBioModel() {
   if( !gBioModelInitialized ) {
     return;
   }
-
-  S32 i;
-
-  if( gSimulator ) {
-    delete gSimulator;
-    gSimulator = 0;
-  }
-
-  if( gAgentGrid ) {
-    delete gAgentGrid;
-    gAgentGrid = 0;
-  }
-
-  for( i = 0; i < (S32) gParticles.size(); i++ ) {
-    if( gParticles[i] ) {
-      delete gParticles[i];
-      gParticles[i] = 0;
-    }
-  }
-  gParticles.clear();
-  
-  for( i = 0; i < (S32) gMechIntrctSpAgent.size(); i++ ) {
-    if( gMechIntrctSpAgent[i] ) {
-      delete gMechIntrctSpAgent[i];
-      gMechIntrctSpAgent[i] = 0;
-    }
-  }
-  gMechIntrctSpAgent.clear();
 
   if( gBioModelRW ) {
     delete gBioModelRW;

@@ -156,8 +156,8 @@ void InitArea::addSpAgentsDefault( const BOOL init, const VIdx& startVIdx, const
   VIdx  vPartitionIdx_min, vPartitionIdx_max;
   VReal vPartitionOffset_min, vPartitionOffset_max;
   for( dim = 0 ; dim < 3 ; dim++ ) {
-    vPartitionOffset_min[ dim ] = -0.5 * gAgentGrid->getResolution( );
-    vPartitionOffset_max[ dim ] = -0.5 * gAgentGrid->getResolution( );
+    vPartitionOffset_min[ dim ] = -0.5 * gBioModel->getAgentGrid()->getResolution( );
+    vPartitionOffset_max[ dim ] = -0.5 * gBioModel->getAgentGrid()->getResolution( );
     vPartitionIdx_min[ dim ] = startVIdx[ dim ];
     vPartitionIdx_max[ dim ] = startVIdx[ dim ] + regionSize[ dim ];
   }
@@ -192,7 +192,7 @@ void InitArea::addSpAgentsDefault( const BOOL init, const VIdx& startVIdx, const
 
   REAL agent_number = intersect_volume * agent_density;
 
-  OUTPUT( 10, "IF_GRID_SPACE = " << gAgentGrid->getResolution( ) );
+  OUTPUT( 10, "IF_GRID_SPACE = " << gBioModel->getAgentGrid()->getResolution( ) );
   OUTPUT( 10, "total_agents = " << mNumber );
   OUTPUT( 10, "total_volume = " << volume );
   OUTPUT( 10, "agent_density = " << agent_density );
@@ -269,8 +269,8 @@ void InitArea::addSpAgentsDefault( const BOOL init, const VIdx& startVIdx, const
       CHECK( vIdxAgent[dim] >= startVIdx[dim] );
       CHECK( vIdxAgent[dim] < startVIdx[dim] + regionSize[dim] );
 
-      CHECK( vOffsetAgent[dim] >= gAgentGrid->getResolution( ) * -0.5 );
-      CHECK( vOffsetAgent[dim] < gAgentGrid->getResolution( ) * 0.5 );
+      CHECK( vOffsetAgent[dim] >= gBioModel->getAgentGrid()->getResolution( ) * -0.5 );
+      CHECK( vOffsetAgent[dim] < gBioModel->getAgentGrid()->getResolution( ) * 0.5 );
     }
 
     v_spAgentVIdx.push_back( vIdxAgent );

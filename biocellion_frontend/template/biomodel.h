@@ -41,6 +41,16 @@ public:
   BOOL getDistanceJunctionsEnabled( ) const;
   const World& getWorld( ) const;
   World& getWorld( );
+  const Simulator* getSimulator( ) const;
+  Simulator* getSimulator( );
+  const AgentGrid* getAgentGrid( ) const;
+  AgentGrid* getAgentGrid( );
+  const Vector<Particle *>& getParticles( ) const;
+  Vector<Particle *>& getParticles( );
+  const Vector<MechIntrctSpAgent *>& getMechIntrctSpAgent( ) const;
+  Vector<MechIntrctSpAgent *>& getMechIntrctSpAgent( );
+  const Vector< Vector<BOOL> > getMechIntrctShoveEnabled( ) const;
+  Vector< Vector<BOOL> > getMechIntrctShoveEnabled( );
   void setDistanceJunctionsEnabled( const BOOL& value );
 
   // general grid support
@@ -86,15 +96,15 @@ protected:
   Vector < AgentSpecies *> mAgentSpecies;
   BOOL mDistanceJunctionsEnabled;
   World mWorld;
+  Simulator* mSimulator;
+  AgentGrid* mAgentGrid;
+  Vector<Particle *> mParticles;
+  Vector<MechIntrctSpAgent *> mMechIntrctSpAgent;
+  Vector< Vector<BOOL> > mMechIntrctShoveEnabled;
 };
 
 extern const BioModel *gBioModel;
 extern BioModel *gBioModelRW;
-extern Simulator *gSimulator;
-extern AgentGrid *gAgentGrid;
-extern Vector<Particle *> gParticles;
-extern Vector<MechIntrctSpAgent *> gMechIntrctSpAgent;
-extern Vector< Vector<BOOL> > gMechIntrctShoveEnabled;
 
 extern void initializeBioModel();
 extern void terminateBioModel();

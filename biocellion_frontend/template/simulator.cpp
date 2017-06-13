@@ -1,5 +1,12 @@
 #include "biomodel.h"
 
+Simulator::Simulator()
+  : mRestartPreviousRun(false), mChemostat(false), mDiffusionReactionOnAgentTime(false),
+    mRandomSeed(0), mOutputPeriod(0), mAgentTimeStep(0)
+{
+  //empty
+}
+
 Simulator::Simulator(
 		     const BOOL& restartPreviousRun, const BOOL& chemostat, const BOOL& diffusionReactionOnAgentTime,
 		     const REAL& randomSeed, const REAL& outputPeriod, const REAL& agentTimeStep

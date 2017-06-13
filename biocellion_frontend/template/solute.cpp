@@ -94,7 +94,7 @@ void Solute::calcSubgridDimension() {
 
 void Solute::getSubgridOffset( const VReal& vOffset, VIdx& subgridVOffset ) const {
   for( S32 dim = 0; dim < 3; dim++ ) {
-    REAL fractional_offset  = vOffset[ dim ] / gAgentGrid->getResolution( );
+    REAL fractional_offset  = vOffset[ dim ] / gBioModel->getAgentGrid()->getResolution( );
     subgridVOffset[ dim ] = fractional_offset * getSubgridDimension();
   }
 }
@@ -102,7 +102,7 @@ void Solute::getSubgridOffset( const VReal& vOffset, VIdx& subgridVOffset ) cons
 void Solute::getSubgridCenter( const VIdx& subgridVOffset, VReal& vOffset ) const {
   S32 dim;
   for( dim = 0 ; dim < 3 ; dim++ ) {
-    vOffset[ dim ] = ( subgridVOffset[ dim ] + 0.5 ) * gAgentGrid->getResolution( ) / mSubgridDimension;
+    vOffset[ dim ] = ( subgridVOffset[ dim ] + 0.5 ) * gBioModel->getAgentGrid()->getResolution( ) / mSubgridDimension;
   }
 }
 
@@ -118,7 +118,7 @@ REAL Solute::getSubgridValue(const NbrUBEnv& nbrUBEnv, const VReal& vOffset) con
   idx_t subgrid_dimension = getSubgridDimension();
   S32 dim;
   VIdx vidx, vsubidx;
-  REAL step = gAgentGrid->getResolution( ) / subgrid_dimension;
+  REAL step = gBioModel->getAgentGrid()->getResolution( ) / subgrid_dimension;
   for( dim = 0 ; dim < 3 ; dim++ ) {
     vidx[ dim ] = 0;
     vsubidx[ dim ] = (idx_t)( vOffset[ dim ] + 0.5 ) / step;
@@ -159,9 +159,8 @@ REAL Solute::getSubgridVolume( ) const {
 }
 
 REAL Solute::getPDETimeStepDuration( ) const {
-  return gSimulator->getAgentTimeStep( ) / NUM_STATE_AND_GRID_TIME_STEPS_PER_BASELINE / mNumTimeSteps;
+  return gBioModel->getSimulator()->getAgentTimeStep( ) / NUM_STATE_AND_GRID_TIME_STEPS_PER_BASELINE / mNumTimeSteps;
 }
-
 
 // support for model_routine_config.cpp
 void Solute::setPDEInfo( PDEInfo& pdeInfo ) const {

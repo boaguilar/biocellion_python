@@ -28,6 +28,7 @@ protected:
 class Simulator {
 
 public:
+  Simulator( );
   Simulator(
 		     const BOOL& restartPreviousRun, const BOOL& chemostat, const BOOL& diffusionReactionOnAgentTime,
 		     const REAL& randomSeed, const REAL& outputPeriod, const REAL& agentTimeStep

@@ -53,7 +53,7 @@ void MechIntrctSpAgentShove::compute( const S32 iter, const VIdx& vIdx0, const S
   S32 agentType1 = spAgent1.state.getType();
 
 #if 0
-  if( !gMechIntrctShoveEnabled[ agentType0 ][ agentType1 ] ) {
+  if( !gBioModel->getMechIntrctShoveEnabled()[ agentType0 ][ agentType1 ] ) {
     return;
   }
 #endif
@@ -761,7 +761,7 @@ void MolecularSpecies::setNumTimeSteps(const S32 value)
 void MolecularSpecies::getSubgridOffset(const VReal& vOffset, VIdx& subgridVOffset)
 {
   for( S32 dim = 0; dim < DIMENSION; dim++ ) {
-    REAL offset  = 0.5 + vOffset[dim] / gAgentGrid->getResolution( );
+    REAL offset  = 0.5 + vOffset[dim] / gBioModel->getAgentGrid()->getResolution( );
     subgridVOffset[dim] = offset * getSubgridDimension();
   }
 }
@@ -780,7 +780,7 @@ REAL MolecularSpecies::getSubgridValue(const NbrUBEnv& nbrUBEnv, const VReal& vO
   idx_t subgrid_dimension = getSubgridDimension();
   S32 dim;
   VIdx vidx, vsubidx;
-  REAL step = gAgentGrid->getResolution( ) / subgrid_dimension;
+  REAL step = gBioModel->getAgentGrid()->getResolution( ) / subgrid_dimension;
   for( dim = 0 ; dim < DIMENSION ; dim++ ) {
     vidx[dim] = 0;
     vsubidx[dim] = (idx_t)(vOffset[dim] + 0.5) / step;

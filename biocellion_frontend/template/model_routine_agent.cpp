@@ -29,15 +29,15 @@ void ModelRoutine::addSpAgents( const BOOL init, const VIdx& startVIdx, const VI
   if( init ) {
     current_time = 0;
   } else {
-    current_time = gSimulator->getAgentTimeStep() * Info::getCurBaselineTimeStep();
+    current_time = gBioModel->getSimulator()->getAgentTimeStep() * Info::getCurBaselineTimeStep();
   }
   size_t i, j;
   for( i = 0 ; i < gBioModel->getAgentSpecies().size() ; i++ ) {
     for( j = 0 ; j < gBioModel->getAgentSpecies()[ i ]->getInitAreas( ).size() ; j++ ) {
       REAL birth_time = gBioModel->getAgentSpecies()[ i ]->getInitAreas( )[ j ]->getBirthday( );
       REAL dt = std::abs( birth_time - current_time );
-      if(( init && birth_time < gSimulator->getAgentTimeStep() / 2.0 ) ||
-         ( !init && birth_time > gSimulator->getAgentTimeStep() / 2.0 && dt < gSimulator->getAgentTimeStep() / 2.0 ) ) {
+      if(( init && birth_time < gBioModel->getSimulator()->getAgentTimeStep() / 2.0 ) ||
+         ( !init && birth_time > gBioModel->getSimulator()->getAgentTimeStep() / 2.0 && dt < gBioModel->getSimulator()->getAgentTimeStep() / 2.0 ) ) {
         gBioModel->getAgentSpecies()[ i ]->getInitAreas( )[ j ]->addSpAgents( init, startVIdx, regionSize, ifGridHabitableBoxData, v_spAgentVIdx, v_spAgentState, v_spAgentOffset );
       }
     }
@@ -104,11 +104,11 @@ static inline void limitMotion(VReal& disp) {
 #if TWO_DIMENSION
     if(dim == DIMENSION-1) { disp[dim] = 0.0; continue; }
 #endif
-    if( disp[dim] > gAgentGrid->getResolution( ) ) {
-      disp[dim] = gAgentGrid->getResolution( );
+    if( disp[dim] > gBioModel->getAgentGrid()->getResolution( ) ) {
+      disp[dim] = gBioModel->getAgentGrid()->getResolution( );
     }
-    else if( disp[dim] < ( gAgentGrid->getResolution( ) * -1.0 ) ) {
-      disp[dim] = gAgentGrid->getResolution( ) * -1.0;
+    else if( disp[dim] < ( gBioModel->getAgentGrid()->getResolution( ) * -1.0 ) ) {
+      disp[dim] = gBioModel->getAgentGrid()->getResolution( ) * -1.0;
     }
   }
 }

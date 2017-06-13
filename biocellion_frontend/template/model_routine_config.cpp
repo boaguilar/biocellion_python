@@ -24,7 +24,7 @@ void ModelRoutine::updateIfGridSpacing( REAL& ifGridSpacing ) {
   /* MODEL START */
   
   initializeBioModel();
-  ifGridSpacing = gAgentGrid->getResolution( );/* sets the grid resolution */
+  ifGridSpacing = gBioModel->getAgentGrid()->getResolution( );/* sets the grid resolution */
 
   /* MODEL END */
 
@@ -74,7 +74,7 @@ void ModelRoutine::updateTimeStepInfo( TimeStepInfo& timeStepInfo ) {
   /* MODEL START */
 
   initializeBioModel();
-  timeStepInfo.durationBaselineTimeStep = gSimulator->getAgentTimeStep();
+  timeStepInfo.durationBaselineTimeStep = gBioModel->getSimulator()->getAgentTimeStep();
   
   // FIXME: Not controlled by XML yet
   timeStepInfo.numStateAndGridTimeStepsPerBaseline = NUM_STATE_AND_GRID_TIME_STEPS_PER_BASELINE;
@@ -110,7 +110,7 @@ void ModelRoutine::updateSpAgentInfo( Vector<SpAgentInfo>& v_spAgentInfo ) {/* s
     
     // FIXME: DMax not controlled from XML yet
     info.dMax = gBioModel->getAgentSpecies()[ i ]->getDMax();
-    CHECK( info.dMax <= gAgentGrid->getResolution( ) );
+    CHECK( info.dMax <= gBioModel->getAgentGrid()->getResolution( ) );
     // FIXME: num*ModelVars not controlled from XML yet
     info.numBoolVars = gBioModel->getAgentSpecies()[ i ]->getNumModelBools();
     info.numStateModelReals = gBioModel->getAgentSpecies()[ i ]->getNumModelReals();

@@ -36,8 +36,8 @@ void ModelRoutine::computeMechIntrctSpAgent( const S32 iter, const VIdx& vIdx0, 
   /* MODEL START */
 
   S32 i;
-  for(i = 0; i < ( S32 )gMechIntrctSpAgent.size(); i++) {
-    gMechIntrctSpAgent[i]->compute( iter, vIdx0, spAgent0, ubEnv0, vIdx1, spAgent1, ubEnv1, dir, dist, mechIntrctData0, mechIntrctData1, link, end0, end1, unlink );
+  for(i = 0; i < ( S32 ) gBioModel->getMechIntrctSpAgent().size(); i++) {
+    gBioModel->getMechIntrctSpAgent()[i]->compute( iter, vIdx0, spAgent0, ubEnv0, vIdx1, spAgent1, ubEnv1, dir, dist, mechIntrctData0, mechIntrctData1, link, end0, end1, unlink );
   }
 
   /* MODEL END */

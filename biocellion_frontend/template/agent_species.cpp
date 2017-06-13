@@ -363,12 +363,12 @@ void AgentSpecies::setInitialAgentState( SpAgentState& state ) const {
   REAL volume = 0.0;
   for( i = 0 ; i < (S32)mParticles.size() ; i++ ) {
     state.setModelReal( mParticles[ i ].getModelRealIdx(), mParticles[ i ].getInitialValue() );
-    volume += mParticles[ i ].getInitialValue() / gParticles[ mParticles[ i ].getParticleIdx() ]->getDensity( );
+    volume += mParticles[ i ].getInitialValue() / gBioModel->getParticles()[ mParticles[ i ].getParticleIdx() ]->getDensity( );
   }
   REAL radius = cbrt( 3.0 * volume / (4.0 * MODEL_PI ) );
 
   // if radius is too big, then agent-agent interactions will be missed.
-  if( true ) {
+  if( false ) {
     OUTPUT( 0, ""
             << " radius: " << radius
             << " mDMax: " << mDMax
@@ -403,14 +403,40 @@ void AgentSpecies::updateSpAgentState( const VIdx& vIdx, const JunctionData& jun
       state.incModelReal( mParticles[ pIdx ].getModelRealIdx( ) , currentKineticFactor * yield * gSimulator->getAgentTimeStep() );
     }
   }
-
+  //update radius here
+  updateSpAgentRadius( state );
   for ( pIdx = 0; pIdx < (S32) mParticles.size( ); pIdx++) {
     OUTPUT( 0,
-            "Agent particle: " << gParticles[ mParticles[ pIdx ].getParticleIdx( ) ]->getName()
+            "Agent particle: " << gBioModel->getParticles()[ mParticles[ pIdx ].getParticleIdx( ) ]->getName()
             << " mass: " << state.getModelReal( mParticles[ pIdx ].getModelRealIdx( ) )
             );
   }
   
+}
+
+void AgentSpecies::updateSpAgentRadius( SpAgentState& state ) const {
+  //calculate new volume based off of updated mass
+  S32 i;
+  REAL mass = 0.0;
+  REAL volume = 0.0;
+  for( i = 0; i < (S32) mParticles.size( ); i++) {
+    mass = state.getModelReal( mParticles[ i ].getModelRealIdx( ) );
+    volume += mass / gBioModel->getParticles()[ mParticles[ i ].getParticleIdx() ]->getDensity( );
+  }
+  //calculate new radius based off of updated mass
+  REAL radius = cbrt( 3.0 * volume / (4.0 * MODEL_PI ) );
+  
+  // if radius is too big, then agent-agent interactions will be missed.
+  if( false ) {
+    OUTPUT( 0, ""
+            << " radius: " << radius
+            << " mDMax: " << mDMax
+            << " mDMax/2.0: " << mDMax/2.0
+            );
+  }
+  CHECK( radius <= mDMax / 2.0 );
+  //update the radius
+  state.setRadius( radius );
 }
 
 void AgentSpecies::adjustSpAgent( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, SpAgentState& state/* INOUT */, VReal& disp ) const {
@@ -459,7 +485,7 @@ static inline void findChemoTaxisDirectionAndConcentration( const S32 elemIdx,  
   bckDir = VReal::ZERO - fwdDir;
 
   // Find solute concentration just ahead and just behind agent
-  REAL offset_magnitude = 1.42 * gAgentGrid->getResolution( ) / gBioModel->getSolutes( )[ elemIdx ]->getSubgridDimension( );
+  REAL offset_magnitude = 1.42 * gBioModel->getAgentGrid()->getResolution( ) / gBioModel->getSolutes( )[ elemIdx ]->getSubgridDimension( );
   VReal curPos = vOffset;
   VReal fwdPos = vOffset + fwdDir * offset_magnitude; // 1.5 * state.getRadius()
   VReal bckPos = vOffset + bckDir * offset_magnitude; // 1.5 * state.getRadius()
