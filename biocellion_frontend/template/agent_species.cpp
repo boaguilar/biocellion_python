@@ -1,5 +1,26 @@
 #include "biomodel.h"
 
+/*
+ * replace contents of vUnit with a unit vector
+ */
+
+static inline void randomUnitVector( VReal& vUnit ) {
+  const REAL epsilon = 0.1;
+
+  vUnit = VReal::ZERO;
+  while(vUnit.length() < epsilon) {
+    for (S32 dim = 0; dim < DIMENSION; dim++) {
+      if( dim == DIMENSION-1 ) {
+        vUnit[dim] = 0.0;
+        continue;
+      }
+      vUnit[dim] = -0.5 + Util::getModelRand(MODEL_RNG_UNIFORM);
+    }
+    vUnit = VReal::normalize(epsilon, vUnit);
+  }
+
+}
+
 /*********************************
  *  AgentSpeciesParticle
  *********************************/
@@ -39,12 +60,19 @@ void AgentSpeciesParticle::setInitialValue( const REAL& value ) {
  *  AgentSpecies
  *********************************/
 
+AgentSpecies::AgentSpecies( )
+  : ParamHolder( ),
+    mName( "" ), mSpeciesName( "" ), mSpeciesIdx( -1),
+    mDMax( 0.0 ),
+    mNumModelBools( 0 ), mNumModelReals( 0 ), mNumModelInts( 0 ),
+    mUseMechForceReals(false)    
+{
+  // empty
+}
+
 AgentSpecies::AgentSpecies(const std::string& name, const std::string& speciesName, const S32& species_idx, const S32& num_real_param, const S32& num_int_param, const S32& num_bool_param, const S32& num_string_param)
-  : mName(name), mSpeciesName(speciesName), mSpeciesIdx(species_idx),
-    mParamsReal(num_real_param),
-    mParamsInt(num_int_param),
-    mParamsBool(num_bool_param),
-    mParamsString(num_string_param),
+  : ParamHolder( num_real_param, num_int_param, num_bool_param, num_string_param ),
+    mName(name), mSpeciesName(speciesName), mSpeciesIdx(species_idx),
     mDMax(0.0),
     mNumModelBools(0), mNumModelReals(0), mNumModelInts(0), 
     mUseMechForceReals(false)
@@ -101,26 +129,6 @@ const std::string& AgentSpecies::getSpeciesName() const
 S32 AgentSpecies::getSpeciesIdx() const
 {
   return mSpeciesIdx;
-}
-
-REAL AgentSpecies::getParamReal(const S32& idx) const
-{
-  return mParamsReal[idx];
-}
-
-S32 AgentSpecies::getParamInt(const S32& idx) const
-{
-  return mParamsInt[idx];
-}
-
-BOOL AgentSpecies::getParamBool(const S32& idx) const
-{
-  return mParamsBool[idx];
-}
-
-const std::string& AgentSpecies::getParamString(const S32& idx) const
-{
-  return mParamsString[idx];
 }
 
 REAL AgentSpecies::getDMax() const
@@ -215,47 +223,6 @@ Vector<DistanceJunction *>& AgentSpecies::getDistanceJunctions( )
   return mDistanceJunctions;
 }
 
-template <class T, class U>
-S32 getIdxGeneric( const std::string& param_name, std::map<std::string, T>& idx_map, const U& size )
-{
-  S32 i = -1;
-  typename std::map<std::string, T>::const_iterator it = idx_map.find(param_name);
-  if( it != idx_map.end() ) {
-    i = it->second;
-  } else {
-    for( it = idx_map.begin(); it != idx_map.end(); it++ ) {
-      if( it->second > i ) {
-        i = it->second;
-      }
-    }
-    i++;
-    idx_map[ param_name ] = i;
-  }
-  CHECK( i >= 0 );
-  CHECK( ((U)i) < size );
-  return i;
-}
-
-S32 AgentSpecies::getIdxReal(const std::string& param_name)
-{
-  return getIdxGeneric( param_name, mIdxReal, mParamsReal.size() );
-}
-
-S32 AgentSpecies::getIdxInt(const std::string& param_name)
-{
-  return getIdxGeneric( param_name, mIdxInt, mParamsInt.size() );
-}
-
-S32 AgentSpecies::getIdxBool(const std::string& param_name)
-{
-  return getIdxGeneric( param_name, mIdxBool, mParamsBool.size() );
-}
-
-S32 AgentSpecies::getIdxString(const std::string& param_name)
-{
-  return getIdxGeneric( param_name, mIdxString, mParamsString.size() );
-}
-
 const Vector< Chemotaxis * >& AgentSpecies::getChemotaxis() const
 {
   return mChemotaxis;
@@ -300,26 +267,6 @@ void AgentSpecies::setSpeciesIdx(const S32& idx)
   mSpeciesIdx = idx;
 }
 
-void AgentSpecies::setParamReal(const S32& idx, const REAL& param)
-{
-  mParamsReal[idx] = param;
-}
-
-void AgentSpecies::setParamInt(const S32& idx, const S32& param)
-{
-  mParamsInt[idx] = param;
-}
-
-void AgentSpecies::setParamBool(const S32& idx, const BOOL& param)
-{
-  mParamsBool[idx] = param;
-}
-
-void AgentSpecies::setParamString(const S32& idx, const std::string& param)
-{
-  mParamsString[idx] = param;
-}
-
 void AgentSpecies::setDMax(const REAL& value)
 {
   mDMax = value;
@@ -360,24 +307,10 @@ void AgentSpecies::addParticle( const S32& particleIdx, const S32& modelRealIdx,
 void AgentSpecies::setInitialAgentState( SpAgentState& state ) const {
   state.setType( mSpeciesIdx );
   S32 i;
-  REAL volume = 0.0;
   for( i = 0 ; i < (S32)mParticles.size() ; i++ ) {
     state.setModelReal( mParticles[ i ].getModelRealIdx(), mParticles[ i ].getInitialValue() );
-    volume += mParticles[ i ].getInitialValue() / gBioModel->getParticles()[ mParticles[ i ].getParticleIdx() ]->getDensity( );
   }
-  REAL radius = cbrt( 3.0 * volume / (4.0 * MODEL_PI ) );
-
-  // if radius is too big, then agent-agent interactions will be missed.
-  if( false ) {
-    OUTPUT( 0, ""
-            << " radius: " << radius
-            << " mDMax: " << mDMax
-            << " mDMax/2.0: " << mDMax/2.0
-            );
-  }
-  CHECK( radius <= mDMax / 2.0 );
-
-  state.setRadius( radius );
+  updateSpAgentRadius( state );
 }
 
 void AgentSpecies::updateSpAgentState( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const NbrUBEnv& nbrUBEnv, SpAgentState& state ) const {
@@ -445,6 +378,49 @@ void AgentSpecies::adjustSpAgent( const VIdx& vIdx, const JunctionData& junction
   adjustSpAgentChemotaxis( vIdx, junctionData, vOffset, mechIntrctData, nbrUBEnv, state, disp );
 }
 
+void AgentSpecies::updateSpAgentBirthDeath( const VIdx& vIdx, const SpAgent& spAgent, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, BOOL& divide, BOOL& disappear ) {
+  disappear = false;
+  if ( spAgent.state.getRadius() >= getParamReal( getIdxReal( SPECIES_divRadius ) ) ) {
+    divide = true;
+  } else {
+    divide = false;
+  }
+}
+
+void AgentSpecies::divideSpAgent( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, SpAgentState& motherState, VReal& motherDisp, SpAgentState& daughterState, VReal& daughterDisp, Vector<BOOL>& v_junctionDivide, BOOL& motherDaughterLinked, JunctionEnd& motherEnd, JunctionEnd& daughterEnd ) {
+  S32 i;
+  REAL motherFraction = 0.4 + 0.05 * Util::getModelRand( MODEL_RNG_UNIFORM );
+  REAL motherMass = 0;
+  daughterState.setType( motherState.getType( ) );
+  for( i = 0; i < (S32) mParticles.size(); i++) {
+    motherMass = motherState.getModelReal( mParticles[ i ].getModelRealIdx( ) );
+    REAL newMass = motherMass * motherFraction;
+    motherState.setModelReal( mParticles[ i ].getModelRealIdx( ), newMass );
+    daughterState.setModelReal( mParticles[ i ].getModelRealIdx( ), motherMass - newMass );
+  }
+  
+  updateSpAgentRadius( motherState );
+  updateSpAgentRadius( daughterState );
+  REAL avg_radius = ( motherState.getRadius( ) + daughterState.getRadius( ) ) / 2;
+  VReal unit_vector;
+  randomUnitVector( unit_vector );
+  motherDisp = unit_vector * avg_radius;
+  daughterDisp = unit_vector * (-avg_radius);
+
+  S32 j;
+  for( j = 0; j < (S32) v_junctionDivide.size(); j++ ) {
+    if( Util::getModelRand( MODEL_RNG_UNIFORM ) < 0.5 ) {
+      v_junctionDivide[ j ] = false;
+    } else {
+      v_junctionDivide[ j ] = true;
+    }
+  }
+  
+  motherDaughterLinked = false;
+  
+}
+
+
 /*
  **************************************** CHEMOTAXIS BEGIN ****************************************************
  */
@@ -457,26 +433,6 @@ static inline S32 countTouches( const JunctionData& junctionData ) {
     }
   }
   return count;
-}
-
-/*
- * replace contents of vUnit with a unit vector
- */
-static inline void randomUnitVector( VReal& vUnit ) {
-  const REAL epsilon = 0.1;
-
-  vUnit = VReal::ZERO;
-  while(vUnit.length() < epsilon) {
-    for (S32 dim = 0; dim < DIMENSION; dim++) {
-      if( dim == DIMENSION-1 ) {
-        vUnit[dim] = 0.0;
-        continue;
-      }
-      vUnit[dim] = -0.5 + Util::getModelRand(MODEL_RNG_UNIFORM);
-    }
-    vUnit = VReal::normalize(epsilon, vUnit);
-  }
-
 }
 
 static inline void findChemoTaxisDirectionAndConcentration( const S32 elemIdx,  const VReal& vOffset, const NbrUBEnv& nbrUBEnv, const SpAgentState& state, VReal& dir, REAL& delta ) {

@@ -439,3 +439,13 @@ void terminateBioModel() {
 void BioModel::updateSpAgentState( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const NbrUBEnv& nbrUBEnv, SpAgentState& state) const {
   mAgentSpecies[ state.getType() ]->updateSpAgentState(vIdx, junctionData, vOffset, nbrUBEnv, state);
 }
+
+void BioModel::updateSpAgentBirthDeath( const VIdx& vIdx, const SpAgent& spAgent, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, BOOL& divide, BOOL& disappear )
+{
+  mAgentSpecies[ spAgent.state.getType() ]->updateSpAgentBirthDeath( vIdx, spAgent, mechIntrctData, nbrUBEnv, divide, disappear);
+}
+
+void BioModel::divideSpAgent( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, SpAgentState& motherState/* INOUT */, VReal& motherDisp, SpAgentState& daughterState, VReal& daughterDisp, Vector<BOOL>& v_junctionDivide, BOOL& motherDaughterLinked, JunctionEnd& motherEnd, JunctionEnd& daughterEnd )
+ {
+   mAgentSpecies[ motherState.getType() ]->divideSpAgent( vIdx, junctionData, vOffset, mechIntrctData, nbrUBEnv, motherState, motherDisp, daughterState, daughterDisp, v_junctionDivide, motherDaughterLinked, motherEnd, daughterEnd);
+ }

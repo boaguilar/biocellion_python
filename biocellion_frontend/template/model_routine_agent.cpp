@@ -84,6 +84,7 @@ void ModelRoutine::updateSpAgentBirthDeath( const VIdx& vIdx, const SpAgent& spA
   divide = false;
   disappear = false;
 
+  gBioModelRW->updateSpAgentBirthDeath( vIdx, spAgent, mechIntrctData, nbrUBEnv, divide, disappear);
   /* MODEL END */
 
   return;
@@ -132,8 +133,8 @@ void ModelRoutine::adjustSpAgent( const VIdx& vIdx, const JunctionData& junction
 void ModelRoutine::divideSpAgent( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, SpAgentState& motherState/* INOUT */, VReal& motherDisp, SpAgentState& daughterState, VReal& daughterDisp, Vector<BOOL>& v_junctionDivide, BOOL& motherDaughterLinked, JunctionEnd& motherEnd, JunctionEnd& daughterEnd ) {
   /* MODEL START */
 
-  ERROR( "unimplemented." );
-
+  gBioModelRW->divideSpAgent( vIdx, junctionData, vOffset, mechIntrctData, nbrUBEnv, motherState, motherDisp, daughterState, daughterDisp, v_junctionDivide, motherDaughterLinked, motherEnd, daughterEnd);
+  
   /* MODEL END */
 
   return;
