@@ -1,23 +1,6 @@
 from biocell import *
 import xml.etree.ElementTree as ET
 
-def same_type( a, b ):
-    if type( a ).__name__ == 'instance':
-        ta = a.__class__.__name__
-    elif type( a ).__name__ == 'classobj':
-        ta = a.__name__
-    else:
-        raise Exception( "ERROR: Unable to find type of object: " + str( a ) )
-
-    if type( b ).__name__ == 'instance':
-        tb = b.__class__.__name__
-    elif type( b ).__name__ == 'classobj':
-        tb = b.__name__
-    else:
-        raise Exception( "ERROR: Unable to find type of object: " + str( b ) )
-
-    return ta == tb
-
 class ModelScanner:
 
     def __init__( self, model ):
@@ -111,9 +94,6 @@ class ModelScanner:
                     msg  = "Param ( " + str( param ) + " ) of ( " + node.tag + " ) not valid, check name, units, and value."
                     msg += " Expected param is " + str( default_param )
                     print( msg )
-
-
-
 
         for name in required_children:
             if name not in found_children:

@@ -1,4 +1,7 @@
 # files must be listed in dependency order.
+# utilities
+from .utils import get_type_of, same_type
+
 # basic generic support
 from .unit import Unit, AllUnits
 from .param import Param
@@ -50,4 +53,4 @@ from .agent_grid import AgentGrid
 from .idynomics import IDynoMiCS
 from .biomodel import BioModel
 from .model_writer import ModelWriter
-from .model_scanner import ModelScanner
+from .model_scanner import ModelScanner, get_type_of, same_type
