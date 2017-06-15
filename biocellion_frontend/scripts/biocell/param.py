@@ -1,5 +1,60 @@
 from biocell import *
 
+def guessStringTypeAndConvert( string_value, unit_string ):
+    if unit_string is None or unit_string in Param.mIntUnits:
+        try:
+            value = int(string_value)
+            if unit_string is None:
+                unit_string = 'int'
+        except:
+            pass
+                
+    if unit_string is None or unit_string in Param.mRealUnits:
+        try:
+            value = float(string_value)
+            if unit_string is None:
+                unit_string = 'float'
+        except:
+            pass
+        
+    if unit_string is None or unit_string in Param.mBoolUnits:
+        try:
+            string_value = str(string_value)
+            if string_value.lower() == "true":
+                value = True
+                if unit_string is None:
+                    unit_string = 'bool'
+            elif string_value.lower() == "false":
+                value = False
+                if unit_string is None:
+                    unit_string = 'bool'
+            else:
+                pass
+        except:
+            pass
+
+    if unit_string is None or unit_string in Param.mStringUnits:
+        try:
+            value = str(string_value)
+            if unit_string is None:
+                unit_string = 'str'
+        except:
+            pass
+
+    return value, unit_string
+    
+
+def convertToStandardUnit( value, unit ):
+    for u in Param.mAllUnits.getUnits( ):
+        if u.contains( unit ):
+            value = u.convertToStandard( unit, value )
+            unit = u.getStandardUnit( )
+                
+    if unit in Param.mStringUnits:
+        unit = Param.mStringStandardUnit
+        
+    return value, unit
+
 #####################################################
 # Param
 #####################################################
@@ -10,13 +65,7 @@ class Param:
     mStringStandardUnit = "str"
     
     def toStandardUnit( self ):
-        for u in self.mAllUnits.getUnits( ):
-            if u.contains( self.mUnit ):
-                self.mValue = u.convertToStandard( self.mUnit, self.mValue )
-                self.mUnit = u.getStandardUnit( )
-                
-        if self.mUnit in self.mStringUnits:
-            self.mUnit = self.mStringStandardUnit
+        self.mValue, self.mUnit = convertToStandardUnit( self.mValue, self.mUnit )
         return
     
     mRealUnits = ( "float", "m2.m-3" ) + mAllUnits.getUnitStrings( )
@@ -25,45 +74,7 @@ class Param:
     
     def __init__( self, name, unit, default_value, required=False, prefix="" ):
         # infer type from format of default_value
-        if unit is None or unit in self.mIntUnits:
-            try:
-                default_value = int(default_value)
-                if unit is None:
-                    unit = 'int'
-            except:
-                pass
-                
-        if unit is None or unit in self.mRealUnits:
-            try:
-                default_value = float(default_value)
-                if unit is None:
-                    unit = 'float'
-            except:
-                pass
-        
-        if unit is None or unit in self.mBoolUnits:
-            try:
-                default_value = str(default_value)
-                if default_value.lower() == "true":
-                    default_value = True
-                    if unit is None:
-                        unit = 'bool'
-                elif default_value.lower() == "false":
-                    default_value = False
-                    if unit is None:
-                        unit = 'bool'
-                else:
-                    pass
-            except:
-                pass
-
-        if unit is None or unit in self.mStringUnits:
-            try:
-                default_value = str(default_value)
-                if unit is None:
-                    unit = 'str'
-            except:
-                pass
+        default_value, unit = guessStringTypeAndConvert( default_value, unit )
 
         self.mName = str( name )
         self.mPrefix = str( prefix )

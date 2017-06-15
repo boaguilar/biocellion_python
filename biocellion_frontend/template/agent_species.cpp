@@ -55,6 +55,45 @@ void AgentSpeciesParticle::setInitialValue( const REAL& value ) {
   mInitialValue = value;
 }
 
+/*********************************
+ *  AgentSpeciesMolecule
+ *********************************/
+
+AgentSpeciesMolecule::AgentSpeciesMolecule( const S32& moleculeIdx, const S32& ODEIdx, const S32& initialValue)
+  : mMoleculeIdx(moleculeIdx), mODEIdx(ODEIdx), mInitialValue(initialValue)
+{
+  //empty
+}
+
+S32 AgentSpeciesMolecule::getMoleculeIdx() const
+{
+  return mMoleculeIdx;
+}
+
+S32 AgentSpeciesMolecule::getODEIdx() const
+{
+  return mODEIdx;
+}
+
+S32 AgentSpeciesMolecule::getInitialValue() const
+{
+  return mInitialValue;
+}
+
+void AgentSpeciesMolecule::setMoleculeIdx( const S32& value )
+{
+  mMoleculeIdx = value;
+}
+
+void AgentSpeciesMolecule::setODEIdx( const S32& value )
+{
+  mODEIdx = value;
+}
+
+void AgentSpeciesMolecule::setInitialValue( const S32& value )
+{
+  mInitialValue = value;
+}
 
 /*********************************
  *  AgentSpecies
@@ -181,6 +220,11 @@ S32 AgentSpecies::getNumMechModelInts() const
   return (S32) mIdxMechModelInts.size();
 }
 
+S32 AgentSpecies::getNumODEVariables() const
+{
+  return mNumODEVariables;
+}
+
 const Vector<InitArea *>& AgentSpecies::getInitAreas( ) const
 {
   return mInitAreas;
@@ -252,6 +296,16 @@ Vector< EntryCondition* >& AgentSpecies::getEntryConditions( )
   return mEntryConditions;
 }
 
+const Vector< AgentSpeciesMolecule* >& AgentSpecies::getMolecules() const
+{
+  return mMolecules;
+}
+
+Vector< AgentSpeciesMolecule* >& AgentSpecies::getMolecules()
+{
+  return mMolecules;
+}
+
 void AgentSpecies::setName(const std::string& name)
 {
   mName = name;
@@ -311,6 +365,14 @@ void AgentSpecies::setInitialAgentState( SpAgentState& state ) const {
     state.setModelReal( mParticles[ i ].getModelRealIdx(), mParticles[ i ].getInitialValue() );
   }
   updateSpAgentRadius( state );
+  for( i = 0 ; i < (S32)mMolecules.size() ; i++ ) {
+    state.setODEVal( 0, i, mMolecules[ i ]->getInitialValue( ) );
+  }
+}
+
+void AgentSpecies::setNumODEVariables( const S32& numODEVariables )
+{
+  mNumODEVariables = numODEVariables;
 }
 
 void AgentSpecies::updateSpAgentState( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const NbrUBEnv& nbrUBEnv, SpAgentState& state ) const {
@@ -391,6 +453,7 @@ void AgentSpecies::divideSpAgent( const VIdx& vIdx, const JunctionData& junction
   S32 i;
   REAL motherFraction = 0.4 + 0.05 * Util::getModelRand( MODEL_RNG_UNIFORM );
   REAL motherMass = 0;
+  REAL motherVar = 0;
   daughterState.setType( motherState.getType( ) );
   for( i = 0; i < (S32) mParticles.size(); i++) {
     motherMass = motherState.getModelReal( mParticles[ i ].getModelRealIdx( ) );
@@ -399,6 +462,13 @@ void AgentSpecies::divideSpAgent( const VIdx& vIdx, const JunctionData& junction
     daughterState.setModelReal( mParticles[ i ].getModelRealIdx( ), motherMass - newMass );
   }
   
+  for( i = 0; i < (S32) mMolecules.size() ; i++ ) {
+    motherVar = motherState.getODEVal( 0, mMolecules[ i ]->getODEIdx( ) );
+    REAL newVar = motherVar * motherFraction;
+    motherState.setODEVal( 0, mMolecules[ i ]->getODEIdx( ), newVar );
+    daughterState.setODEVal( 0, mMolecules[ i ]->getODEIdx( ), motherVar - newVar );
+  }
+
   updateSpAgentRadius( motherState );
   updateSpAgentRadius( daughterState );
   REAL avg_radius = ( motherState.getRadius( ) + daughterState.getRadius( ) ) / 2;

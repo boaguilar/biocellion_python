@@ -19,6 +19,23 @@ protected:
   
 };
 
+class AgentSpeciesMolecule {
+public:
+  AgentSpeciesMolecule( const S32& moleculeIdx, const S32& ODEIdx, const S32& initialValue);
+  S32 getMoleculeIdx() const;
+  S32 getODEIdx() const;
+  S32 getInitialValue() const;
+  void setMoleculeIdx( const S32& value );
+  void setODEIdx( const S32& value );
+  void setInitialValue( const S32& value );  
+
+protected:
+  S32 mMoleculeIdx;
+  S32 mODEIdx;
+  S32 mInitialValue;
+};
+
+
 class AgentSpecies : public ParamHolder {
 
 public:
@@ -38,6 +55,8 @@ public:
   S32 getIdxMechForceRealY() const;
   S32 getIdxMechForceRealZ() const;
   S32 getNumMechModelInts() const;
+  S32 getNumODEVariables() const;
+
   const Vector<InitArea *>& getInitAreas( ) const;
   Vector<InitArea *>& getInitAreas( );
   const Vector<Adhesion *>& getAdhesions( ) const;
@@ -55,6 +74,8 @@ public:
   Vector< Chemotaxis * >& getChemotaxis();
   const Vector< S32 >& getReactions() const;
   Vector< S32 >& getReactions();
+  const Vector< AgentSpeciesMolecule* >& getMolecules() const;
+  Vector< AgentSpeciesMolecule* >& getMolecules();
 
   void setName(const std::string& name);
   void setSpeciesName(const std::string& speciesName);
@@ -67,7 +88,7 @@ public:
   void setIdxMechForceReals(const S32& idx_x, const S32& idx_y, const S32& idx_z);
   void addParticle( const S32& particleIdx, const S32& modelRealIdx, const REAL& initialValue );
   void setInitialAgentState( SpAgentState& state ) const;
-
+  void setNumODEVariables( const S32& numODEVariables );
   // support for model_routine_agent.cpp
   void adjustSpAgent( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, SpAgentState& state/* INOUT */, VReal& disp ) const;
   void adjustSpAgentChemotaxis( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, SpAgentState& state/* INOUT */, VReal& disp ) const;
@@ -80,7 +101,7 @@ protected:
   std::string mSpeciesName;
   S32 mSpeciesIdx;
   REAL        mDMax;
-  S32         mNumModelBools, mNumModelReals, mNumModelInts;
+  S32         mNumModelBools, mNumModelReals, mNumModelInts, mNumODEVariables;
   BOOL        mUseMechForceReals;
   Vector<S32> mIdxMechForceReals;
   Vector<S32> mIdxMechModelInts;
@@ -92,6 +113,7 @@ protected:
   Vector <Chemotaxis * > mChemotaxis;
   Vector < S32 > mReactions;
   Vector < EntryCondition* > mEntryConditions;
+  Vector< AgentSpeciesMolecule *> mMolecules;
 };
 
 #endif /* _AGENT_SPECIES_H_ */

@@ -85,7 +85,7 @@ class ItemHolder:
         s = "<ITEM_HOLDER_ITEMS_" + str( self.mItemClass ) + "\n"
 
         for name in self.mOrder:
-            s += str( self.mItems[ name ] )
+            s += str( self.mItems[ name ] ) + "\n"
 
         s += "</ITEM_HOLDER_ITEMS_" + str( self.mItemClass ) + "\n"
         return s

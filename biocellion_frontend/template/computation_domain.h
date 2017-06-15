@@ -20,23 +20,91 @@ protected:
   S32 mNK;
 };
 
-class BoundaryCondition {};
+class XYZParam {
+public:
+  XYZParam( );
 
-class ComputationDomain : public ParamHolder{
+  const std::string& getName( ) const;
+  S32 getX( ) const;
+  S32 getY( ) const;
+  S32 getZ( ) const;
+  
+  void setName( const std::string& value );
+  void setX( const S32& value );
+  void setY( const S32& value );
+  void setZ( const S32& value );
+
+protected:
+  std::string mName;
+  S32 mX, mY, mZ;
+};
+
+class Shape {
+public:
+  Shape( );
+
+  const Vector< XYZParam >& getXYZParams( ) const;
+  Vector< XYZParam >& getXYZParams( );
+  
+protected:
+  Vector< XYZParam > mXYZParams;
+};
+
+class IsPermeableTo {
+public:
+  IsPermeableTo( );
+
+  const std::string& getDetail( ) const;
+  REAL getValue( ) const;
+
+  void setDetail( const std::string& value );
+  void setValue( const REAL& value );
+  
+protected:
+  std::string mDetail;
+  REAL mValue;
+};
+
+class BoundaryCondition : public ParamHolder {
+public:
+  BoundaryCondition( );
+  virtual ~BoundaryCondition( );
+
+  const std::string& getName( ) const;
+  const std::string& getClass( ) const;
+  const Vector< Shape* >& getShapes( ) const;
+  Vector< Shape* >& getShapes( );
+  const Vector< IsPermeableTo >& getIsPermeableTos( ) const;
+  Vector< IsPermeableTo >& getIsPermeableTos( );
+  
+  void setName( const std::string& value );
+  void setClass( const std::string& value );
+
+protected:
+  std::string mName;
+  std::string mClass;
+  Vector< Shape* > mShapes;
+  Vector< IsPermeableTo > mIsPermeableTos;
+};
+
+class ComputationDomain : public ParamHolder {
 public:
   ComputationDomain();
+  virtual ~ComputationDomain();
   std::string getName() const { return mName; };
   S32 getComputationDomainIndex() const { return mComputationDomainIndex; };
   void setName(const std::string& name);
   void setComputationDomainIndex(const S32& computationDomainIndex);
-  const Vector <BoundaryCondition >& getBoundaryConditions() const { return mBoundaryCyclic; };
-  Vector <BoundaryCondition >& getBoundaryConditions() { return mBoundaryCyclic; };
+  const Grid& getGrid() const { return mGrid; };
+  Grid& getGrid() { return mGrid; };
+  const Vector <BoundaryCondition* >& getBoundaryConditions() const { return mBoundaryConditions; };
+  Vector <BoundaryCondition* >& getBoundaryConditions() { return mBoundaryConditions; };
   
 protected:
   std::string mName;
   S32 mComputationDomainIndex;
   Grid mGrid;
-  Vector<BoundaryCondition > mBoundaryCyclic;
+  Vector< BoundaryCondition* > mBoundaryConditions;
 };
 
 

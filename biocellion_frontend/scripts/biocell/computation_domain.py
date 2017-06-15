@@ -1,29 +1,29 @@
 from biocell import *
 
-class ComputationDomainBoundaryCondition( ParamHolder ):
-
-    def __init__( self ):
-        ParamHolder.__init__(self)
-        self.addAttribute( Param( "class", "str", "", True ) )
-        self.addAttribute( Param( "name", "str", "", True ) )
-        return
-    
 class ComputationDomain( ParamHolder ):
 
     def __init__( self ):
         ParamHolder.__init__(self)
+        self.setPrefix( "DOMAIN" )
         self.addAttribute( Param( "name", "str", "", True ) )
         self.addParam( Param( "resolution", "um", 0 ) )
         self.addParam( Param( "specificArea", "m2.m-3", 0 ) )
         self.addParam( Param( "hasBulk", "bool", False ) )
         self.addParam( Param( "boundaryLayer", "um", 0 ) )
         self.addParam( Param( "biofilmDiffusivity", "float", 0 ) )
+
+        self.mPrivateNumberHiddenParams = [  ]
+        self.mPrivateBoolHiddenParams = [  ]
+        self.mPrivateStringHiddenParams = [  ]
+        self.mPrivateHiddenParams = self.mPrivateNumberHiddenParams + self.mPrivateBoolHiddenParams + self.mPrivateStringHiddenParams
+        self.mHiddenParams = self.mHiddenParams + self.mPrivateHiddenParams
+
         self.mGrid = ComputationDomainGrid( )
         self.mBoundaryConditions = ItemHolder( ComputationDomainBoundaryCondition )
         return
 
     def getEnumToken(self):
-        return "DOMAIN_%s" % ( self.getAttribute( 'name' ).getValue( ), )
+        return "%s_%s" % ( self.getPrefix(), self.getAttribute( 'name' ).getValue( ), )
     
     def getGrid( self ):
         return self.mGrid
@@ -33,12 +33,36 @@ class ComputationDomain( ParamHolder ):
 
     def getBioModelH( self, indent, depth ):
         lines = [ ]
-        lines.append( '// FIXME: ComputationDomain' )
         return "\n".join( lines )
 
     def getInitializeBioModel(self, indent, depth):
-        lines = [ ]
-        lines.append( '// FIXME: ComputationDomain' )
+        varname = "domain"
+        lines = []
+        lines.append( (depth*indent) + "{" )
+        depth += 1
+        lines.append( (depth*indent) + "ComputationDomain *%s = new ComputationDomain(  );" % ( varname, ) )
+        s = ParamHolder.getInitializeBioModel( self, varname, indent, depth )
+        if s:
+            lines.append( s )
+        s = self.getInitializeBioModelSetDataMembers( varname, "->", indent, depth,
+                                                      self.mPrivateBoolHiddenParams,
+                                                      self.mPrivateNumberHiddenParams,
+                                                      self.mPrivateStringHiddenParams )
+        lines.append( s )
+        
+        container_name = "%s->getGrid()" % ( varname, )
+        s = self.mGrid.getInitializeBioModel( container_name, indent, depth )
+        if s:
+            lines.append( s )
+
+        container_name = "%s->getBoundaryConditions()" % ( varname, )
+        s = self.mBoundaryConditions.getInitializeBioModel( container_name, indent, depth )
+        if s:
+            lines.append( s )
+        
+        lines.append( (depth*indent) + "gBioModelRW->getWorld( ).getComputationDomains().push_back( %s );" % ( varname, ) )
+        depth -= 1;
+        lines.append( (depth*indent) + "}" )
         return "\n".join( lines )
     
     def __str__(self):
@@ -60,9 +84,32 @@ class AllComputationDomains( ItemHolder ):
 
     def getBioModelH( self, indent, depth ):
         lines = [ ]
+        lines.append( self.getAllParamNames( indent, depth ) )
+        lines.append( "" )
         lines.append( self.getDomainsEnum( indent, depth ) )
+        lines.append( "" )
+        lines.append( self.getAllBoundaryConditionParamNames( indent, depth ) )
+        lines.append( "" )
         for name in self.mOrder:
             lines.append( self.mItems[ name ].getBioModelH( indent, depth ) )
+        return "\n".join( lines )
+
+    def getAllBoundaryConditionParamNames( self, indent, depth ):
+        all_params = { }
+        all_order = [ ]
+        for domain_name in self.getKeys( ):
+            domain = self.getItem( domain_name )
+            for bc_name in domain.getBoundaryConditions( ).getKeys( ):
+                bc = domain.getBoundaryConditions( ).getItem( bc_name )
+                for param_name in bc.getParamKeys( ):
+                    if param_name not in all_params:
+                        all_params[ param_name ] = bc.getParam( param_name )
+                        all_order.append( param_name )
+                    
+        lines = []
+        for n in all_order:
+            s = (depth*indent) + "const std::string %s = \"%s\";" % ( all_params[ n ].getConstName( ), n, )
+            lines.append( s )
         return "\n".join( lines )
     
     def getDomainsEnum(self, indent, depth):
@@ -80,7 +127,6 @@ class AllComputationDomains( ItemHolder ):
 
     def getInitializeBioModel( self, indent, depth ):
         lines = [ ]
-        lines.append( '// FIXME: ComputationDomains' )
         for name in self.mOrder:
             lines.append( self.mItems[ name ].getInitializeBioModel( indent, depth ) )
         return "\n".join( lines )

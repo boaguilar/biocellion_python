@@ -4,7 +4,7 @@ from .utils import get_type_of, same_type
 
 # basic generic support
 from .unit import Unit, AllUnits
-from .param import Param
+from .param import Param, convertToStandardUnit, guessStringTypeAndConvert
 from .param_holder import ParamHolder
 from .item_holder import ItemHolder
 
@@ -27,7 +27,8 @@ from .agar import Agar, AllAgars
 from .bulk_solute import BulkSolute, AllBulkSolutes
 from .bulk import Bulk, AllBulks
 from .computation_domain_grid import ComputationDomainGrid
-from .computation_domain_boundary_condition import ComputationDomainBoundaryCondition
+from .computation_domain_boundary_condition_shape import ComputationDomainBoundaryConditionShape, XYZParam
+from .computation_domain_boundary_condition import ComputationDomainBoundaryCondition, IsPermeableToParam
 from .computation_domain import ComputationDomain, AllComputationDomains
 from .world import World
 

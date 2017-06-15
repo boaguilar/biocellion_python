@@ -107,7 +107,17 @@ void ModelRoutine::updateSpAgentInfo( Vector<SpAgentInfo>& v_spAgentInfo ) {/* s
     MechModelVarInfo mechModelVarInfo;
     mechModelVarInfo.syncMethod = VAR_SYNC_METHOD_DELTA;
     SpAgentInfo info;
-    
+    ODENetInfo odeNetInfo;
+    odeNetInfo.numVars = gBioModel->getAgentSpecies()[ i ]->getNumODEVariables( );
+    odeNetInfo.stiff = ODE_STIFF_NORMAL;
+    odeNetInfo.h = 0.1;
+    odeNetInfo.hm = 0.01;
+    odeNetInfo.epsilon = 1e-6;
+    odeNetInfo.threshold = 1e-3;
+    odeNetInfo.errorThresholdVal = 0.0;
+    odeNetInfo.warningThresholdVal = 0.0;
+    odeNetInfo.setNegToZero = false;
+  
     // FIXME: DMax not controlled from XML yet
     info.dMax = gBioModel->getAgentSpecies()[ i ]->getDMax();
     CHECK( info.dMax <= gBioModel->getAgentGrid().getResolution( ) );
@@ -125,9 +135,11 @@ void ModelRoutine::updateSpAgentInfo( Vector<SpAgentInfo>& v_spAgentInfo ) {/* s
     } else {
       info.v_mechIntrctModelIntInfo.clear();
     }
-    // FIXME: odeNetInfo not controlled from XML yet
-    info.v_odeNetInfo.clear();
-
+    if( gBioModel->getAgentSpecies()[ i ]->getNumODEVariables() > 0 ) {
+      info.v_odeNetInfo.assign( 1, odeNetInfo );
+    } else {
+      info.v_odeNetInfo.clear();
+    }
     v_spAgentInfo[i] = info;
   }
 

@@ -13,7 +13,6 @@ class World( ParamHolder ):
 
     def getBioModelH( self, indent, depth ):
         lines = [ ]
-        lines.append( "// FIXME: World" )
         lines.append( self.mBulks.getBioModelH( indent, depth ) )
         lines.append( self.mAgars.getBioModelH( indent, depth ) )
         lines.append( self.mComputationDomains.getBioModelH( indent, depth ) )
@@ -21,7 +20,6 @@ class World( ParamHolder ):
 
     def getInitializeBioModel( self, indent, depth ):
         lines = [ ]
-        lines.append( "// FIXME: World" )
         lines.append( self.mBulks.getInitializeBioModel( indent, depth ) )
         lines.append( self.mAgars.getInitializeBioModel( indent, depth ) )
         lines.append( self.mComputationDomains.getInitializeBioModel( indent, depth ) )

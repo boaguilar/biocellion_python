@@ -86,14 +86,15 @@ class ModelScanner:
                     ok = False
                     print( "Param ( " + name + " = " + child.text + " ) of ( " + node.tag + " ) not expected, but found." )
                     print( "Allowed Params = " + str( may_params ) )
-                
-                param = Param( child.get('name'), child.get('unit'), child.text )
-                if not param_validator.validateParam( param ):
-                    ok = False
-                    default_param = param_validator.getParam( name )
-                    msg  = "Param ( " + str( param ) + " ) of ( " + node.tag + " ) not valid, check name, units, and value."
-                    msg += " Expected param is " + str( default_param )
-                    print( msg )
+
+                if ok:
+                    param = Param( child.get('name'), child.get('unit'), child.text )
+                    if not param_validator.validateParam( param ):
+                        ok = False
+                        default_param = param_validator.getParam( name )
+                        msg  = "Param ( " + str( param ) + " ) of ( " + node.tag + " ) not valid, check name, units, and value."
+                        msg += " Expected param is " + str( default_param )
+                        print( msg )
 
         for name in required_children:
             if name not in found_children:
@@ -156,7 +157,12 @@ class ModelScanner:
                     found_params.add( name )
                 else:
                     ok = False
-                    raise Exception( "ERROR : Param ( " + str( child_param ) + " ) of ( " + node.tag + " ) not expected, but found." )
+                    msg  = "ERROR : Param ( " + str( child_param ) + " ) of ( " + node.tag + " ) not expected, but found."
+                    msg += "\nmay_params: " + str( may_params )
+                    msg += "\nrequired_params: " + str( required_params )
+                    msg += "\nnode: " + str( node )
+                    msg += "\nnode_object: " + str( node_object )
+                    raise Exception( msg )
 
                 if not node_object.validateParam( child_param ):
                     ok = False
@@ -409,9 +415,104 @@ class ModelScanner:
         return ok
 
     def scanWorldComputationDomainBoundaryConditionXML( self, node, parent_object=None ):
-        ok = True
-        print( "world-computationdomain-boundarycondition not scaned yet" )
+        may_children = ( "shape", "param" )
+        required_children = ( "shape", )
+
+        if parent_object is None:
+            node_object = ComputationDomainBoundaryCondition()
+        else:
+            if not parent_object.getBoundaryConditions(  ).addItem(  ):
+                raise Exception( "ERROR : couldn't add a boundary condition." )
+            node_object = parent_object.getBoundaryConditions().getLastItem()
+            parent_object = None # don't need to add this as a child
+
+        child_methods = {
+            "param": self.scanBoundaryConditionParamXML,
+            "shape": self.scanWorldComputationDomainBoundaryConditionShapeXML,
+        }
+
+        ok = self.scanNodeXML( node, may_children, required_children, child_methods, node_object, parent_object )
+        
         return ok
+
+    def scanBoundaryConditionParamXML( self, node, parent_object=None ):
+        # only isPermeableTo needs special treatment
+        if node.get( 'name' ) != "isPermeableTo":
+            return self.scanGenericParamXML( node, parent_object )
+            
+        may_children = (  )
+        required_children = (  )
+
+        if parent_object is None:
+            node_object = IsPermeableToParam()
+        else:
+            if not parent_object.getIsPermeableTos(  ).addItem(  ):
+                raise Exception( "ERROR : couldn't add a isPermeableTo param." )
+            node_object = parent_object.getIsPermeableTos( ).getLastItem( )
+            parent_object = None # don't need to add this as a child
+
+        child_methods = {
+        }
+
+        ok = self.scanNodeXML( node, may_children, required_children, child_methods, node_object, parent_object )
+
+        value, unit = node.text, node.get( 'unit' )
+        value, unit = guessStringTypeAndConvert( value, unit )
+        value, unit = convertToStandardUnit( value, unit )
+        node_object.getAttribute( 'unit' ).setValue( unit )
+        node_object.setValue( value )
+
+        return ok
+
+    def scanWorldComputationDomainBoundaryConditionShapeXML( self, node, parent_object=None ):
+        may_children = ( "param" )
+        required_children = ( )
+
+        if parent_object is None:
+            node_object = ComputationDomainBoundaryConditionShape( )
+        else:
+            if not parent_object.getShapes(  ).addItem(  ):
+                raise Exception( "ERROR : couldn't add a boundary condition shape." )
+            node_object = parent_object.getShapes().getLastItem()
+            parent_object = None # don't need to add this as a child
+
+        child_methods = {
+            "param": self.scanBoundaryConditionShapeParamXML,
+        }
+
+        ok = self.scanNodeXML( node, may_children, required_children, child_methods, node_object, parent_object )
+        
+        return ok
+
+    def scanBoundaryConditionShapeParamXML( self, node, parent_object=None ):
+        # pointIn and vectorOut need special treatment
+        if node.get( 'name' ) not in ( "pointIn", "vectorOut" ):
+            return self.scanGenericParamXML( node, parent_object )
+            
+        may_children = (  )
+        required_children = (  )
+
+        if parent_object is None:
+            node_object = XYZParam( )
+        else:
+            if not parent_object.getXYZParams(  ).addItem(  ):
+                raise Exception( "ERROR : couldn't add a Shape param." )
+            node_object = parent_object.getXYZParams( ).getLastItem( )
+            parent_object = None # don't need to add this as a child
+
+        child_methods = {
+        }
+
+        ok = self.scanNodeXML( node, may_children, required_children, child_methods, node_object, parent_object )
+
+        for key in ( 'x', 'y', 'z' ):
+            value, unit = node.get( key ), "int"
+            value, unit = guessStringTypeAndConvert( value, unit )
+            value, unit = convertToStandardUnit( value, unit )
+            node_object.getAttribute( key ).setValue( value )
+
+        return ok
+
 
     def scanReactionXML( self, node, parent_object=None ):
         may_children = ( "param", "kineticFactor", "yield", )
