@@ -34,6 +34,16 @@ Bulk::~Bulk( ) {
   mSolutes.clear( );
 }
 
+const BulkSolute* Bulk::getSolute( const S32& soluteIdx ) const {
+  S32 i;
+  for( i = 0 ; i < (S32) mSolutes.size( ) ; i++ ) {
+    if( mSolutes[ i ]->getSolute( ) == soluteIdx ) {
+      return mSolutes[ i ];
+    }
+  }
+  return 0;
+}
+
 void Bulk::setName(const std::string& name)
 {
   mName = name;

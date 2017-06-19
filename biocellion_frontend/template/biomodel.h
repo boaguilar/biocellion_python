@@ -1,5 +1,9 @@
 #ifndef _BIOMODEL_H_
 #define _BIOMODEL_H_
+/*
+ * forward declarations
+ */
+class BioModel;
 
 #include "biocellion.h"
 #include "model_define.h"
@@ -16,6 +20,7 @@
 #include "particle.h"
 #include "computation_domain.h"
 #include "solute.h"
+#include "molecule.h"
 #include "reaction.h"
 #include "bulk.h"
 #include "agar.h"
@@ -32,6 +37,8 @@ public:
 
   const Vector< Solute * >& getSolutes( ) const;
   Vector< Solute * >& getSolutes( );
+  const Vector< Molecule * >& getMolecules( ) const;
+  Vector< Molecule * >& getMolecules( );
   const Vector< Reaction * >& getReactions( ) const;
   Vector< Reaction * >& getReactions( );
   const Vector< Solver * >& getSolvers( ) const;
@@ -53,12 +60,33 @@ public:
   Vector< Vector<BOOL> >& getMechIntrctShoveEnabled( );
   void setDistanceJunctionsEnabled( const BOOL& value );
 
+  // general time suppport
+  REAL getCurrentTime( ) const;
+  REAL getAgentTimeStep( ) const;
+  
   // general grid support
   REAL getSubgridValue( const S32& elemIdx, const NbrUBEnv& nbrUBEnv, const VReal& vOffset ) const;
   REAL getSubgridValue( const S32& elemIdx, const UBEnv& ubEnv, const VReal& vOffset ) const;
   REAL getSubgridValue( const S32& elemIdx, const UBEnv& ubEnv, const VIdx& subgridVOffset ) const;
 
-  // support for model_routine_config.cpp
+  /**********************************************
+   * support for model_routine_agent.cpp
+   **********************************************/
+  void addSpAgents( const BOOL init, const VIdx& startVIdx, const VIdx& regionSize, const IfGridBoxData<BOOL>& ifGridHabitableBoxData, Vector<VIdx>& v_spAgentVIdx, Vector<SpAgentState>& v_spAgentState, Vector<VReal>& v_spAgentOffset ) const;
+  void spAgentCRNODERHS( const S32 odeNetIdx, const VIdx& vIdx, const SpAgent& spAgent, const NbrUBEnv& nbrUBEnv, const Vector<double>& v_y, Vector<double>& v_f ) const;
+  void updateSpAgentState( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const NbrUBEnv& nbrUBEnv, SpAgentState& state) const;
+  void spAgentSecretionBySpAgent( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, SpAgentState& state/* INOUT */, Vector<SpAgentState>& v_spAgentState, Vector<VReal>& v_spAgentDisp ) const;
+  void updateSpAgentBirthDeath( const VIdx& vIdx, const SpAgent& spAgent, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, BOOL& divide, BOOL& disappear ) const;
+  void adjustSpAgent( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, SpAgentState& state/* INOUT */, VReal& disp ) const;
+  void divideSpAgent( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, SpAgentState& motherState/* INOUT */, VReal& motherDisp, SpAgentState& daughterState, VReal& daughterDisp, Vector<BOOL>& v_junctionDivide, BOOL& motherDaughterLinked, JunctionEnd& motherEnd, JunctionEnd& daughterEnd ) const;
+
+
+  /**********************************************
+   * support for model_routine_config.cpp
+   **********************************************/
+  void updateDomainBdryType( domain_bdry_type_e a_domainBdryType[DIMENSION] ) const;
+  void updateTimeStepInfo( TimeStepInfo& timeStepInfo ) const;
+  void updateBoundaryConditions( );
   void updatePhiPDEInfo( Vector<PDEInfo>& v_phiPDEInfo ) const;
   void updateFileOutputInfo( FileOutputInfo& fileOutputInfo ) const;
   
@@ -87,12 +115,16 @@ public:
   void updatePDEBufferRHSTimeDependentSplitting( const S32 pdeIdx, const VIdx& startVIdx, const VIdx& pdeBufferBoxSize, const Vector<double>& v_gridPhi/* [idx] */, Vector<double>& v_gridRHS/* [idx], uptake(-) and secretion (+) */ ) const;
   void updatePDEBufferDirichletBCVal( const S32 elemIdx, const VReal& startPos, const VReal& pdeBufferFaceSize, const S32 dim, const BOOL lowSide, REAL& bcVal ) const;
   void updatePDEBufferNeumannBCVal( const S32 elemIdx, const VReal& startPos, const VReal& pdeBufferFaceSize, const S32 dim, const BOOL lowSide, REAL& bcVal ) const;
-  //support for model_routine_agent.cpp
-  void updateSpAgentState( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const NbrUBEnv& nbrUBEnv, SpAgentState& state) const;
-  void divideSpAgent( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, SpAgentState& motherState/* INOUT */, VReal& motherDisp, SpAgentState& daughterState, VReal& daughterDisp, Vector<BOOL>& v_junctionDivide, BOOL& motherDaughterLinked, JunctionEnd& motherEnd, JunctionEnd& daughterEnd );
-  void updateSpAgentBirthDeath( const VIdx& vIdx, const SpAgent& spAgent, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, BOOL& divide, BOOL& disappear );
+
+  /**********************************************
+   * support for model_routine_output.cpp
+   **********************************************/
+  void updateSpAgentOutput( const VIdx& vIdx, const SpAgent& spAgent, REAL& color, Vector<REAL>& v_extraScalar, Vector<VReal>& v_extraVector ) const;
+  void updateSummaryVar( const VIdx& vIdx, const NbrUBAgentData& nbrUBAgentData, const NbrUBEnv& nbrUBEnv, Vector<REAL>& v_realVal/* [elemIdx] */, Vector<S32>& v_intVal/* [elemIdx] */ ) const;
+
 protected:
   Vector< Solute* > mSolutes;
+  Vector< Molecule* > mMolecules;
   Vector< Reaction* > mReactions;
   Vector< Solver* > mSolvers;
   Vector < AgentSpecies *> mAgentSpecies;

@@ -10,10 +10,10 @@ class DistanceJunction( ParamHolder ):
         self.addAttribute( Param( "enabled", "bool", False, True ) )
         self.addAttribute( Param( "withSpecies", "str", "", True ) )
 
-        self.mPrivateNumberHiddenParams = [ "withSpecies", ]
+        self.mPrivateNumberHiddenParams = [ ]
         self.mPrivateBoolHiddenParams = [ "enabled", ]
         self.mPrivateStringHiddenParams = [  ]
-        self.mPrivateHiddenParams = self.mPrivateNumberHiddenParams + self.mPrivateBoolHiddenParams + self.mPrivateStringHiddenParams
+        self.mPrivateHiddenParams = [ "withSpecies", ] + self.mPrivateNumberHiddenParams + self.mPrivateBoolHiddenParams + self.mPrivateStringHiddenParams
         self.mHiddenParams = self.mHiddenParams + self.mPrivateHiddenParams
         return
 
@@ -34,6 +34,9 @@ class DistanceJunction( ParamHolder ):
                                                       self.mPrivateNumberHiddenParams,
                                                       self.mPrivateStringHiddenParams )
         lines.append( s )
+
+        s = "%s->setWithSpecies( %s );" % ( varname, self.mReference.getEnumToken( ),  );
+        lines.append( (depth*indent) + s )
 
         lines.append( (depth*indent) + "%s.push_back( %s );" % (container_name, varname, ) )
         depth -= 1;

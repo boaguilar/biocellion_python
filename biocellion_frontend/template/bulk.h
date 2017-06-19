@@ -21,6 +21,7 @@ class Bulk : public ParamHolder {
 public:
   Bulk();
   virtual ~Bulk( );
+  const BulkSolute* getSolute( const S32& soluteIdx ) const;
   std::string getName() const { return mName; };
   S32 getBulkIdx() const { return mBulkIdx; };
   void setName(const std::string& name);

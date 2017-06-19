@@ -18,8 +18,8 @@
       <param name="timeStepIni" unit="hour">0.01</param>
       <param name="timeStepMin" unit="hour">0.01</param>
       <param name="timeStepMax" unit="hour">0.01</param>
-      <!-- <param name="endOfSimulation" unit="hour">0.03</param> -->
-      <param name="endOfSimulation" unit="hour">2.0</param>
+      <param name="endOfSimulation" unit="hour">0.50</param>
+      <!-- <param name="endOfSimulation" unit="hour">2.0</param> -->
     </timeStep>
     <!-- The AGENTTIMESTEP which should always be EQUAL or LOWER than the global time step -->
     <param name="agentTimeStep" unit="hour">0.01</param>

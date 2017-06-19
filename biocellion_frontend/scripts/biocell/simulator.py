@@ -5,12 +5,14 @@ class Simulator( ParamHolder ):
     def __init__(self):
         self.mName = "simulator"
         ParamHolder.__init__(self)
+        self.setPrefix( "SIMULATOR" )
         self.addParam( Param( "restartPreviousRun", "bool", False, False ) )
         self.addParam( Param( "randomSeed", "int", 75321, False ) )
         self.addParam( Param( "outputPeriod", "hr", 0.01, True ) )
         self.addParam( Param( "chemostat", "bool", False, False ) )
         self.addParam( Param( "diffusionReactionOnAgentTime", "bool", False, False ) )
         self.addParam( Param( "agentTimeStep", "hr", 0.01, True ) )
+        self.addParam( Param( "numStateAndGridTimeStepsPerBaseline", "int", 1, False ) )
         self.mPrivateNumberHiddenParams = [ "randomSeed", "outputPeriod", "agentTimeStep" ]
         self.mPrivateBoolHiddenParams = [ "restartPreviousRun", "chemostat", "diffusionReactionOnAgentTime" ]
         self.mPrivateStringHiddenParams = [ ]
@@ -19,6 +21,10 @@ class Simulator( ParamHolder ):
 
         self.mTimeStep = SimulatorTimeStep()
         return
+
+    def getOutputInterval( self ):
+        interval = int( 0.5 + self.getParam( 'outputPeriod' ).getValue( ) / self.getParam( 'agentTimeStep' ).getValue( ) )
+        return interval
 
     def getNumBaselineSteps( self ):
         self.getTimeStep().getParam( 'endOfSimulation' ).checkUnit( 'hour' )
@@ -32,14 +38,29 @@ class Simulator( ParamHolder ):
 
     def getBioModelH( self, indent, depth ):
         lines = [ ]
+        lines.append( self.getAllParamNames( indent, depth ) )
         return "\n".join( lines )
+
+    def getAllParamNames(self, indent, depth):
+        all_params = { }
+        all_order = [ ]
+        for param_name in self.mParamOrder:
+            if param_name not in all_params:
+                all_params[ param_name ] = self.getParam( param_name )
+                all_order.append( param_name )
+        lines = []
+        for n in all_order:
+            s = (depth*indent) + "const std::string %s = \"%s\";" % ( all_params[ n ].getConstName( ), n, )
+            lines.append( s )
+        return "\n".join( lines )
+
 
     def getInitializeBioModel( self, indent, depth ):
         varname = "gBioModelRW->getSimulator( )"
         lines = []
         lines.append( (depth*indent) + "{" )
         depth += 1
-        lines.append( ParamHolder.getInitializeBioModel( self, varname, indent, depth ) )
+        lines.append( ParamHolder.getInitializeBioModel( self, varname, indent, depth, "." ) )
 
         s = self.getInitializeBioModelSetDataMembers( varname, ".", indent, depth,
                                                       self.mPrivateBoolHiddenParams,

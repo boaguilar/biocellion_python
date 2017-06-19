@@ -96,23 +96,23 @@ class ParamHolder:
             lines.append( s )
         return "\n".join( lines )
         
-    def getInitializeBioModel(self, varname, indent, depth):
+    def getInitializeBioModel(self, varname, indent, depth, connector="->"):
         lines = []
         for n in self.mParamOrder:
             if n in self.mHiddenParams:
                 continue
             param = self.mParams[ n ]
             if param.getUnit() in Param.mStringUnits:
-                s = (depth*indent) + "%s->setParamString( %s->getIdxString( %s ), \"%s\" );" % (varname, varname, param.getConstName( ), param.getValue( ), )
+                s = (depth*indent) + "%s%ssetParamString( %s%sgetIdxString( %s ), \"%s\" );" % (varname, connector, varname, connector, param.getConstName( ), param.getValue( ), )
                 lines.append( s )
             elif param.getUnit() in Param.mBoolUnits:
-                s = (depth*indent) + "%s->setParamBool( %s->getIdxBool( %s ), %s );" % (varname, varname, param.getConstName( ), "true" if param.getValue( ) else "false", )
+                s = (depth*indent) + "%s%ssetParamBool( %s%sgetIdxBool( %s ), %s );" % (varname, connector, varname, connector, param.getConstName( ), "true" if param.getValue( ) else "false", )
                 lines.append( s )
             elif param.getUnit() in Param.mIntUnits:
-                s = (depth*indent) + "%s->setParamInt( %s->getIdxInt( %s ), %s );" % (varname, varname, param.getConstName( ), param.getValue( ), )
+                s = (depth*indent) + "%s%ssetParamInt( %s%sgetIdxInt( %s ), %s );" % (varname, connector, varname, connector, param.getConstName( ), param.getValue( ), )
                 lines.append( s )
             elif param.getUnit() in Param.mRealUnits:
-                s = (depth*indent) + "%s->setParamReal( %s->getIdxReal( %s ), %s );" % (varname, varname, param.getConstName( ), param.getValue( ), )
+                s = (depth*indent) + "%s%ssetParamReal( %s%sgetIdxReal( %s ), %s );" % (varname, connector, varname, connector, param.getConstName( ), param.getValue( ), )
                 lines.append( s )
             else:
                 s = "FIXME: Unknown unit: " + str( param.getUnit( ) )
@@ -277,7 +277,7 @@ class ParamHolder:
                 s += "\t\ttype: " + t + "\n"
                 for c in self.mChildren[ t ]:
                     s += "\t\t" + str( c ) + "\n"
-            s += "\t</children>"
+            s += "\t</children>\n"
         return s
 
     def __repr__(self):

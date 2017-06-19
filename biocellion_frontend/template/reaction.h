@@ -16,15 +16,17 @@ public:
     S32 getType( ) const;
     S32 getItemIdx( ) const;
     REAL getValue( ) const;
+    BOOL isMolecule( ) const;
 
     void setSolute( );
     void setParticle( );
     void setType( const S32& value );
     void setItemIdx( const S32& value );
     void setValue( const REAL& value);
-    
+    void setMolecule( );
+
   protected:
-    enum { TYPE_SOLUTE, TYPE_PARTICLE, NUM_TYPE };
+    enum { TYPE_SOLUTE, TYPE_PARTICLE, TYPE_MOLECULE, NUM_TYPE };
     S32 mType;     // type of yield
     S32 mItemIdx;  // index into gBioModel->getSolutes() or gBioModel->getAgentSpecies()
     REAL mValue;   // yield amount
@@ -42,6 +44,8 @@ public:
     S32 getMolecule( ) const;
     REAL getKi( ) const;
     REAL getKs( ) const;
+    BOOL isSolute( ) const;
+    BOOL isMolecule( ) const;
 
     void setClass( const std::string& value );
     void setSolute( const S32& value );
@@ -103,9 +107,12 @@ public:
   void setCatalyst(const S32& value); 
   void setMuMax(const REAL& value);
 
-  REAL getKineticFactor( const NbrUBEnv& nbrUBEnv, const VReal& vOffset ) const;
+  REAL getKineticFactor( const NbrUBEnv& nbrUBEnv, const VReal& vOffset, SpAgentState& state ) const;
+  REAL getKineticFactor( const NbrUBEnv& nbrUBEnv, const SpAgent& spAgent, const Vector< double >& v_y ) const;
   REAL getKineticFactor( const UBEnv& ubEnv, const VReal& vOffset ) const;
+  REAL getKineticFactor( const UBEnv& ubEnv, const VReal& vOffset, const SpAgent& spAgent ) const;
   REAL getSoluteYield( const S32& solute_idx, const SpAgent& spAgent ) const;
+  REAL getMoleculeYield( const S32& moleculeIdx, const SpAgent& spAgent ) const;
   REAL getParticleYield( const S32& particle_idx, const SpAgentState& spAgentState ) const;
 
 protected:

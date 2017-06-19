@@ -11,10 +11,10 @@ class Adhesion( ParamHolder ):
         self.addAttribute( Param( "withSpecies", "str", "", True ) )
         self.addAttribute( Param( "scale", "float", 1.0, False ) )
 
-        self.mPrivateNumberHiddenParams = [ "strength", "withSpecies", "scale" ]
+        self.mPrivateNumberHiddenParams = [ "strength", "scale" ]
         self.mPrivateBoolHiddenParams = [  ]
         self.mPrivateStringHiddenParams = [  ]
-        self.mPrivateHiddenParams = self.mPrivateNumberHiddenParams + self.mPrivateBoolHiddenParams + self.mPrivateStringHiddenParams
+        self.mPrivateHiddenParams = [ "withSpecies", ] + self.mPrivateNumberHiddenParams + self.mPrivateBoolHiddenParams + self.mPrivateStringHiddenParams
         self.mHiddenParams = self.mHiddenParams + self.mPrivateHiddenParams
         return
 
@@ -35,6 +35,9 @@ class Adhesion( ParamHolder ):
                                                       self.mPrivateNumberHiddenParams,
                                                       self.mPrivateStringHiddenParams )
         lines.append( s )
+        
+        s = "%s->setWithSpecies( %s );" % ( varname, self.mReference.getEnumToken( ),  );
+        lines.append( (depth*indent) + s )
         
         lines.append( (depth*indent) + "%s.push_back( %s );" % (container_name, varname, ) )
         depth -= 1;

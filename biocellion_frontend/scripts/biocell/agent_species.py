@@ -49,6 +49,9 @@ class AgentSpecies(ParamHolder):
         lines.append( (depth*indent) + "{" )
         depth += 1
         lines.append( (depth*indent) + "AgentSpecies *%s = new AgentSpecies( \"%s\", \"%s\", %s, %d, %d, %d, %d );" % (varname, self.mName, self.mClassName, self.mEnumToken, self.countReal(), self.countInt(), self.countBool(), self.countString()) )
+        s = (depth*indent) + "%s->setModel( gBioModel );" % ( varname, )
+        lines.append( s )
+        
         lines.append( ParamHolder.getInitializeBioModel( self, varname, indent, depth ) )
 
         s = (depth*indent) + "%s->setDMax( %s );" % (varname, self.mModel.getAgentGrid( ).getParam( 'resolution' ).getValue(), )
@@ -67,6 +70,9 @@ class AgentSpecies(ParamHolder):
         else:
             s = (depth*indent) + "%s->setUseMechForceReals( false );" % (varname, )
             lines.append( s )
+
+        s = (depth*indent) + "%s->setNumODEVariables( %s_NUM_ODE_VAR );" % (varname, self.mEnumToken, )
+        lines.append( s )
 
         container_name = "%s->getInitAreas()" % ( varname )
         for i in range( len( self.mInitAreas ) ):
@@ -92,6 +98,10 @@ class AgentSpecies(ParamHolder):
         return "\n".join( lines )
 
     def getSpecificRealsEnum( self, indent, depth ):
+        line = [ ]
+        return "\n".join( lines )
+        
+    def getSpecificODEVarsEnum( self, indent, depth ):
         line = [ ]
         return "\n".join( lines )
         
@@ -129,8 +139,10 @@ class AgentSpecies(ParamHolder):
         for key in self.mAdhesions.getKeys( ):
             item = self.getAdhesions( ).getItem( key )
             species_name = item.getAttribute( "withSpecies" ).getValue( )
+            species = self.mModel.getItem( 'species', species_name )
 
             junction = DistanceJunction( )
+            junction.setReference( species )
             node_attr = Param( "enabled", None, "true" )
             if not junction.validateAttribute( node_attr ):
                 raise Exception( "ERROR : Failed to create DistanceJunction" )
@@ -149,8 +161,10 @@ class AgentSpecies(ParamHolder):
         for key in self.mTightJunctions.getKeys( ):
             item = self.getTightJunctions( ).getItem( key )
             species_name = item.getAttribute( "withSpecies" ).getValue( )
+            species = self.mModel.getItem( 'species', species_name )
 
             junction = DistanceJunction( )
+            junction.setReference( species )
             node_attr = Param( "enabled", None, "true" )
             if not junction.validateAttribute( node_attr ):
                 raise Exception( "ERROR : Failed to create DistanceJunction" )
@@ -168,9 +182,11 @@ class AgentSpecies(ParamHolder):
         # If chemotaxis is in play, contact inhibition may be needed, so create distance junctions
         for key in self.mChemotaxis.getKeys( ):
             item = self.getChemotaxis( ).getItem( key )
-            species_name = self.getEnumToken( )
+            species_name = self.getName( )
+            species = self.mModel.getItem( 'species', species_name )
 
             junction = DistanceJunction( )
+            junction.setReference( species )
             node_attr = Param( "enabled", None, "true" )
             if not junction.validateAttribute( node_attr ):
                 raise Exception( "ERROR : Failed to create DistanceJunction" )
@@ -191,9 +207,15 @@ class AgentSpecies(ParamHolder):
         self.updateUseMechForceReals(  )
         lines = [ ]
         lines.append( self.getBoolsEnum( indent, depth ) )
+        lines.append( "" )
         lines.append( self.getRealsEnum( indent, depth ) )
+        lines.append( "" )
         lines.append( self.getIntsEnum( indent, depth ) )
+        lines.append( "" )
         lines.append( self.getMechForceRealsEnum( indent, depth ) )
+        lines.append( "" )
+        lines.append( self.getODEVarsEnum( indent, depth ) )
+
         return "\n".join( lines )
     
     def getBoolsEnum( self, indent, depth ):
@@ -240,6 +262,19 @@ class AgentSpecies(ParamHolder):
         lines.append( s )
         depth -= 1
         lines.append( (depth*indent) + "} %s_mech_force_real_type_e;" % ( self.getEnumToken(), ) )
+        return "\n".join( lines )
+    
+    def getODEVarsEnum( self, indent, depth ):
+        lines = []
+        lines.append( (depth*indent) + "typedef enum _%s_ode_var_type_e {" % ( self.getEnumToken(), ) )
+        depth += 1
+        s = self.getSpecificODEVarsEnum( indent, depth )
+        if s:
+            lines.append( s )
+        s = (depth*indent) + "%s_NUM_ODE_VAR" % ( self.getEnumToken(), )
+        lines.append( s )
+        depth -= 1
+        lines.append( (depth*indent) + "} %s_ode_var_type_e;" % ( self.getEnumToken(), ) )
         return "\n".join( lines )
     
     def updateUseMechForceReals( self ):
@@ -310,13 +345,47 @@ class AgentSpeciesActive(AgentSpecies):
         AgentSpecies.__init__(self, class_name, name, model)
         
         self.mParticles = ItemHolder( AgentSpeciesParticle )
+        self.mMolecules = ItemHolder( AgentSpeciesMolecule )
         self.mReactions = ItemHolder( AgentSpeciesReaction )
-        print("FIXME: <species><molecules></molecules></species> not yet parsed.")
-        print("FIXME: <species><agentMolecularReactions></agentMolecularReactions></species> not yet parsed.")
+        #print("FIXME: <species><agentMolecularReactions></agentMolecularReactions></species> not yet parsed.")
+        return
+
+    def chooseReactions( self ):
+        # find all reactions of this agent species that have Particle or ODE Variable yield
+        for reaction_key in self.mReactions.getKeys( ):
+            # global reaction
+            reaction = self.mReactions.getItem( reaction_key ).getReference( )
+
+            # does this agent have a particle that is a yield of this reaction?
+            for particle_key in self.mParticles.getKeys( ):
+                # global particle
+                my_particle = self.mParticles.getItem( particle_key ).getReference( )
+                # global particle
+                yield_particle = reaction.getYields( ).getParticle( particle_key )
+
+                if my_particle == yield_particle:
+                    # is a particle affecting reaction
+                    self.mReactions.getItem( reaction_key ).setParticle( )
+
+            # does this agent have a molecule that is a yield of this reaction?
+            for molecule_key in self.mMolecules.getKeys( ):
+                # global molecule
+                my_molecule = self.mMolecules.getItem( molecule_key ).getReference( )
+                # global molecule
+                yield_molecule = reaction.getYields( ).getMolecule( molecule_key )
+
+                if my_molecule == yield_molecule:
+                    # is a molecule affecting reaction
+                    self.mReactions.getItem( reaction_key ).setMolecule( )
+
         return
 
     def getParticleEnumToken( self, particle ):
         s = "%s_%s" % ( self.getEnumToken(), particle.getAttribute( 'name' ).getValue() )
+        return s
+
+    def getMoleculeEnumToken( self, molecule ):
+        s = "%s_%s" % ( self.getEnumToken(), molecule.getAttribute( 'name' ).getValue() )
         return s
 
     def getSpecificRealsEnum( self, indent, depth ):
@@ -325,6 +394,15 @@ class AgentSpeciesActive(AgentSpecies):
             for i in range( len( self.mParticles ) ):
                 p = self.mParticles[ i ]
                 s = "%s," % ( self.getParticleEnumToken( p ), );
+                lines.append( (depth*indent) + s )
+        return "\n".join( lines )
+
+    def getSpecificODEVarsEnum( self, indent, depth ):
+        lines = [ ]
+        if len( self.mMolecules ) > 0:
+            for i in range( len( self.mMolecules ) ):
+                m = self.mMolecules[ i ]
+                s = "%s," % ( self.getMoleculeEnumToken( m ), );
                 lines.append( (depth*indent) + s )
         return "\n".join( lines )
 
@@ -339,26 +417,51 @@ class AgentSpeciesActive(AgentSpecies):
                 lines.append( (depth*indent) + s )
             depth -= 1
             lines.append( (depth*indent) + "}" )
+        if len( self.mMolecules ) > 0:
+            lines.append( (depth*indent) + "{" )
+            depth += 1
+            for i in range( len( self.mMolecules ) ):
+                m = self.mMolecules[ i ]
+                s = "%s->addMolecule( %s, %s, %s );" % ( varname, m.getMoleculeEnumToken( ), self.getMoleculeEnumToken( m ), m.getParam( 'concentration' ).getValue( ), );
+                lines.append( (depth*indent) + s )
+            depth -= 1
+            lines.append( (depth*indent) + "}" )
         if len( self.mReactions ) > 0:
             lines.append( (depth*indent) + "{" )
             depth += 1
             for i in range( len( self.mReactions ) ):
                 r = self.mReactions[ i ]
-                if r.isActive( ):
+                if r.isActive( ) and r.isParticle( ):
                     s = "%s->getReactions( ).push_back( %s );" % ( varname, r.getReactionEnumToken( ), );
                     lines.append( (depth*indent) + s )
             depth -= 1
             lines.append( (depth*indent) + "}" )
+
+        if len( self.mReactions ) > 0:
+            lines.append( (depth*indent) + "{" )
+            depth += 1
+            for i in range( len( self.mReactions ) ):
+                r = self.mReactions[ i ]
+                if r.isActive( ) and r.isMolecule( ):
+                    s = "%s->getODEReactions( ).push_back( %s );" % ( varname, r.getReactionEnumToken( ), );
+                    lines.append( (depth*indent) + s )
+            depth -= 1
+            lines.append( (depth*indent) + "}" )
+
         return "\n".join( lines )
 
     def getParticles( self ):
         return self.mParticles
+
+    def getMolecules( self ):
+        return self.mMolecules
 
     def getReactions( self ):
         return self.mReactions
 
     def toString( self, additional ):
         additional += str( self.mParticles )
+        additional += str( self.mMolecules )
         additional += str( self.mReactions )
         return AgentSpecies.toString( self, additional )
 
@@ -388,7 +491,7 @@ class AgentSpeciesBacterium(AgentSpeciesLocated):
         AgentSpeciesLocated.__init__(self, class_name, name, model)
         self.addParam( Param( "epsMax", "float", 0.15 ) )
         self.addParam( Param( "epsColor", "str", "lightGray" ) )
-        print("FIXME: <particle name='capsule'> <particle name='inert'> special names not parsed for Bacterium.")
+        # print("FIXME: <particle name='capsule'> <particle name='inert'> special names not parsed for Bacterium.")
         return
 
 class AgentSpeciesBactEPS(AgentSpeciesBacterium):
@@ -407,8 +510,8 @@ class AgentSpeciesYeast(AgentSpeciesBactEPS):
         self.addParam( Param( "useActivationInhibition", "bool", False ) )
         self.addParam( Param( "neighborhoodRadiusCoefficient", "float", 2.5 ) )
         self.addParam( Param( "startingTimeActivationInhibition", "int", 0 ) )
-        print("FIXME: <species><entryConditions></species> not yet parsed <entryCondition type='type' name='name'><switch/><fromSpecies/> </entryCondition>")
-        print("FIXME: <species><switchingLags></species> not yet parsed")
+        #print("FIXME: <species><entryConditions></species> not yet parsed <entryCondition type='type' name='name'><switch/><fromSpecies/> </entryCondition>")
+        #print("FIXME: <species><switchingLags></species> not yet parsed")
         return
 
 
@@ -449,6 +552,11 @@ class AllAgentSpecies( ItemHolder ):
         lines.append( "" )
         lines.append( self.getSpeciesBioModelH( indent, depth ) )
         return "\n".join( lines )
+
+    def chooseReactions( self ):
+        for name in self.mOrder:
+            self.mItems[ name ].chooseReactions( )
+        return
 
     def getSpeciesEnum(self, indent, depth):
         lines = []

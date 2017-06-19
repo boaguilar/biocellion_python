@@ -25,7 +25,7 @@ protected:
   REAL mEndOfSimulation;
 };
 
-class Simulator {
+class Simulator: public ParamHolder {
 
 public:
   Simulator( );
@@ -45,6 +45,8 @@ public:
   REAL getAgentTimeStep() const { return mAgentTimeStep; };
   const TimeStep& getTimeStep() const;
   TimeStep& getTimeStep();
+  REAL getCurrentTime( ) const;
+  
   void setRestartPreviousRun(const BOOL& restartPreviousRun);
   void setChemostat(const BOOL& chemostat);
   void setDiffusionReactionOnAgentTime(const BOOL& diffusionReactionOnAgentTime);

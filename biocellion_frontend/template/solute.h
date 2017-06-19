@@ -11,6 +11,7 @@ public:
   Solute();
   Solute(const std::string& name, const S32& solute_idx, const S32& domain_idx, const S32& num_real_param, const S32& num_int_param, const S32& num_bool_param, const S32& num_string_param);
 
+  const BioModel* getModel() const;
   const std::string& getName() const;
   S32 getSoluteIdx() const;
   S32 getDomainIdx() const;
@@ -19,6 +20,12 @@ public:
   S32 getInterfaceAMRLevel() const;
   S32 getNumTimeSteps() const;
 
+  const Vector< S32 >& getReactions() const;
+  Vector< S32 >& getReactions();
+  const Vector< S32 >& getMoleculeReactions() const;
+  Vector< S32 >& getMoleculeReactions();
+
+  void setModel(const BioModel*& biomodel );
   void setName(const std::string& name);
   void setSoluteIdx(const S32& idx);
   void setDomainIdx(const S32& idx);
@@ -40,7 +47,8 @@ public:
   REAL getPDETimeStepDuration( ) const;
 
   // support for model_routine_config.cpp
-  void setPDEInfo( PDEInfo& pdeInfo ) const;
+  void calculateBoundaryConditions( );
+  void updatePhiPDEInfo( PDEInfo& pdeInfo ) const;
 
   // support for model_routine_grid.cpp
   void initIfGridVar( const VIdx& vIdx, const UBAgentData& ubAgentData, UBEnv& ubEnv ) const;
@@ -70,17 +78,24 @@ public:
   void updatePDEBufferNeumannBCVal( const VReal& startPos, const VReal& pdeBufferFaceSize, const S32 dim, const BOOL lowSide, REAL& bcVal ) const;
   
 protected:
+  const BioModel *mModel;
   std::string mName;
   S32         mSoluteIdx;
   S32         mDomainIdx;
   S32         mSolverIdx;
+  REAL        mGridBeta; // diffisivity within the domain
+  bc_type_e   mGridBCType[3][2]; // Boundary type 
+  REAL        mGridBCVal[3][2]; // Boundary value
+  REAL        mGridBoundaryBeta[3][2]; // mGridBeta[ dim ][ face ] diffusivity at the boundary
 
+  Vector< S32 > mReactions; // Reactions that do not have molecule related kinetic factors
+  Vector< S32 > mMoleculeReactions;  // Reactions that do have molecule related kinetic factors
   
   S32         mAMRLevels;         // Total number of AMR Levels
   S32         mInterfaceAMRLevel; // AMR Level of the interface // RANGE 0 <-> mAMRLevels - 1
   S32         mNumTimeSteps;
   S32         mSubgridDimension;  // subgrid dimension
-};
+  };
 
 #endif /* _SOLUTE_H_ */
 /* Local Variables: */

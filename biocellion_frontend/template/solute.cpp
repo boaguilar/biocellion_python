@@ -2,6 +2,7 @@
 
 Solute::Solute()
   : ParamHolder( ),
+    mModel( 0 ),
     mName( "" ), mSoluteIdx( -1 ), mDomainIdx( -1 ), mSolverIdx( -1 ),
     mAMRLevels( 3 ), mInterfaceAMRLevel( 2 ),
     mNumTimeSteps( 1 ), mSubgridDimension(-1)
@@ -11,11 +12,16 @@ Solute::Solute()
 
 Solute::Solute(const std::string& name, const S32& solute_idx, const S32& domain_idx, const S32& num_real_param, const S32& num_int_param, const S32& num_bool_param, const S32& num_string_param) 
   : ParamHolder( num_real_param, num_int_param, num_bool_param, num_string_param ),
+    mModel( 0 ),
     mName( name ), mSoluteIdx( solute_idx ), mDomainIdx( domain_idx ), mSolverIdx( -1 ),
     mAMRLevels( 3 ), mInterfaceAMRLevel( 2 ),
     mNumTimeSteps( 1 ), mSubgridDimension(-1)
 {
   calcSubgridDimension( );
+}
+
+const BioModel* Solute::getModel() const {
+  return mModel;
 }
 
 const std::string& Solute::getName() const {
@@ -46,6 +52,25 @@ S32 Solute::getNumTimeSteps() const {
   return mNumTimeSteps;
 }
 
+const Vector< S32 >& Solute::getReactions() const {
+  return mReactions;
+}
+
+Vector< S32 >& Solute::getReactions() {
+  return mReactions;
+}
+
+const Vector< S32 >& Solute::getMoleculeReactions() const {
+  return mMoleculeReactions;
+}
+
+Vector< S32 >& Solute::getMoleculeReactions() {
+  return mMoleculeReactions;
+}
+
+void Solute::setModel(const BioModel*& biomodel ) {
+  mModel = biomodel;
+}
 
 void Solute::setName(const std::string& name) {
   mName = name;
@@ -159,12 +184,45 @@ REAL Solute::getSubgridVolume( ) const {
 }
 
 REAL Solute::getPDETimeStepDuration( ) const {
-  return gBioModel->getSimulator().getAgentTimeStep( ) / NUM_STATE_AND_GRID_TIME_STEPS_PER_BASELINE / mNumTimeSteps;
+  return gBioModel->getSimulator().getAgentTimeStep( ) / gBioModel->getSimulator().getParamInt( gBioModel->getSimulator().getIdxInt( SIMULATOR_numStateAndGridTimeStepsPerBaseline ) ) / mNumTimeSteps;
 }
 
 // support for model_routine_config.cpp
-void Solute::setPDEInfo( PDEInfo& pdeInfo ) const {
-  WARNING( "setPDEInfo still has numerous hard-coded values." );
+void Solute::calculateBoundaryConditions( ) {
+  
+  mGridBeta = getParamReal( getIdxReal( SOLUTE_diffusivity ) );
+  
+  const ComputationDomain* domain = mModel->getWorld( ).getComputationDomains( )[0];
+  S32 dim, face;
+  for( dim = 0 ; dim < DIMENSION ; dim++ ) {
+    if( domain->boundaryIsPeriodic( dim ) ) {
+      mGridBCType[ dim ][ 0 ] = BC_TYPE_NEUMANN_CONST;
+      mGridBCType[ dim ][ 1 ] = BC_TYPE_NEUMANN_CONST;
+      mGridBCVal[ dim ][ 0 ] = 0.0;
+      mGridBCVal[ dim ][ 1 ] = 0.0;
+      mGridBoundaryBeta[ dim ][ 0 ] = 0.0;
+      mGridBoundaryBeta[ dim ][ 1 ] = 0.0;
+    } else {
+      for( face = 0 ; face < 2 ; face++ ) {
+        domain->updateGridPhiBoundaryInfo( mSoluteIdx, dim, face,
+                                           mGridBCType[ dim ][ face ],
+                                           mGridBCVal[ dim ][ face ],
+                                           mGridBoundaryBeta[ dim ][ face ] );
+        if( false ) {
+          OUTPUT( 0, ""
+                  << "Solute: " << mName
+                  << " BC: " << dim << ":" << face
+                  << " type: " << mGridBCType[ dim ][ face ]
+                  << " val: " << mGridBCVal[ dim ][ face ] 
+                  << " boundary beta: " << mGridBoundaryBeta[ dim ][ face ] );
+        }
+      }
+    }
+  }
+}
+
+void Solute::updatePhiPDEInfo( PDEInfo& pdeInfo ) const {
+  // WARNING( "updatePhiPDEInfo still has numerous hard-coded values." );
   GridPhiInfo gridPhiInfo;
   SplittingInfo splittingInfo;
 
@@ -194,7 +252,7 @@ void Solute::setPDEInfo( PDEInfo& pdeInfo ) const {
     const Solver* solver = gBioModel->getSolvers( )[ mSolverIdx ];
     pdeInfo.mgSolveInfo.numPre = solver->getParamInt( solver->getIdxInt( SOLVER_preStep ) );
     pdeInfo.mgSolveInfo.numPost = solver->getParamInt( solver->getIdxInt( SOLVER_postStep ) );
-    pdeInfo.mgSolveInfo.numBottom = 3;/* multigrid parameters */
+    pdeInfo.mgSolveInfo.numBottom = 3;
     pdeInfo.mgSolveInfo.vCycle = true;/* multigrid parameters */
     pdeInfo.mgSolveInfo.maxIters =  solver->getParamInt( solver->getIdxInt( SOLVER_nCycles ) );
     pdeInfo.mgSolveInfo.epsilon = 1e-8;/* multigrid parameters */
@@ -211,18 +269,16 @@ void Solute::setPDEInfo( PDEInfo& pdeInfo ) const {
   gridPhiInfo.elemIdx = mSoluteIdx;
   gridPhiInfo.name = mName;
   gridPhiInfo.syncMethod = VAR_SYNC_METHOD_DELTA;
-  gridPhiInfo.aa_bcType[0][0] = BC_TYPE_NEUMANN_CONST;
-  gridPhiInfo.aa_bcVal[0][0] = 0.0;
-  gridPhiInfo.aa_bcType[0][1] = BC_TYPE_NEUMANN_CONST;
-  gridPhiInfo.aa_bcVal[0][1] = 0.0;
-  gridPhiInfo.aa_bcType[1][0] = BC_TYPE_NEUMANN_CONST;
-  gridPhiInfo.aa_bcVal[1][0] = 0.0;
-  gridPhiInfo.aa_bcType[1][1] = BC_TYPE_NEUMANN_CONST;
-  gridPhiInfo.aa_bcVal[1][1] = 0.0;
-  gridPhiInfo.aa_bcType[2][0] = BC_TYPE_NEUMANN_CONST;
-  gridPhiInfo.aa_bcVal[2][0] = 0.0;
-  gridPhiInfo.aa_bcType[2][1] = BC_TYPE_NEUMANN_CONST;
-  gridPhiInfo.aa_bcVal[2][1] = 0.0;
+
+  { // boundary conditions
+    S32 dim, face;
+    for( dim = 0 ; dim < DIMENSION ; dim++ ) {
+      for( face = 0 ; face < 2 ; face++ ) {
+        gridPhiInfo.aa_bcType[ dim ][ face ] = mGridBCType[ dim ][ face ];
+        gridPhiInfo.aa_bcVal[ dim ][ face ] = mGridBCVal[ dim ][ face ];
+      }
+    }
+  }
 
   // ???FIXME: Need to configure this correctly
   gridPhiInfo.errorThresholdVal = pdeInfo.mgSolveInfo.normThreshold * -1.0;
@@ -275,17 +331,65 @@ void Solute::updateIfSubgridAlpha( const VIdx& vIdx, const VIdx& subgridVOffset,
 
 void Solute::updateIfSubgridBetaInIfRegion( const S32 dim, const VIdx& vIdx0, const VIdx& subgridVOffset0, const UBAgentData& ubAgentData0, const UBEnv& ubEnv0, const VIdx& vIdx1, const VIdx& subgridVOffset1, const UBAgentData& ubAgentData1, const UBEnv& ubEnv1, REAL& gridBeta ) const {
   /* flux between subgrids */
-  gridBeta = getParamReal( getIdxReal( SOLUTE_diffusivity ) );
+  gridBeta = mGridBeta;
 }
 
 void Solute::updateIfSubgridBetaPDEBufferBdry( const S32 dim, const VIdx& vIdx, const VIdx& subgridVOffset, const UBAgentData& ubAgentData, const UBEnv& ubEnv, REAL& gridBeta ) const {
   /* flux between grid and buffer */
-  gridBeta = getParamReal( getIdxReal( SOLUTE_diffusivity ) );
+  gridBeta = mGridBeta;
 }
 
 void Solute::updateIfSubgridBetaDomainBdry( const S32 dim, const VIdx& vIdx, const VIdx& subgridVOffset, const UBAgentData& ubAgentData, const UBEnv& ubEnv, REAL& gridBeta ) const {
   /* flux at domain boundary */
-  gridBeta = 0.0;
+  S32 face = -1;
+  if( vIdx[ dim ] == 0 && subgridVOffset[ dim ] == 0 ) {
+    face = 0;
+    if( false ) {
+      OUTPUT( 0, "lower: "
+              << " solute: " << mName
+              << " dim: " << dim
+              << " vIdx: " << vIdx[0] << "," << vIdx[1] << "," << vIdx[2]
+              << " subgridVOffset: " << subgridVOffset[0] << "," << subgridVOffset[1] << "," << subgridVOffset[2]
+              << " domain_size: " << Info::getDomainSize( dim )
+              << " subgrid_dimension:" << getSubgridDimension( )
+              );
+    }
+  } else if( vIdx[ dim ] == ( Info::getDomainSize( dim ) - 1 ) && subgridVOffset[ dim ] == ( getSubgridDimension( ) - 1 ) ) {
+    face = 1;
+    if( false ) {
+      OUTPUT( 0, "upper: "
+              << " solute: " << mName
+              << " dim: " << dim
+              << " vIdx: " << vIdx[0] << "," << vIdx[1] << "," << vIdx[2]
+              << " subgridVOffset: " << subgridVOffset[0] << "," << subgridVOffset[1] << "," << subgridVOffset[2]
+              << " domain_size: " << Info::getDomainSize( dim )
+              << " subgrid_dimension:" << getSubgridDimension( )
+              );
+    }
+  } else {
+    OUTPUT( 0, "updateIfSubgridBetaDomainBdry called. "
+            << " solute: " << mName
+            << " dim: " << dim
+            << " vIdx: " << vIdx[0] << "," << vIdx[1] << "," << vIdx[2]
+            << " subgridVOffset: " << subgridVOffset[0] << "," << subgridVOffset[1] << "," << subgridVOffset[2]
+            << " domain_size: " << Info::getDomainSize( dim )
+            << " subgrid_dimension:" << getSubgridDimension( )
+            );
+    ERROR( "Called on non-boundary subgrid." );
+  }
+  gridBeta = mGridBoundaryBeta[ dim ][ face ];
+  if( false ) {
+    OUTPUT( 0, "updateIfSubgridBetaDomainBdry called. "
+            << " solute: " << mName
+            << " dim: " << dim
+            << " face: " << face
+            << " vIdx: " << vIdx[0] << "," << vIdx[1] << "," << vIdx[2]
+            << " subgridVOffset: " << subgridVOffset[0] << "," << subgridVOffset[1] << "," << subgridVOffset[2]
+            << " domain_size: " << Info::getDomainSize( dim )
+            << " subgrid_dimension:" << getSubgridDimension( )
+            << " gridBeta: " << gridBeta
+            );
+  }
 }
 
 void Solute::updateIfSubgridRHSLinear( const VIdx& vIdx, const VIdx& subgridVOffset, const UBAgentData& ubAgentData, const UBEnv& ubEnv, REAL& gridRHS/* uptake(-) and secretion (+) */ ) const {
@@ -302,13 +406,16 @@ void Solute::updateIfSubgridRHSLinear( const VIdx& vIdx, const VIdx& subgridVOff
   VReal vOffset;
   getSubgridCenter( subgridVOffset, vOffset );
   const Vector< Reaction * >& reactions = gBioModel->getReactions( );
-  for( i = 0 ; i < (S32) reactions.size( ) ; i++ ) {
-    REAL factor = reactions[ i ]->getKineticFactor( ubEnv, vOffset );
+
+  // process all reactions that involve this solute, but don't require agent molecular concentrations for kinetic factors
+  for( i = 0 ; i < (S32) mReactions.size( ) ; i++ ) {
+    const Reaction *reaction = reactions[ mReactions[ i ] ];
+    REAL factor = reaction->getKineticFactor( ubEnv, vOffset );
     if( false ) {
       std::stringstream kf;
       S32 ii;
-      for( ii = 0 ; ii < (S32) reactions[ i ]->getKineticFactors( ).size( ) ; ii++ ) {
-        kf << "  KF:" << ii << " " << *(reactions[ i ]->getKineticFactors( )[ ii ]);
+      for( ii = 0 ; ii < (S32) reaction->getKineticFactors( ).size( ) ; ii++ ) {
+        kf << "  KF:" << ii << " " << *(reaction->getKineticFactors( )[ ii ]);
       }
       
       OUTPUT( 0, ""
@@ -317,7 +424,7 @@ void Solute::updateIfSubgridRHSLinear( const VIdx& vIdx, const VIdx& subgridVOff
               << " solute: " << getSoluteIdx( )
               << " reaction: " << i
               << " factor: " << factor
-              << " muMax: " << reactions[ i ]->getMuMax( )
+              << " muMax: " << reaction->getMuMax( )
               << " KF: " << kf.str( )
               );
     }
@@ -330,14 +437,14 @@ void Solute::updateIfSubgridRHSLinear( const VIdx& vIdx, const VIdx& subgridVOff
       getSubgridOffset( spAgent.vOffset, sgridVOffset );
       if( sgridVOffset == subgridVOffset ) {
         // agent is in the subgrid
-        yield += reactions[ i ]->getSoluteYield( getSoluteIdx( ), spAgent );
+        yield += reaction->getSoluteYield( getSoluteIdx( ), spAgent );
         if( false ) {
           std::stringstream y;
           S32 ii;
-          for( ii = 0 ; ii < (S32) reactions[ i ]->getYields( ).size( ) ; ii++ ) {
-            y << "  YLD:" << ii << " " << reactions[ i ]->getYields( )[ ii ];
+          for( ii = 0 ; ii < (S32) reaction->getYields( ).size( ) ; ii++ ) {
+            y << "  YLD:" << ii << " " << reaction->getYields( )[ ii ];
           }
-          REAL mass = spAgent.state.getModelReal( reactions[ i ]->getCatalyzedBy( ) );
+          REAL mass = spAgent.state.getModelReal( reaction->getCatalyzedBy( ) );
           OUTPUT( 0, ""
                   << " loc: " << vIdx[ 0 ] << "," << vIdx[ 1 ] << "," << vIdx[ 2 ]
                   << " " << subgridVOffset[ 0 ] << "," << subgridVOffset[ 1 ] << "," << subgridVOffset[ 2 ]
@@ -354,6 +461,62 @@ void Solute::updateIfSubgridRHSLinear( const VIdx& vIdx, const VIdx& subgridVOff
     //(fg.um-3.hour-1) =(fg)  * (hour-1) * (um-3)
     gridRHS += yield * factor / getSubgridVolume();
   }
+
+  // process all reactions that involve this solute, and require agent molecular concentrations for kinetic factors
+  for( i = 0 ; i < (S32) mMoleculeReactions.size( ) ; i++ ) {
+    const Reaction *reaction = reactions[ mMoleculeReactions[ i ] ];
+
+    // Check for all agents that apply
+    for( ubAgentIdx_t l = 0 ; l < ( ubAgentIdx_t )ubAgentData.v_spAgent.size() ; l++ ) {
+      const SpAgent& spAgent = ubAgentData.v_spAgent[ l ];
+      VIdx sgridVOffset;
+      getSubgridOffset( spAgent.vOffset, sgridVOffset );
+      if( sgridVOffset == subgridVOffset ) {
+        // agent is in the subgrid
+        REAL factor = reaction->getKineticFactor( ubEnv, vOffset, spAgent );
+        if( false ) {
+          std::stringstream kf;
+          S32 ii;
+          for( ii = 0 ; ii < (S32) reaction->getKineticFactors( ).size( ) ; ii++ ) {
+            kf << "  KF:" << ii << " " << *(reaction->getKineticFactors( )[ ii ]);
+          }
+          
+          OUTPUT( 0, ""
+                  << " loc: " << vIdx[ 0 ] << "," << vIdx[ 1 ] << "," << vIdx[ 2 ]
+                  << " " << subgridVOffset[ 0 ] << "," << subgridVOffset[ 1 ] << "," << subgridVOffset[ 2 ]
+                  << " solute: " << getSoluteIdx( )
+                  << " reaction: " << i
+                  << " factor: " << factor
+                  << " muMax: " << reaction->getMuMax( )
+                  << " KF: " << kf.str( )
+                  );
+        }
+
+        REAL yield = reaction->getSoluteYield( getSoluteIdx( ), spAgent );
+        if( false ) {
+          std::stringstream y;
+          S32 ii;
+          for( ii = 0 ; ii < (S32) reaction->getYields( ).size( ) ; ii++ ) {
+            y << "  YLD:" << ii << " " << reaction->getYields( )[ ii ];
+          }
+          REAL mass = spAgent.state.getModelReal( reaction->getCatalyzedBy( ) );
+          OUTPUT( 0, ""
+                  << " loc: " << vIdx[ 0 ] << "," << vIdx[ 1 ] << "," << vIdx[ 2 ]
+                  << " " << subgridVOffset[ 0 ] << "," << subgridVOffset[ 1 ] << "," << subgridVOffset[ 2 ]
+                  << " solute: " << getSoluteIdx( )
+                  << " reaction: " << i
+                  << " agent: " << l
+                  << " yield: " << yield
+                  << " YIELDS: " << y.str( )
+                  << " mass: " << mass
+                  );
+        }
+        //(fg.um-3.hour-1) =(fg)  * (hour-1) * (um-3)
+        gridRHS += yield * factor / getSubgridVolume();
+      }
+    }
+  }
+
   if( false ) {
     if( true || !( gridRHS >= 0. || ( ubEnv.getSubgridPhi( subgridVOffset, getSoluteIdx() ) >= -gridRHS ) ) ) {
       OUTPUT( 0, ""
@@ -367,6 +530,9 @@ void Solute::updateIfSubgridRHSLinear( const VIdx& vIdx, const VIdx& subgridVOff
     }
   }
   // Can't uptake more than exists.
+  if( gridRHS < 0. && getSubgridValue( ubEnv, subgridVOffset ) <= 0 ) {
+    gridRHS = 0.0;
+  }
   if( gridRHS < 0. && getSubgridValue( ubEnv, subgridVOffset ) < -gridRHS * getPDETimeStepDuration( ) ) {
     gridRHS = -getSubgridValue( ubEnv, subgridVOffset );
   }

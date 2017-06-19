@@ -8,9 +8,11 @@ class Particle( ParamHolder ):
         self.mEnumToken = "PARTICLE_%s" % ( name, )
         
         ParamHolder.__init__(self)
+        self.setPrefix( "PARTICLE" )
         self.addAttribute( Param( "name", "str", "", True ) )
         self.addAttribute( Param( "regulator", "bool", False, False ) )
         self.addParam( Param( "density", "g.L-1", 0.0, True ) )
+        self.addParam( Param( "writeOutput", "bool", False, False ) )
         self.mHiddenParams = self.mHiddenParams + [ "density" ]
         return
 
@@ -51,6 +53,8 @@ class AllParticles( ItemHolder ):
 
     def getBioModelH( self, indent, depth ):
         lines = [ ]
+        lines.append( self.getAllParamNames( indent, depth ) )
+        lines.append( "" )
         lines.append( self.getParticlesEnum( indent, depth ) )
         return "\n".join( lines )
 

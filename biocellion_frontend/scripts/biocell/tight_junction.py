@@ -11,10 +11,10 @@ class TightJunction( ParamHolder ):
         self.addAttribute( Param( "withSpecies", "str", "", True ) )
         self.addAttribute( Param( "scale", "float", 1.0, False ) )
 
-        self.mPrivateNumberHiddenParams = [ "stiffness", "withSpecies", "scale" ]
+        self.mPrivateNumberHiddenParams = [ "stiffness", "scale" ]
         self.mPrivateBoolHiddenParams = [  ]
         self.mPrivateStringHiddenParams = [  ]
-        self.mPrivateHiddenParams = self.mPrivateNumberHiddenParams + self.mPrivateBoolHiddenParams + self.mPrivateStringHiddenParams
+        self.mPrivateHiddenParams = [ "withSpecies", ] + self.mPrivateNumberHiddenParams + self.mPrivateBoolHiddenParams + self.mPrivateStringHiddenParams
         self.mHiddenParams = self.mHiddenParams + self.mPrivateHiddenParams
         return
 
@@ -36,6 +36,9 @@ class TightJunction( ParamHolder ):
                                                       self.mPrivateStringHiddenParams )
         lines.append( s )
         
+        s = "%s->setWithSpecies( %s );" % ( varname, self.mReference.getEnumToken( ),  );
+        lines.append( (depth*indent) + s )
+
         lines.append( (depth*indent) + "%s.push_back( %s );" % (container_name, varname, ) )
         depth -= 1;
         lines.append( (depth*indent) + "}" )

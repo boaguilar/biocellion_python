@@ -42,6 +42,7 @@ public:
   AgentSpecies( );
   AgentSpecies(const std::string& name, const std::string& speciesName, const S32& species_idx, const S32& num_real_param, const S32& num_int_param, const S32& num_bool_param, const S32& num_string_param);
   ~AgentSpecies();
+  const BioModel* getModel() const;
   const std::string& getName() const;
   const std::string& getSpeciesName() const;
   S32 getSpeciesIdx() const;
@@ -56,6 +57,8 @@ public:
   S32 getIdxMechForceRealZ() const;
   S32 getNumMechModelInts() const;
   S32 getNumODEVariables() const;
+  REAL getMoleculeValue(  const S32& moleculeIdx, const SpAgentState& spAgentState, const Vector< double >& v_y ) const;
+  REAL getMoleculeValue(  const S32& moleculeIdx, const SpAgentState& spAgentState ) const;
 
   const Vector<InitArea *>& getInitAreas( ) const;
   Vector<InitArea *>& getInitAreas( );
@@ -74,9 +77,12 @@ public:
   Vector< Chemotaxis * >& getChemotaxis();
   const Vector< S32 >& getReactions() const;
   Vector< S32 >& getReactions();
-  const Vector< AgentSpeciesMolecule* >& getMolecules() const;
-  Vector< AgentSpeciesMolecule* >& getMolecules();
+  const Vector< AgentSpeciesMolecule >& getMolecules() const;
+  Vector< AgentSpeciesMolecule >& getMolecules();
+  const Vector< S32 >& getODEReactions() const;
+  Vector< S32 >& getODEReactions();
 
+  void setModel(const BioModel*& biomodel );
   void setName(const std::string& name);
   void setSpeciesName(const std::string& speciesName);
   void setSpeciesIdx(const S32& idx);
@@ -87,16 +93,33 @@ public:
   void setUseMechForceReals(const BOOL& value);
   void setIdxMechForceReals(const S32& idx_x, const S32& idx_y, const S32& idx_z);
   void addParticle( const S32& particleIdx, const S32& modelRealIdx, const REAL& initialValue );
+  void addMolecule( const S32& moleculeIdx, const S32& odeVarIdx, const REAL& initialValue );
   void setInitialAgentState( SpAgentState& state ) const;
   void setNumODEVariables( const S32& numODEVariables );
-  // support for model_routine_agent.cpp
-  void adjustSpAgent( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, SpAgentState& state/* INOUT */, VReal& disp ) const;
-  void adjustSpAgentChemotaxis( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, SpAgentState& state/* INOUT */, VReal& disp ) const;
+
+  
+  /**********************************************
+   * support for model_routine_agent.cpp
+   **********************************************/
+  void addSpAgents( const BOOL init, const VIdx& startVIdx, const VIdx& regionSize, const IfGridBoxData<BOOL>& ifGridHabitableBoxData, Vector<VIdx>& v_spAgentVIdx, Vector<SpAgentState>& v_spAgentState, Vector<VReal>& v_spAgentOffset ) const;
+  void spAgentCRNODERHS( const S32 odeNetIdx, const VIdx& vIdx, const SpAgent& spAgent, const NbrUBEnv& nbrUBEnv, const Vector<double>& v_y, Vector<double>& v_f ) const;
   void updateSpAgentState( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const NbrUBEnv& nbrUBEnv, SpAgentState& state) const;
   void updateSpAgentRadius( SpAgentState& state ) const;
-  void updateSpAgentBirthDeath( const VIdx& vIdx, const SpAgent& spAgent, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, BOOL& divide, BOOL& disappear );
-  void divideSpAgent( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, SpAgentState& motherState/* INOUT */, VReal& motherDisp, SpAgentState& daughterState, VReal& daughterDisp, Vector<BOOL>& v_junctionDivide, BOOL& motherDaughterLinked, JunctionEnd& motherEnd, JunctionEnd& daughterEnd );
+  void spAgentSecretionBySpAgent( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, SpAgentState& state/* INOUT */, Vector<SpAgentState>& v_spAgentState, Vector<VReal>& v_spAgentDisp ) const;
+  void updateSpAgentBirthDeath( const VIdx& vIdx, const SpAgent& spAgent, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, BOOL& divide, BOOL& disappear ) const;
+  void brownianMotion( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, const SpAgentState& state, VReal& disp ) const;
+  void limitMotion(VReal& disp) const;
+  void setDisplacementFromMechanicalInteraction( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, SpAgentState& state/* INOUT */, VReal& disp ) const;
+  void adjustSpAgent( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, SpAgentState& state/* INOUT */, VReal& disp ) const;
+  void adjustSpAgentChemotaxis( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, SpAgentState& state/* INOUT */, VReal& disp ) const;
+  void divideSpAgent( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, SpAgentState& motherState/* INOUT */, VReal& motherDisp, SpAgentState& daughterState, VReal& daughterDisp, Vector<BOOL>& v_junctionDivide, BOOL& motherDaughterLinked, JunctionEnd& motherEnd, JunctionEnd& daughterEnd ) const;
+
+
+  // support for model_routine_output.cpp
+  void updateSpAgentOutput( const VIdx& vIdx, const SpAgent& spAgent, REAL& color, Vector<REAL>& v_extraScalar, Vector<VReal>& v_extraVector ) const;
+  
 protected:
+  const BioModel *mModel;
   std::string mName;
   std::string mSpeciesName;
   S32 mSpeciesIdx;
@@ -113,7 +136,8 @@ protected:
   Vector <Chemotaxis * > mChemotaxis;
   Vector < S32 > mReactions;
   Vector < EntryCondition* > mEntryConditions;
-  Vector< AgentSpeciesMolecule *> mMolecules;
+  Vector< AgentSpeciesMolecule > mMolecules;
+  Vector< S32 > mODEReactions;
 };
 
 #endif /* _AGENT_SPECIES_H_ */

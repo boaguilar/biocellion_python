@@ -10,8 +10,8 @@ class IsPermeableToParam( ParamHolder ):
 
         self.mPrivateNumberHiddenParams = [  ]
         self.mPrivateBoolHiddenParams = [  ]
-        self.mPrivateStringHiddenParams = [ "detail", ]
-        self.mPrivateHiddenParams = [ "name", ] + self.mPrivateNumberHiddenParams + self.mPrivateBoolHiddenParams + self.mPrivateStringHiddenParams
+        self.mPrivateStringHiddenParams = [  ]
+        self.mPrivateHiddenParams = [ "name", "detail", ] + self.mPrivateNumberHiddenParams + self.mPrivateBoolHiddenParams + self.mPrivateStringHiddenParams
         self.mHiddenParams = self.mHiddenParams + self.mPrivateHiddenParams
 
         self.mValue = 0.0
@@ -32,7 +32,8 @@ class IsPermeableToParam( ParamHolder ):
         
         lines.append( (depth*indent) + "IsPermeableTo %s;" % (varname, ) )
         lines.append( ParamHolder.getInitializeBioModel( self, varname, indent, depth ) )
-        lines.append( (depth*indent) + "%s.setValue( %s );" % (varname, str( self.mValue ) ) )
+        lines.append( (depth*indent) + "%s.setSoluteIdx( %s );" % ( varname, self.mReference.getEnumToken( ) ) )
+        lines.append( (depth*indent) + "%s.setValue( %s );" % ( varname, str( self.mValue ) ) )
         
         s = self.getInitializeBioModelSetDataMembers( varname, ".", indent, depth,
                                                       self.mPrivateBoolHiddenParams,
@@ -68,7 +69,7 @@ class ComputationDomainBoundaryCondition( ParamHolder ):
         self.mPrivateNumberHiddenParams = [  ]
         self.mPrivateBoolHiddenParams = [  ]
         self.mPrivateStringHiddenParams = [ "class", "name", ]
-        self.mPrivateHiddenParams = [ "isPermeableTo", ] + self.mPrivateNumberHiddenParams + self.mPrivateBoolHiddenParams + self.mPrivateStringHiddenParams
+        self.mPrivateHiddenParams = [ "isPermeableTo", "bulk", ] + self.mPrivateNumberHiddenParams + self.mPrivateBoolHiddenParams + self.mPrivateStringHiddenParams
         self.mHiddenParams = self.mHiddenParams + self.mPrivateHiddenParams
 
         self.mIsPermeableTos = ItemHolder( IsPermeableToParam )
@@ -92,7 +93,10 @@ class ComputationDomainBoundaryCondition( ParamHolder ):
         
         lines.append( (depth*indent) + "BoundaryCondition *%s = new BoundaryCondition( );" % (varname, ) )
         lines.append( ParamHolder.getInitializeBioModel( self, varname, indent, depth ) )
-        
+
+        if self.mReference:
+            lines.append( (depth*indent) + "%s->setBulkIdx( %s );" % ( varname, self.mReference.getEnumToken( ) ) )
+
         s = self.getInitializeBioModelSetDataMembers( varname, "->", indent, depth,
                                                       self.mPrivateBoolHiddenParams,
                                                       self.mPrivateNumberHiddenParams,

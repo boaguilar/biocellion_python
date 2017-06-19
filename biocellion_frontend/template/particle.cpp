@@ -1,14 +1,14 @@
 #include "biomodel.h"
 
 Particle::Particle(const S32& id, const std::string& name, const REAL& density)
-  : mId(id), mName(name), mDensity(density)
+  : ParamHolder( ), mParticleIdx( id ), mName( name ), mDensity( density )
 {
   //empty
 }
 
-S32 Particle:: getId() const
+S32 Particle:: getParticleIdx() const
 {
-  return mId;
+  return mParticleIdx;
 }
 
 std::string Particle::getName() const 
@@ -21,9 +21,9 @@ REAL Particle::getDensity() const
   return mDensity;
 }
  
-void Particle::setId(const S32& id)
+void Particle::setParticleIdx(const S32& id)
 {
-  mId = id;
+  mParticleIdx = id;
 }
 
 void Particle::setName(const std::string& name)

@@ -22,25 +22,16 @@ using namespace std;
 
 #if HAS_SPAGENT
 void ModelRoutine::updateSpAgentOutput( const VIdx& vIdx, const SpAgent& spAgent, REAL& color, Vector<REAL>& v_extraScalar, Vector<VReal>& v_extraVector ) {
-  /* MODEL START */
 
-  color = spAgent.state.getType();
-  CHECK( v_extraScalar.size() == 0 );
-  CHECK( v_extraVector.size() == 0 );
-
-  /* MODEL END */
+  gBioModel->updateSpAgentOutput( vIdx, spAgent, color, v_extraScalar, v_extraVector );
 
   return;
 }
 #endif
 
 void ModelRoutine::updateSummaryVar( const VIdx& vIdx, const NbrUBAgentData& nbrUBAgentData, const NbrUBEnv& nbrUBEnv, Vector<REAL>& v_realVal/* [elemIdx] */, Vector<S32>& v_intVal/* [elemIdx] */ ) {
-  /* MODEL START */
 
-  CHECK( v_realVal.size() == 0 );
-  CHECK( v_intVal.size() == 0 );
-
-  /* MODEL END */
+  gBioModel->updateSummaryVar( vIdx, nbrUBAgentData, nbrUBEnv, v_realVal, v_intVal );
 
   return;
 }

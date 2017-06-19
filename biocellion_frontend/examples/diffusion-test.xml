@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!--
+  Testing diffusion.
+  Attempt at 1-D equation.
+  X and Z boundaries are cyclic:
+  Y0 has a Bulk with constant concentration (10 g.L-1) of solute (MyBulkSolute)
+  YN has a Bulk with constant concentration (0 g.L-1) of solute (MyBulkSolute)
+
+  No solute decay.
+  No other solutes.
+  No agents.
+  No secretion/uptake.
+-->
+<idynomics>
+  <!--#####################################################################
+      SIMULATOR SECTION
+      ######################################################################-->
+  <simulator>
+    <param name="restartPreviousRun">false</param>
+    <param name="randomSeed">5515</param>
+    <param name="outputPeriod" unit="hour">0.01</param>
+
+    <timeStep>
+      <param name="adaptive">false</param>
+      <param name="timeStepIni" unit="hour">0.01</param>
+      <param name="timeStepMin" unit="hour">0.01</param>
+      <param name="timeStepMax" unit="hour">0.01</param>
+      <param name="endOfSimulation" unit="hour">5.0</param>
+    </timeStep>
+    <!-- The AGENTTIMESTEP which should always be EQUAL or LOWER than the global time step -->
+    <param name="agentTimeStep" unit="hour">0.01</param>
+    <param name="numStateAndGridTimeStepsPerBaseline">1</param>
+  </simulator>
+
+  <!--#####################################################################
+      INPUT SECTION
+      ######################################################################-->
+  <input>
+    <param name="useAgentFile">false</param>
+    <param name="useBulkFile">false</param>
+  </input>
+
+  <!--#####################################################################
+      SOLUTES AND BIOMASS TYPES SECTION
+      ######################################################################-->
+
+  <solute domain="MySoluteColony" name="MyBulkSolute">
+    <param name="diffusivity" unit="m2.day-1">8.64e-9</param>
+    <param name="airDiffusivity" unit="m2.day-1">8.64e-9</param>
+    <param name="decayRate">0.0</param>
+    <param name="concentration" unit="g.L-1">0.0</param>
+    <param name="writeOutput">true</param>
+  </solute>
+  
+  <particle name="biomass">
+    <param name="density" unit="g.L-1">150</param>
+  </particle>
+
+  <particle name="inert">
+    <param name="density" unit="g.L-1">150</param>
+  </particle>
+
+  <particle name="capsule">
+    <param name="density" unit="g.L-1">75</param>
+  </particle>
+
+  <!--#####################################################################
+      WORLD SECTION
+      ######################################################################-->
+  <world>
+
+    <bulk name="MyEmptyTank">
+      <param name="isConstant">true</param>
+      <param name="D" unit="h-1">0.6</param>
+      <solute name="MyBulkSolute">
+	<param name="Sbulk" unit="g.L-1">0.0</param>
+	<param name="Sin" unit="g.L-1">0</param>
+	<param name="isConstant">true</param>
+      </solute>
+    </bulk>
+
+    <bulk name="MySemiEmptyTank">
+      <param name="isConstant">true</param>
+      <param name="D" unit="h-1">0.6</param>
+      <solute name="MyBulkSolute">
+	<param name="Sbulk" unit="g.L-1">5.0</param>
+	<param name="Sin" unit="g.L-1">0</param>
+	<param name="isConstant">true</param>
+      </solute>
+    </bulk>
+
+    <computationDomain name="MySoluteColony">
+      <grid nDim="2" nI="17" nJ="33" nK="1"/>
+      <param name="resolution" unit="um">8</param>
+      <param name="boundaryLayer" unit="um">1</param>
+      <param name="biofilmDiffusivity">0.8</param>
+      <param name="specificArea" unit="m2.m-3">80</param>
+
+      <!-- x borders wrap for all -->
+      <boundaryCondition class="BoundaryCyclic" name="y0z">
+        <shape class="Planar">
+          <param name="pointIn" x="-1" y="0" z="0" />
+          <param name="vectorOut" x="-1" y="0" z="0" />
+        </shape>
+	<shape class="Planar">
+          <param name="pointIn" x="17" y="0" z="0" />
+          <param name="vectorOut" x="1" y="0" z="0" />
+        </shape>
+      </boundaryCondition>
+
+      <!-- y borders : 
+           empty tank/evaporation? at y0
+           constant concentration at yN
+      -->
+      <boundaryCondition class="BoundaryGasMembrane" name="x0z">
+        <param name="canAttachTo">true</param>
+	<param name="bulk">MyEmptyTank</param>
+	<param detail="MyBulkSolute" name="isPermeableTo" unit="m2.day-1">8.64e-9</param>
+        <shape class="Planar">
+          <param name="pointIn" x="0" y="-1" z="0"/>
+          <param name="vectorOut" x="0" y="-1" z="0"/>
+        </shape>
+      </boundaryCondition>
+
+      <boundaryCondition class="BoundaryGasMembrane" name="xNz">
+        <param name="canAttachTo">true</param>
+        <param name="bulk">MySemiEmptyTank</param>
+	<param detail="MyBulkSolute" name="isPermeableTo" unit="m2.day-1">8.64e-9</param>
+        <shape class="Planar">
+          <param name="pointIn" x="0" y="33" z="0"/>
+          <param name="vectorOut" x="0" y="1" z="0"/>
+        </shape>
+      </boundaryCondition>
+
+      <!-- z borders wrap for all -->
+      <boundaryCondition class="BoundaryCyclic" name="x0y">
+        <shape class="Planar">
+          <param name="pointIn" x="0" y="0" z="-1" />
+          <param name="vectorOut" x="0" y="0" z="-1" />
+        </shape>
+	<shape class="Planar">
+          <param name="pointIn" x="0" y="0" z="1" />
+          <param name="vectorOut" x="0" y="0" z="1" />
+        </shape>
+      </boundaryCondition>
+
+    </computationDomain>
+  </world>
+
+  <!--#####################################################################
+      REACTION SECTION
+      ######################################################################-->
+
+  <reaction catalyzedBy="biomass" catalyst="MyUptakeCells" class="ReactionFactor" name="MyBulkSoluteUptake">
+    <param name="muMax" unit="hour-1">0.0</param>
+    <kineticFactor class="FirstOrderKinetic"/>
+    <kineticFactor class="MonodKinetic" solute="MyBulkSolute">
+      <param name="Ks" unit="g.L-1">0.75</param>
+    </kineticFactor>
+    <yield>
+      <param name="MyBulkSolute" unit="g.g-1">-1.0</param>
+    </yield>
+  </reaction>
+  
+  <!--#####################################################################
+      SOLVER SECTION
+      ######################################################################-->
+  <solver class="SolverSimple" domain="MySoluteColony" name="solutes">
+    <param name="active">true</param>
+    <param name="preStep">150</param>
+    <param name="postStep">150</param>
+    <param name="coarseStep">1500</param>
+    <param name="nCycles">5</param>
+    <reaction name="MyBulkSoluteUptake"/>
+  </solver> 
+
+  <!--#####################################################################
+      AGENT GRID SECTION
+      ######################################################################-->
+  <agentGrid>
+    <param name="computationDomain">MySoluteColony</param>
+    <param name="resolution" unit="um">8</param>
+    <param name="shovingFraction">0.0025</param>
+    <param name="shovingMaxIter">1000</param>
+    <param name="shovingMutual">true</param>
+  </agentGrid>
+
+  <!--#####################################################################
+      SPECIES SECTION
+      ######################################################################-->
+
+  <species class="Yeast" name="MyUptakeCells">
+    <particle name="biomass">
+      <param name="mass" unit="fg">10000</param>
+    </particle>
+    <particle name="inert">
+      <param name="mass" unit="fg">0</param>
+    </particle>
+    <param name="color">blue</param>
+    <param name="fixed">true</param>
+    <param name="computationDomain">MySoluteColony</param>
+    <param name="divRadius" unit="um">3000</param>
+    <param name="deathRadius" unit="um">0</param>
+    <param name="shoveFactor" unit="um">1</param>
+    <param name="shoveLimit" unit="um">0.0</param>
+    <param name="epsMax">0.5</param>
+    <param name="kHyd" unit="hr-1">0.1</param> 
+    <param name="attachCreateFactor">1.0</param>
+    <param name="attachDestroyFactor">2</param>
+    <param name="tightJunctionToBoundaryStrength">0.5</param>
+    <param name="attachToBoundaryCreateFactor">1.1</param>
+    <param name="attachToBoundaryDestroyFactor">1.8</param>
+    <reaction name="MyBulkSoluteUptake" status="active"/>
+    <initArea number="15" shape="default">
+      <param name="birthday" unit="hour">0</param>
+      <coordinates x="1" y="1" z="0"/>
+      <coordinates x="135" y="263" z="0"/>
+    </initArea>
+  </species>
+
+</idynomics>

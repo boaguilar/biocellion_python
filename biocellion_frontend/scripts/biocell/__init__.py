@@ -1,6 +1,6 @@
 # files must be listed in dependency order.
 # utilities
-from .utils import get_type_of, same_type
+from .utils import get_type_of, same_type, GenericException, BadItemType, BadItemName
 
 # basic generic support
 from .unit import Unit, AllUnits
@@ -10,6 +10,7 @@ from .item_holder import ItemHolder
 
 # agent_species and requirements
 from .adhesion import Adhesion
+from .agent_species_molecule import AgentSpeciesMolecule
 from .agent_species_particle import AgentSpeciesParticle
 from .agent_species_reaction import AgentSpeciesReaction
 from .chemotaxis import Chemotaxis
@@ -46,6 +47,9 @@ from .particle import Particle, AllParticles
 
 # solutes
 from .solute import Solute, AllSolutes
+
+# molecules
+from .molecule import Molecule, AllMolecules
 
 # agent grid
 from .agent_grid import AgentGrid

@@ -14,3 +14,20 @@ def same_type( a, b ):
     tb = get_type_of( b )
     return ta == tb
 
+class GenericException( Exception ):
+    def __init__( self , msg ):
+        msg = "ERROR: " + msg
+        Exception.__init__( self, msg )
+        return
+
+class BadItemType( Exception ):
+    def __init__( self , tag, item_name ):
+        msg = "ERROR: Can not find list of " + str( tag ) + " items looking for/adding item " + str( item_name ) + "."
+        Exception.__init__( self, msg )
+        return
+
+class BadItemName( Exception ):
+    def __init__( self , tag, item_name ):
+        msg = "ERROR: Can not find " + str( item_name ) + " in list of " + str( tag ) + " items."
+        Exception.__init__( self, msg )
+        return

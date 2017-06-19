@@ -16,7 +16,7 @@ class Solute( ParamHolder ):
         self.addParam( Param( "airDiffusivity", "um2.hour-1", 0.0, False ) )
         self.addParam( Param( "decayRate", "float", 0.0, False ) )
         self.addParam( Param( "resolution", "um", -1.0, False ) )
-        self.addParam( Param( "concentration", "g.L-1", -1.0, False ) )
+        self.addParam( Param( "concentration", "g.L-1", 0.0, False ) )
         self.addParam( Param( "randomInit", "bool", False, False ) )
         self.addParam( Param( "rndMinConcentration", "g.L-1", 0.0, False ) )
         self.addParam( Param( "rndMaxConcentration", "g.L-1", 0.0, False ) )
@@ -33,6 +33,9 @@ class Solute( ParamHolder ):
 
         self.mDomainReference = None
         self.mSolverReference = None
+        
+        self.mReactions = [ ]
+        self.mMoleculeReactions = [ ]
         return
 
     def getDomainReference( self ):
@@ -119,17 +122,6 @@ class Solute( ParamHolder ):
         self.getParam( 'resolution' ).setValue( resolution )
         return resolution
 
-    def getConcentration( self ):
-        concentration = self.getParam( 'concentration' ).getValue( )
-        if concentration <= 0.0:
-            concentration = self.mModel.getWorld( ).getBulks( ).getSoluteConcentration( self.mName )
-        
-        self.getParam( 'concentration' ).setValue( concentration )
-        return concentration
-
-    def calcConcentration( self ):
-        return self.getConcentration( )
-
     def chooseSolver( self ):
         # find solver that contains reaction that contains this solute as a yield
         self.mSolverReference = None
@@ -148,6 +140,28 @@ class Solute( ParamHolder ):
                     break
         return
         
+    def chooseReactions( self ):
+        # find all reactions that apply to this solute
+        # file them according to kinetic factor requirements
+        self.mReactions = [ ]
+        self.mMoleculeReactions = [ ]
+        for reaction_key in self.mModel.getReactions( ).getKeys( ):
+            # global reaction
+            reaction = self.mModel.getReactions( ).getItem( reaction_key )
+            # is this solute a yield of this reaction?
+            solute = reaction.getYields( ).getSolute( self.mName )
+            if solute == self:
+                # look at all kinetic factors
+                for kinetic_factor_key in reaction.getKineticFactors( ).getKeys( ):
+                    kinetic_factor = reaction.getKineticFactors( ).getItem( kinetic_factor_key )
+                    if kinetic_factor.getMoleculeReference( ) is None:
+                        self.mReactions.append( reaction )
+                        break
+                    else:
+                        self.mMoleculeReactions.append( reaction )
+                        break
+        return
+        
     def getName(self):
         return self.mName
 
@@ -161,6 +175,8 @@ class Solute( ParamHolder ):
         depth += 1
         lines.append( (depth*indent) + "Solute *%s = new Solute( \"%s\", %s, %s, %s, %s, %s, %s );" % ( varname, self.mName, self.mEnumToken, self.mDomainReference.getEnumToken( ),
                                                                                                         self.countReal(), self.countInt(), self.countBool(), self.countString(), ) )
+        s = (depth*indent) + "%s->setModel( gBioModel );" % ( varname, )
+        lines.append( s )
         s = ParamHolder.getInitializeBioModel( self, varname, indent, depth )
         if s:
             lines.append( s )
@@ -174,6 +190,24 @@ class Solute( ParamHolder ):
         if self.mSolverReference is not None:
             s = (depth*indent) + "%s->setSolverIdx( %s );" % ( varname, self.mSolverReference.getEnumToken( ), )
             lines.append( s )
+
+        if len( self.mReactions ) > 0:
+            lines.append( (depth*indent) + "{" )
+            depth += 1
+            for reaction in self.mReactions:
+                s = (depth*indent) + "%s->getReactions( ).push_back( %s );" % ( varname, reaction.getEnumToken( ), )
+                lines.append( s )
+            depth -= 1
+            lines.append( (depth*indent) + "}" )
+
+        if len( self.mMoleculeReactions ) > 0:
+            lines.append( (depth*indent) + "{" )
+            depth += 1
+            for reaction in self.mMoleculeReactions:
+                s = (depth*indent) + "%s->getMoleculeReactions( ).push_back( %s );" % ( varname, reaction.getEnumToken( ), )
+                lines.append( s )
+            depth -= 1
+            lines.append( (depth*indent) + "}" )
 
         lines.append( (depth*indent) + "gBioModelRW->getSolutes( ).push_back( %s );" % ( varname, ) )
         depth -= 1;
@@ -212,14 +246,14 @@ class AllSolutes( ItemHolder ):
             raise Exception( "ERROR: Need at least 1 interface AMR level." )
         return max( levels )
 
-    def calcConcentrations( self ):
-        for name in self.mOrder:
-            self.mItems[ name ].calcConcentration( )
-        return
-
     def chooseSolvers( self ):
         for name in self.mOrder:
             self.mItems[ name ].chooseSolver( )
+        return
+
+    def chooseReactions( self ):
+        for name in self.mOrder:
+            self.mItems[ name ].chooseReactions( )
         return
 
     def getBioModelH( self, indent, depth ):

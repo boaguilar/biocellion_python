@@ -190,7 +190,7 @@ void InitArea::addSpAgentsDefault( const BOOL init, const VIdx& startVIdx, const
     intersect_volume = 0.0;
   }
 
-  REAL agent_number = intersect_volume * agent_density;
+  S64 agent_number = (S64) (0.5 + intersect_volume * agent_density);
 
   OUTPUT( 10, "IF_GRID_SPACE = " << gBioModel->getAgentGrid().getResolution( ) );
   OUTPUT( 10, "total_agents = " << mNumber );
@@ -224,7 +224,7 @@ void InitArea::addSpAgentsDefault( const BOOL init, const VIdx& startVIdx, const
   }
   
   /**** create the agents now ****/
-  S64 j;
+  S64 j = 0;
   for( j = 0 ; j < ( S64 ) agent_number ; j ++ ) {
     VReal vPosAgent;
     VIdx vIdxAgent;

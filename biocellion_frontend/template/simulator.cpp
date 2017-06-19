@@ -1,7 +1,8 @@
 #include "biomodel.h"
 
 Simulator::Simulator()
-  : mRestartPreviousRun(false), mChemostat(false), mDiffusionReactionOnAgentTime(false),
+  : ParamHolder( ),
+    mRestartPreviousRun(false), mChemostat(false), mDiffusionReactionOnAgentTime(false),
     mRandomSeed(0), mOutputPeriod(0), mAgentTimeStep(0)
 {
   //empty
@@ -11,7 +12,8 @@ Simulator::Simulator(
 		     const BOOL& restartPreviousRun, const BOOL& chemostat, const BOOL& diffusionReactionOnAgentTime,
 		     const REAL& randomSeed, const REAL& outputPeriod, const REAL& agentTimeStep
 		     )
-  : mRestartPreviousRun(restartPreviousRun), mChemostat(chemostat), mDiffusionReactionOnAgentTime(diffusionReactionOnAgentTime),
+  : ParamHolder( ),
+    mRestartPreviousRun(restartPreviousRun), mChemostat(chemostat), mDiffusionReactionOnAgentTime(diffusionReactionOnAgentTime),
     mRandomSeed(randomSeed), mOutputPeriod(outputPeriod), mAgentTimeStep(agentTimeStep)
 {
   //empty
@@ -21,8 +23,9 @@ Simulator::Simulator(
 		     const BOOL& restartPreviousRun, const BOOL& chemostat, const BOOL& diffusionReactionOnAgentTime,
 		     const REAL& randomSeed, const REAL& outputPeriod, const REAL& agentTimeStep, const TimeStep& simTimeStep
 		     )
-  :  mRestartPreviousRun(restartPreviousRun), mChemostat(chemostat), mDiffusionReactionOnAgentTime(diffusionReactionOnAgentTime),
-     mRandomSeed(randomSeed), mOutputPeriod(outputPeriod), mAgentTimeStep(agentTimeStep), mTimeStep(simTimeStep)
+  : ParamHolder( ),
+    mRestartPreviousRun(restartPreviousRun), mChemostat(chemostat), mDiffusionReactionOnAgentTime(diffusionReactionOnAgentTime),
+    mRandomSeed(randomSeed), mOutputPeriod(outputPeriod), mAgentTimeStep(agentTimeStep), mTimeStep(simTimeStep)
 {
   //empty
 
@@ -36,6 +39,10 @@ const TimeStep& Simulator::getTimeStep() const
 TimeStep& Simulator::getTimeStep()
 {
   return mTimeStep;
+}
+
+REAL Simulator::getCurrentTime( ) const {
+  return getAgentTimeStep( ) * Info::getCurBaselineTimeStep();
 }
 
 void Simulator::setRestartPreviousRun(const BOOL& restartPreviousRun)

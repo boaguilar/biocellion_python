@@ -20,6 +20,14 @@ BioModel::~BioModel( ) {
   }
   mSolutes.clear();
 
+  for( i = 0; i < (S32) mMolecules.size(); i++ ) {
+    if( mMolecules[i] ) {
+      delete mMolecules[i];
+      mMolecules[i] = 0;
+    }
+  }
+  mMolecules.clear();
+
   for( i = 0; i < (S32) mReactions.size(); i++ ) {
     if( mReactions[i] ) {
       delete mReactions[i];
@@ -69,6 +77,14 @@ const Vector< Solute * >& BioModel::getSolutes( ) const {
 
 Vector< Solute * >& BioModel::getSolutes( ) {
   return mSolutes;
+}
+
+const Vector< Molecule * >& BioModel::getMolecules( ) const {
+  return mMolecules;
+}
+
+Vector< Molecule * >& BioModel::getMolecules( ) {
+  return mMolecules;
 }
 
 const Vector< Reaction * >& BioModel::getReactions( ) const {
@@ -157,6 +173,16 @@ void BioModel::setDistanceJunctionsEnabled( const BOOL& value ) {
   mDistanceJunctionsEnabled = value;
 }
 
+// general time suppport
+REAL BioModel::getCurrentTime( ) const {
+  return mSimulator.getCurrentTime( );
+}
+
+REAL BioModel::getAgentTimeStep( ) const {
+  return mSimulator.getAgentTimeStep( );
+}
+
+
 // general grid support
 REAL BioModel::getSubgridValue( const S32& elemIdx, const NbrUBEnv& nbrUBEnv, const VReal& vOffset ) const {
   return mSolutes[ elemIdx ]->getSubgridValue( nbrUBEnv, vOffset );
@@ -172,7 +198,86 @@ REAL BioModel::getSubgridValue( const S32& elemIdx, const UBEnv& ubEnv, const VI
 
 
 
-// support for model_routine_config.cpp
+/**********************************************
+ * support for model_routine_agent.cpp
+ **********************************************/
+void BioModel::addSpAgents( const BOOL init, const VIdx& startVIdx, const VIdx& regionSize, const IfGridBoxData<BOOL>& ifGridHabitableBoxData, Vector<VIdx>& v_spAgentVIdx, Vector<SpAgentState>& v_spAgentState, Vector<VReal>& v_spAgentOffset ) const {
+
+  S32 i;
+  for( i = 0 ; i < (S32) mAgentSpecies.size( ) ; i++ ) {
+    mAgentSpecies[ i ]->addSpAgents( init, startVIdx, regionSize, ifGridHabitableBoxData, v_spAgentVIdx, v_spAgentState, v_spAgentOffset );
+  }
+
+}
+
+void BioModel::spAgentCRNODERHS( const S32 odeNetIdx, const VIdx& vIdx, const SpAgent& spAgent, const NbrUBEnv& nbrUBEnv, const Vector<double>& v_y, Vector<double>& v_f ) const {
+  
+  mAgentSpecies[ spAgent.state.getType( ) ]->spAgentCRNODERHS( odeNetIdx, vIdx, spAgent, nbrUBEnv, v_y, v_f );
+
+}
+
+void BioModel::updateSpAgentState( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const NbrUBEnv& nbrUBEnv, SpAgentState& state) const {
+
+  mAgentSpecies[ state.getType() ]->updateSpAgentState(vIdx, junctionData, vOffset, nbrUBEnv, state);
+
+}
+
+void BioModel::spAgentSecretionBySpAgent( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, SpAgentState& state/* INOUT */, Vector<SpAgentState>& v_spAgentState, Vector<VReal>& v_spAgentDisp ) const {
+
+  mAgentSpecies[ state.getType() ]->spAgentSecretionBySpAgent( vIdx, junctionData, vOffset, mechIntrctData, nbrUBEnv, state, v_spAgentState, v_spAgentDisp );
+
+}
+
+void BioModel::updateSpAgentBirthDeath( const VIdx& vIdx, const SpAgent& spAgent, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, BOOL& divide, BOOL& disappear ) const {
+
+  mAgentSpecies[ spAgent.state.getType() ]->updateSpAgentBirthDeath( vIdx, spAgent, mechIntrctData, nbrUBEnv, divide, disappear);
+
+}
+
+void BioModel::adjustSpAgent( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, SpAgentState& state/* INOUT */, VReal& disp ) const {
+
+  mAgentSpecies[ state.getType( ) ]->adjustSpAgent( vIdx, junctionData, vOffset, mechIntrctData, nbrUBEnv, state, disp );
+
+}
+
+void BioModel::divideSpAgent( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, SpAgentState& motherState/* INOUT */, VReal& motherDisp, SpAgentState& daughterState, VReal& daughterDisp, Vector<BOOL>& v_junctionDivide, BOOL& motherDaughterLinked, JunctionEnd& motherEnd, JunctionEnd& daughterEnd ) const {
+
+  mAgentSpecies[ motherState.getType() ]->divideSpAgent( vIdx, junctionData, vOffset, mechIntrctData, nbrUBEnv, motherState, motherDisp, daughterState, daughterDisp, v_junctionDivide, motherDaughterLinked, motherEnd, daughterEnd);
+
+}
+
+
+/**********************************************
+ * support for model_routine_config.cpp
+ **********************************************/
+void BioModel::updateDomainBdryType( domain_bdry_type_e a_domainBdryType[DIMENSION] ) const {
+
+  CHECK( DIMENSION == 3 );
+
+  for( S32 dim = 0 ; dim < DIMENSION ; dim++ ) {
+    if( mWorld.getComputationDomains( )[ 0 ]->boundaryIsPeriodic( dim ) ) {
+      a_domainBdryType[ dim ] = DOMAIN_BDRY_TYPE_PERIODIC;
+    } else {
+      a_domainBdryType[ dim ] = DOMAIN_BDRY_TYPE_NONPERIODIC_HARD_WALL;
+    }
+  }
+  
+}
+
+void BioModel::updateTimeStepInfo( TimeStepInfo& timeStepInfo ) const {
+  
+  timeStepInfo.durationBaselineTimeStep = mSimulator.getAgentTimeStep( );
+  
+  timeStepInfo.numStateAndGridTimeStepsPerBaseline = mSimulator.getParamInt( mSimulator.getIdxInt( SIMULATOR_numStateAndGridTimeStepsPerBaseline ) );
+  
+}
+
+void BioModel::updateBoundaryConditions( ) {
+  S32 i;
+  for( i = 0 ; i < (S32) mSolutes.size( ) ; i++ ) {
+    mSolutes[ i ]->calculateBoundaryConditions( );
+  }
+}
 
 void BioModel::updatePhiPDEInfo( Vector<PDEInfo>& v_phiPDEInfo ) const {
 
@@ -181,7 +286,7 @@ void BioModel::updatePhiPDEInfo( Vector<PDEInfo>& v_phiPDEInfo ) const {
     S32 i;
     v_phiPDEInfo.resize( mSolutes.size( ) );
     for( i = 0; i < (S32) mSolutes.size( ); i++ ) {
-      mSolutes[ i ]->setPDEInfo( v_phiPDEInfo[ i ] );
+      mSolutes[ i ]->updatePhiPDEInfo( v_phiPDEInfo[ i ] );
     }
   } else {
     v_phiPDEInfo.clear( );
@@ -191,7 +296,26 @@ void BioModel::updatePhiPDEInfo( Vector<PDEInfo>& v_phiPDEInfo ) const {
 
 void BioModel::updateFileOutputInfo( FileOutputInfo& fileOutputInfo ) const {
 
-  WARNING( "Should configure particle output in BioModel." );
+  if( mAgentSpecies.size() > 0 ) {
+    S32 i;
+    fileOutputInfo.particleOutput = true;
+    fileOutputInfo.v_particleExtraOutputScalarVarName.clear();
+    for( i = 0 ; i < (S32) mParticles.size( ) ; i++ ) {
+      if( mParticles[ i ]->getParamBool( mParticles[ i ]->getIdxBool( PARTICLE_writeOutput ) ) ) {
+        fileOutputInfo.v_particleExtraOutputScalarVarName.push_back( mParticles[ i ]->getName( ) );
+      }
+    }
+    for( i = 0 ; i < (S32) mMolecules.size( ) ; i++ ) {
+      if( mMolecules[ i ]->getParamBool( mMolecules[ i ]->getIdxBool( MOLECULE_writeOutput ) ) ) {
+        fileOutputInfo.v_particleExtraOutputScalarVarName.push_back( mMolecules[ i ]->getName( ) );
+      }
+    }
+    fileOutputInfo.v_particleExtraOutputVectorVarName.clear();
+  } else {
+    fileOutputInfo.particleOutput = false;
+    fileOutputInfo.v_particleExtraOutputScalarVarName.clear();
+    fileOutputInfo.v_particleExtraOutputVectorVarName.clear();
+  }
   
   if( mSolutes.size() > 0 ) {
     S32 i;
@@ -403,6 +527,7 @@ void initializeBioModel() {
   }
 
   initializeBioModelAuto();
+  gBioModelRW->updateBoundaryConditions( );
 
   S32 i, j;
   gBioModelRW->getMechIntrctShoveEnabled().resize( NUM_AGENT_SPECIES ); 
@@ -436,16 +561,19 @@ void terminateBioModel() {
   gBioModelInitialized = false;
 }
 
-void BioModel::updateSpAgentState( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const NbrUBEnv& nbrUBEnv, SpAgentState& state) const {
-  mAgentSpecies[ state.getType() ]->updateSpAgentState(vIdx, junctionData, vOffset, nbrUBEnv, state);
+/**********************************************
+ * support for model_routine_output.cpp
+ **********************************************/
+void BioModel::updateSpAgentOutput( const VIdx& vIdx, const SpAgent& spAgent, REAL& color, Vector<REAL>& v_extraScalar, Vector<VReal>& v_extraVector ) const {
+
+  mAgentSpecies[ spAgent.state.getType() ]->updateSpAgentOutput( vIdx, spAgent, color, v_extraScalar, v_extraVector );
+
 }
 
-void BioModel::updateSpAgentBirthDeath( const VIdx& vIdx, const SpAgent& spAgent, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, BOOL& divide, BOOL& disappear )
-{
-  mAgentSpecies[ spAgent.state.getType() ]->updateSpAgentBirthDeath( vIdx, spAgent, mechIntrctData, nbrUBEnv, divide, disappear);
+void BioModel::updateSummaryVar( const VIdx& vIdx, const NbrUBAgentData& nbrUBAgentData, const NbrUBEnv& nbrUBEnv, Vector<REAL>& v_realVal/* [elemIdx] */, Vector<S32>& v_intVal/* [elemIdx] */ ) const {
+  
+  CHECK( v_realVal.size() == 0 );
+  CHECK( v_intVal.size() == 0 );
+  
 }
 
-void BioModel::divideSpAgent( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, SpAgentState& motherState/* INOUT */, VReal& motherDisp, SpAgentState& daughterState, VReal& daughterDisp, Vector<BOOL>& v_junctionDivide, BOOL& motherDaughterLinked, JunctionEnd& motherEnd, JunctionEnd& daughterEnd )
- {
-   mAgentSpecies[ motherState.getType() ]->divideSpAgent( vIdx, junctionData, vOffset, mechIntrctData, nbrUBEnv, motherState, motherDisp, daughterState, daughterDisp, v_junctionDivide, motherDaughterLinked, motherEnd, daughterEnd);
- }

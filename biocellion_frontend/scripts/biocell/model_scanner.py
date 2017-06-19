@@ -226,14 +226,14 @@ class ModelScanner:
             elif child.tag in ( 'world' ):
                 # need to enumerate computationDomain
                 for child in list( child ):
-                    if child.tag in ( 'computationDomain' ):
+                    if child.tag in ( 'computationDomain', 'bulk' ):
                         tag = child.tag
                         name = child.get( 'name' )
                         class_name = child.get( 'class' )
                         item = self.mModel.getItemAddIfNeeded( tag, name, class_name )
                     else:
                         pass
-            elif child.tag in ( 'solute', 'particle', 'reaction', 'solver', 'molecularReactions', 'species' ):
+            elif child.tag in ( 'solute', 'molecule', 'particle', 'reaction', 'solver', 'molecularReactions', 'species' ):
                 tag = child.tag
                 name = child.get( 'name' )
                 class_name = child.get( 'class' )
@@ -244,7 +244,7 @@ class ModelScanner:
         return
         
     def scanIdynomicsXML( self, node, parent_object=None ):
-        may_children = ( "simulator", "input", "solute", "particle", "world", "reaction", "molecularReactions", "solver", "agentGrid", "species", )
+        may_children = ( "simulator", "input", "solute", "molecule", "particle", "world", "reaction", "molecularReactions", "solver", "agentGrid", "species", )
         required_children = ( "simulator", )
         self.mModel.resetIDynoMiCS( )
         node_object = self.mModel.getIDynoMiCS( )
@@ -252,6 +252,7 @@ class ModelScanner:
             "simulator": self.scanSimulatorXML,
             "input": self.scanInputXML,
             "solute": self.scanSoluteXML,
+            "molecule": self.scanMoleculeXML,
             "particle": self.scanParticleXML,
             "world": self.scanWorldXML,
             "reaction": self.scanReactionXML,
@@ -302,6 +303,24 @@ class ModelScanner:
         may_children = ( "param", )
         required_children = (  )
         node_object = self.mModel.getItemAddIfNeeded( node.tag, node.get( 'name' ), node.get( 'class' ) )
+        if not node.get( 'domain' ):
+            raise Exception( '<'+ node.tag +' name="' + node.get( 'name' ) + '">: must have attribute domain="".' )
+        node_object.setDomainReference( self.mModel.getItem( 'domain', node.get( 'domain' ) ) )
+        parent_object = None # don't need to add this as a child
+        child_methods = {
+            "param": self.scanGenericParamXML,
+        }
+        
+        ok = self.scanNodeXML( node, may_children, required_children, child_methods, node_object, parent_object )
+
+        return ok
+
+    def scanMoleculeXML( self, node, parent_object=None ):
+        may_children = ( "param", )
+        required_children = (  )
+        node_object = self.mModel.getItemAddIfNeeded( node.tag, node.get( 'name' ), node.get( 'class' ) )
+        if not node.get( 'domain' ):
+            raise Exception( '<'+ node.tag +' name="' + node.get( 'name' ) + '">: must have attribute domain="".' )
         node_object.setDomainReference( self.mModel.getItem( 'domain', node.get( 'domain' ) ) )
         parent_object = None # don't need to add this as a child
         child_methods = {
@@ -343,9 +362,7 @@ class ModelScanner:
     def scanWorldBulkXML( self, node, parent_object=None ):
         may_children = ( "solute", "param", )
         required_children = ( )
-        if not self.mModel.getIDynoMiCS( ).getWorld().getBulks().addItem( node.get('name') ):
-            raise Exception( "ERROR : couldn't add a bulk." )
-        node_object = self.mModel.getIDynoMiCS( ).getWorld().getBulks().getLastItem( )
+        node_object = self.mModel.getItemAddIfNeeded( node.tag, node.get( 'name' ), node.get( 'class' ) )
         parent_object = None # don't need to add this as a child
         child_methods = {
             "param": self.scanGenericParamXML,
@@ -432,6 +449,10 @@ class ModelScanner:
         }
 
         ok = self.scanNodeXML( node, may_children, required_children, child_methods, node_object, parent_object )
+
+        bulk_name = node_object.getParam( 'bulk' ).getValue( )
+        if bulk_name:
+            node_object.setReference( self.mModel.getItem( 'bulk', bulk_name ) )
         
         return ok
 
@@ -461,6 +482,8 @@ class ModelScanner:
         value, unit = convertToStandardUnit( value, unit )
         node_object.getAttribute( 'unit' ).setValue( unit )
         node_object.setValue( value )
+        if node.get( 'detail' ):
+            node_object.setReference( self.mModel.getItem( 'solute', node.get( 'detail' ) ) )
 
         return ok
 
@@ -539,7 +562,9 @@ class ModelScanner:
                 raise Exception( "ERROR : couldn't add a reaction kinetic factor." )
             node_object = parent_object.getKineticFactors().getLastItem()
             if node.get( 'solute' ):
-                node_object.setReference( self.mModel.getItem( 'solute', node.get( 'solute' ) ) )
+                node_object.setSoluteReference( self.mModel.getItem( 'solute', node.get( 'solute' ) ) )
+            if node.get( 'molecule' ):
+                node_object.setMoleculeReference( self.mModel.getItem( 'molecule', node.get( 'molecule' ) ) )
             parent_object = None # don't need to add this as a child
         child_methods = {
             "param": self.scanGenericParamXML,
@@ -573,9 +598,12 @@ class ModelScanner:
                 node_object.setParticle( yield_name, self.mModel.getItem( 'particle', yield_name ) )
             elif self.mModel.getIDynoMiCS( ).getSolutes( ).hasKey( yield_name ):
                 node_object.setSolute( yield_name, self.mModel.getItem( 'solute', yield_name ) )
+            elif self.mModel.getIDynoMiCS( ).getMolecules( ).hasKey( yield_name ):
+                node_object.setMolecule( yield_name, self.mModel.getItem( 'molecule', yield_name ) )
             else:
-                msg  = "ERROR: Reaction.Yield.Param should name a solute or a particle. " + str( yield_name ) + " is not in either list.\n"
+                msg  = "ERROR: Reaction.Yield.Param should name a solute, molecule or particle. " + str( yield_name ) + " is not in any list.\n"
                 msg += "ERROR: Known solutes: " + ", ".join( self.mModel.getIDynoMiCS( ).getSolutes( ).getKeys( ) ) + ".\n"
+                msg += "ERROR: Known molecules: " + ", ".join( self.mModel.getIDynoMiCS( ).getMolecules( ).getKeys( ) ) + ".\n"
                 msg += "ERROR: Known particles: " + ", ".join( self.mModel.getIDynoMiCS( ).getParticles( ).getKeys( ) ) + ".\n"
                 raise Exception( msg )
         
@@ -634,13 +662,14 @@ class ModelScanner:
         return ok
 
     def scanSpeciesXML( self, node, parent_object=None ):
-        may_children = ( "param", "particle", "reaction", "tightJunctions", "adhesions", "initArea", "entryConditions", "chemotaxis", "switchingLags",  )
+        may_children = ( "param", "particle", "molecule", "reaction", "tightJunctions", "adhesions", "initArea", "entryConditions", "chemotaxis", "switchingLags",  )
         required_children = (  )
         node_object = self.mModel.getItemAddIfNeeded( node.tag, node.get( 'name' ), node.get( 'class' ) )
         parent_object = None # don't need to add this as a child
         child_methods = {
             "param": self.scanGenericParamXML,
             "particle": self.scanSpeciesParticleXML,
+            "molecule": self.scanSpeciesMoleculeXML,
             "reaction": self.scanSpeciesReactionXML,
             "tightJunctions": self.scanSpeciesTightJunctionsXML,
             "adhesions": self.scanSpeciesAdhesionsXML,
@@ -664,6 +693,26 @@ class ModelScanner:
             if not parent_object.getParticles().addItem( node.get('name') ):
                 raise Exception( "ERROR : couldn't add a species particle." )
             node_object = parent_object.getParticles().getLastItem()
+            node_object.setReference( self.mModel.getItem( node.tag, node.get( 'name' ) ) )
+            parent_object = None # don't need to add this as a child
+        child_methods = {
+            "param": self.scanGenericParamXML,
+        }
+        
+        ok = self.scanNodeXML( node, may_children, required_children, child_methods, node_object, parent_object )
+        
+        return ok
+
+    def scanSpeciesMoleculeXML( self, node, parent_object=None ):
+        may_children = ( "param", )
+        required_children = ( "param", )
+        if parent_object is None:
+            node_object = AgentSpeciesMolecule( )
+        else:
+            if not parent_object.getMolecules( ).addItem( node.get('name') ):
+                raise Exception( "ERROR : couldn't add a species molecule." )
+            node_object = parent_object.getMolecules( ).getLastItem( )
+            node_object.setReference( self.mModel.getItem( node.tag, node.get( 'name' ) ) )
             parent_object = None # don't need to add this as a child
         child_methods = {
             "param": self.scanGenericParamXML,
@@ -679,9 +728,10 @@ class ModelScanner:
         if parent_object is None:
             node_object = AgentSpeciesReaction( )
         else:
-            if not parent_object.getReactions().addItem( node.get('name') ):
+            if not parent_object.getReactions( ).addItem( node.get( 'name' ) ):
                 raise Exception( "ERROR : couldn't add a species reaction." )
-            node_object = parent_object.getReactions().getLastItem()
+            node_object = parent_object.getReactions( ).getLastItem( )
+            node_object.setReference( self.mModel.getItem( node.tag, node.get( 'name' ) ) )
             parent_object = None # don't need to add this as a child
         child_methods = {
         }
@@ -715,6 +765,8 @@ class ModelScanner:
             if not parent_object.addItem(  ):
                 raise Exception( "ERROR : couldn't add a species tight junction." )
             node_object = parent_object.getLastItem( )
+            if node.get( 'withSpecies' ):
+                node_object.setReference( self.mModel.getItem( 'species', node.get( 'withSpecies' ) ) )
             parent_object = None # don't need to add this as a child
         child_methods = {
         }
@@ -749,6 +801,8 @@ class ModelScanner:
             if not parent_object.addItem(  ):
                 raise Exception( "ERROR : couldn't add a species adhesion." )
             node_object = parent_object.getLastItem( )
+            if node.get( 'withSpecies' ):
+                node_object.setReference( self.mModel.getItem( 'species', node.get( 'withSpecies' ) ) )
             parent_object = None # don't need to add this as a child
         child_methods = {
         }

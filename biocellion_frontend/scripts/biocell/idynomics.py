@@ -14,6 +14,7 @@ class IDynoMiCS( ParamHolder ):
         self.mAgentGrid = AgentGrid()
         self.mAgentSpecies = AllAgentSpecies( self )
         self.mSolutes = AllSolutes( self )
+        self.mMolecules = AllMolecules( self )
         self.mParticles = AllParticles()
         
         return
@@ -21,6 +22,8 @@ class IDynoMiCS( ParamHolder ):
     def getItemAddIfNeeded( self, tag, name, class_name ):
         if tag == "solute":
             collection = self.getSolutes( )
+        elif tag == "molecule":
+            collection = self.getMolecules( )
         elif tag == "particle":
             collection = self.getParticles( )
         elif tag == "reaction":
@@ -33,8 +36,10 @@ class IDynoMiCS( ParamHolder ):
             collection = self.getAgentSpecies( )
         elif tag in ( "computationDomain", "domain" ):
             collection = self.getWorld( ).getComputationDomains( )
+        elif tag in ( "bulk" ):
+            collection = self.getWorld( ).getBulks( )
         else:
-            raise Exception( "Unexpected tag: " + str( tag ) )
+            raise BadItemType( tag, name )
 
         if not collection.hasKey( name ):
             if tag == 'species':
@@ -43,12 +48,14 @@ class IDynoMiCS( ParamHolder ):
                 ok = collection.addItem( name )
                 
             if not ok:
-                raise Exception( "ERROR: could not add " + str( tag ) + " " + str( name )  )
+                raise GenericException( "Could not add item " + str( name ) + " to the list of " + str( tag ) + "." )
         return collection.getItem( name )
 
     def getItem( self, tag, name ):
         if tag == "solute":
             collection = self.getSolutes( )
+        elif tag == "molecule":
+            collection = self.getMolecules( )
         elif tag == "particle":
             collection = self.getParticles( )
         elif tag == "reaction":
@@ -61,11 +68,13 @@ class IDynoMiCS( ParamHolder ):
             collection = self.getAgentSpecies( )
         elif tag in ( "computationDomain", "domain" ):
             collection = self.getWorld( ).getComputationDomains( )
+        elif tag in ( "bulk" ):
+            collection = self.getWorld( ).getBulks( )
         else:
-            raise Exception( "Unexpected tag: " + str( tag ) )
+            raise BadItemType( tag, name )
 
         if not collection.hasKey( name ):
-            raise Exception( "ERROR: could not get " + str( tag ) + " " + str( name )  )
+            raise BadItemName( tag, name )
         return collection.getItem( name )
 
     def getBioModelH( self, indent, depth ):
@@ -84,6 +93,8 @@ class IDynoMiCS( ParamHolder ):
         lines.append( "" )
         lines.append( self.mSolutes.getBioModelH( indent, depth ) )
         lines.append( "" )
+        lines.append( self.mMolecules.getBioModelH( indent, depth ) )
+        lines.append( "" )
         lines.append( self.mParticles.getBioModelH( indent, depth ) )
         return "\n".join( lines )
 
@@ -96,6 +107,7 @@ class IDynoMiCS( ParamHolder ):
         lines.append( self.mAgentGrid.getInitializeBioModel( indent, depth ) )
         lines.append( self.mAgentSpecies.getInitializeBioModel( indent, depth ) )
         lines.append( self.mSolutes.getInitializeBioModel( indent, depth ) )
+        lines.append( self.mMolecules.getInitializeBioModel( indent, depth ) )
         lines.append( self.mParticles.getInitializeBioModel( indent, depth ) )
         return "\n".join( lines )
 
@@ -119,6 +131,9 @@ class IDynoMiCS( ParamHolder ):
         
     def getSolutes( self ):
         return self.mSolutes
+        
+    def getMolecules( self ):
+        return self.mMolecules
         
     def getParticles( self ):
         return self.mParticles
@@ -155,6 +170,9 @@ class IDynoMiCS( ParamHolder ):
     def getSoluteEnumToken( self, item_key ):
         return self.getItemEnumToken( self.mSolutes, item_key )
 
+    def getMoleculeEnumToken( self, item_key ):
+        return self.getItemEnumToken( self.mMolecules, item_key )
+
     def getParticleEnumToken( self, item_key ):
         return self.getItemEnumToken( self.mParticles, item_key )
 
@@ -163,11 +181,14 @@ class IDynoMiCS( ParamHolder ):
             print( "Still have children of type: " + str( t ) )
             raise Exception( "ERROR: children should not be here." )
 
-        print( "FIXME: Warning, *->Reactions need to be connected by enumtoken." )
-
         ### These must happen before enums are used to link items
+        ## Link solutes to reactions
+        self.mSolutes.chooseReactions( )
         ## Link solutes to solvers
         self.mSolutes.chooseSolvers( )
+
+        ## Link agent species to reactions
+        self.mAgentSpecies.chooseReactions( )
         
         ### These are linking with enums
         ## Reactions.catalyzedBy->Particles 
@@ -178,75 +199,22 @@ class IDynoMiCS( ParamHolder ):
         ## Set up AMR related features for the model
         self.mSolvers.getRefineRatio( )
         self.mSolutes.calcInterfaceAMRLevel( )
-        ## Set up solute initial concentrations
-        self.mSolutes.calcConcentrations( )
 
-        ## Reactions.*->others
-        for reaction_key in self.mReactions.getKeys( ):
-            reaction = self.mReactions.getItem( reaction_key )
-
-            ## Reactions.KineticFactors->Molecules
-            kinetic_factors = reaction.getKineticFactors()
-            for kinetic_factor_key in kinetic_factors.getKeys( ):
-                kinetic_factor = kinetic_factors.getItem( kinetic_factor_key )
-                molecule_key = kinetic_factor.getAttribute( 'molecule' ).getValue( )
-                if molecule_key == "":
-                    # no molecule is allowed
-                    kinetic_factor.getAttribute( 'molecule' ).setValue( -1 )
-                else:
-                    msg  = "ERROR: Reaction.KineticFactor.molecule should name a molecule. " + str( molecule_key ) + " is not in the list.\n"
-                    msg += "ERROR: Known molecules: NONE.\n"
-                    raise Exception( msg )
-        
         for species_key in self.mAgentSpecies.getKeys( ):
             species = self.mAgentSpecies.getItem( species_key )
-            ## AgentSpeciesParticles need to be connected to Particles
-            for species_particle_key in species.getParticles( ).getKeys( ):
-                species_particle = species.getParticles( ).getItem( species_particle_key )
-                particle_key = species_particle.getAttribute( 'name' ).getValue( )
-                if self.mParticles.hasKey( particle_key ):
-                    particle = self.mParticles.getItem( particle_key )
-                    species_particle.setParticle( particle )
-                else:
-                    msg  = "ERROR:"
-                    msg += " species " + species.getAttribute( 'class' ).getValue( ) + "-" + species.getAttribute( 'name' ).getValue( )
-                    msg += " has particle " + species_particle.getAttribute( 'name' ).getValue( )
-                    msg += " but no particle exists.  Particles = " + " ".join( self.mParticles.getKeys( ) )
-                    raise Exception( msg )
                     
-            ## AgentSpeciesReactions need to be connected to Reactions
-            for species_reaction_key in species.getReactions( ).getKeys( ):
-                species_reaction = species.getReactions( ).getItem( species_reaction_key )
-                reaction_key = species_reaction.getAttribute( 'name' ).getValue( )
-                if self.mReactions.hasKey( reaction_key ):
-                    reaction = self.mReactions.getItem( reaction_key )
-                    species_reaction.setReaction( reaction )
-                else:
-                    msg  = "ERROR:"
-                    msg += " species " + species.getAttribute( 'class' ).getValue( ) + "-" + species.getAttribute( 'name' ).getValue( )
-                    msg += " has reaction " + species_reaction.getAttribute( 'name' ).getValue( )
-                    msg += " but no reaction exists.  Reactions = " + " ".join( self.mReactions.getKeys( ) )
-                    raise Exception( msg )
-                    
-            ## AgentSpecies.Adhesions->AgentSpecies
-            self.linkAttributeToEnumToken( species.getAdhesions( ), 'withSpecies', self.mAgentSpecies )
-                
-            ## AgentSpecies.TightJunctions->AgentSpecies
-            self.linkAttributeToEnumToken( species.getTightJunctions( ), 'withSpecies', self.mAgentSpecies )
-                
-            ## AgentSpecies.DistanaceJuctions need to be created
+            ## AgentSpecies.DistanceJunctions need to be created
             species.createDistanceJunctions( )
             if len( species.getDistanceJunctions( ) ) > 0:
                 self.mBioModel.setDistanceJunctionsEnabled( True )
-            # THIS SECTION SHOULD NOT BE NECESSARY, as long as adhesions and tight junctions, etc. are updated before creation
-            # ## AgentSpecies.DistanaceJuctions need to be connected to AgentSpecies
-            # for junction_key in species.getDistanceJunctions( ).getKeys( ):
-            #     junction = species.getDistanceJunctions( ).getItem( junction_key )
-            #     target_species_key = junction.getAttribute( "withSpecies" ).getValue( )
-            #     target_species = self.mAgentSpecies.getItem( target_species_key )
-            #     target_species_token = target_species.getEnumToken( )
-            #     junction.getAttribute( "withSpecies" ).setValue( target_species_token )
-                    
+
+        # make sure that all parameter names are defined
+        if len( self.mSolutes ) == 0:
+            node_object = self.getItemAddIfNeeded( 'solute', 'PlaceHolderSolute', "" )
+            node_object.setDomainReference( self.mWorld.getComputationDomains( ).getLastItem( ) )
+        if len( self.mMolecules ) == 0:
+            node_object = self.getItemAddIfNeeded( 'molecule', 'PlaceHolderMolecule', "" )
+            node_object.setDomainReference( self.mWorld.getComputationDomains( ).getLastItem( ) )
                     
         return
 
@@ -260,6 +228,7 @@ class IDynoMiCS( ParamHolder ):
         s += str( self.mAgentGrid ) + "\n"
         s += str( self.mAgentSpecies ) + "\n"
         s += str( self.mSolutes )  + "\n"
+        s += str( self.mMolecules )  + "\n"
         s += str( self.mParticles )  + "\n"
         s += "</%s>\n" % (self.mName)
         return s

@@ -6,6 +6,7 @@ class Yields( ParamHolder ):
         ParamHolder.__init__( self )
         self.addParam( Param( "*", "g.g-1", 0.0, False ) )
         self.mSolutes = { }
+        self.mMolecules = { }
         self.mParticles = { }
         self.mItems = { }
         return
@@ -22,6 +23,27 @@ class Yields( ParamHolder ):
         self.mSolutes[ name ] = solute
         self.mItems[ name ] = solute
         return
+
+    def isMolecule( self, name ):
+        return name in self.mMolecules
+
+    def getMolecule( self, name ):
+        if self.isMolecule( name ):
+            return self.mMolecules[ name ]
+        return None
+
+    def setMolecule( self, name, molecule ):
+        self.mMolecules[ name ] = molecule
+        self.mItems[ name ] = molecule
+        return
+
+    def isParticle( self, name ):
+        return name in self.mParticles
+
+    def getParticle( self, name ):
+        if self.isParticle( name ):
+            return self.mParticles[ name ]
+        return None
 
     def setParticle( self, name, particle ):
         self.mParticles[ name ] = particle
@@ -47,10 +69,12 @@ class Yields( ParamHolder ):
             lines.append( (depth*indent) + "Reaction::Yield %s;" % (varname, ) )
             if n in self.mSolutes:
                 lines.append( (depth*indent) + "%s.setSolute( );" % (varname, ) )
+            elif n in self.mMolecules:
+                lines.append( (depth*indent) + "%s.setMolecule( );" % (varname, ) )
             elif n in self.mParticles:
                 lines.append( (depth*indent) + "%s.setParticle( );" % (varname, ) )
             else:
-                raise Exception( "ERROR: Yield must be solute or particle" )
+                raise Exception( "ERROR: Yield must be solute, molecule or particle" )
 
             lines.append( (depth*indent) + "%s.setItemIdx( %s );" % ( varname, self.mItems[ n ].getEnumToken( ) ) )
             lines.append( (depth*indent) + "%s.setValue( %s );" % ( varname, param.getValue( ) ) )

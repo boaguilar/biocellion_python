@@ -54,14 +54,14 @@ class IsPermeableTo {
 public:
   IsPermeableTo( );
 
-  const std::string& getDetail( ) const;
+  S32 getSoluteIdx( ) const;
   REAL getValue( ) const;
 
-  void setDetail( const std::string& value );
+  void setSoluteIdx( const S32& value );
   void setValue( const REAL& value );
   
 protected:
-  std::string mDetail;
+  S32 mSoluteIdx;
   REAL mValue;
 };
 
@@ -72,17 +72,23 @@ public:
 
   const std::string& getName( ) const;
   const std::string& getClass( ) const;
+  S32 getBulkIdx( ) const;
   const Vector< Shape* >& getShapes( ) const;
   Vector< Shape* >& getShapes( );
   const Vector< IsPermeableTo >& getIsPermeableTos( ) const;
   Vector< IsPermeableTo >& getIsPermeableTos( );
+
+  BOOL isPermeableTo( const S32& soluteIdx ) const;
+  REAL permeability( const S32& soluteIdx ) const;
   
   void setName( const std::string& value );
   void setClass( const std::string& value );
+  void setBulkIdx( const S32& bulkIdx );
 
 protected:
   std::string mName;
   std::string mClass;
+  S32 mBulkIdx;
   Vector< Shape* > mShapes;
   Vector< IsPermeableTo > mIsPermeableTos;
 };
@@ -99,6 +105,10 @@ public:
   Grid& getGrid() { return mGrid; };
   const Vector <BoundaryCondition* >& getBoundaryConditions() const { return mBoundaryConditions; };
   Vector <BoundaryCondition* >& getBoundaryConditions() { return mBoundaryConditions; };
+  const BoundaryCondition* getBoundaryCondition( const std::string& key ) const;
+  const BoundaryCondition* getBoundaryCondition( const S32& dim, const S32& face ) const;
+  BOOL boundaryIsPeriodic( const S32& dim ) const;
+  void updateGridPhiBoundaryInfo( const S32& soluteIdx, const S32& dim, const S32& face, bc_type_e& bcType, REAL& bcVal, REAL& gridBeta ) const;
   
 protected:
   std::string mName;

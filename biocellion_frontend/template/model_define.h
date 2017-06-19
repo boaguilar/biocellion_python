@@ -20,11 +20,9 @@
 
 typedef enum _model_rng_type_e {
   MODEL_RNG_UNIFORM,
-	MODEL_RNG_GAUSSIAN,
+  MODEL_RNG_GAUSSIAN,
   NUM_MODEL_RNGS
 } model_rng_type_e;
-
-const S32 NUM_STATE_AND_GRID_TIME_STEPS_PER_BASELINE = 1;
 
 /* MODEL END */
 

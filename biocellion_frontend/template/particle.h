@@ -2,18 +2,20 @@
 #define _PARTICLE_H_
 #include "biomodel.h"
 
-class Particle {
+class Particle: public ParamHolder {
 public:
-  Particle(const S32& id, const std::string& name, const REAL& density); 
-  S32 getId() const;
-  std::string getName() const; 
-  REAL getDensity() const;
-  void setId(const S32& id);
-  void setName(const std::string& name);
-  void setDensity(const REAL& density);
+  Particle(const S32& id, const std::string& name, const REAL& density);
+  
+  S32 getParticleIdx( ) const;
+  std::string getName( ) const; 
+  REAL getDensity( ) const;
+  
+  void setParticleIdx( const S32& id );
+  void setName( const std::string& name );
+  void setDensity( const REAL& density );
 
 protected:
-  S32 mId;
+  S32 mParticleIdx;
   std::string mName;
   REAL mDensity;
 };

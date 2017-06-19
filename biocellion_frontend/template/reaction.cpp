@@ -29,6 +29,9 @@ REAL Reaction::Yield::getValue( ) const {
   return mValue;
 }
 
+BOOL Reaction::Yield::isMolecule( ) const {
+  return mType ==  TYPE_MOLECULE;
+}
 
 void Reaction::Yield::setSolute( ) {
   mType = TYPE_SOLUTE;
@@ -36,6 +39,10 @@ void Reaction::Yield::setSolute( ) {
 
 void Reaction::Yield::setParticle( ) {
   mType = TYPE_PARTICLE;
+}
+
+void Reaction::Yield::setMolecule( ) {
+  mType = TYPE_MOLECULE;
 }
 
 void Reaction::Yield::setType( const S32& value ) {
@@ -92,6 +99,14 @@ REAL Reaction::KineticFactor::getKi( ) const {
 
 REAL Reaction::KineticFactor::getKs( ) const {
   return mKs;
+}
+
+BOOL Reaction::KineticFactor::isSolute( ) const {
+  return mSoluteIdx >= 0 && mMoleculeIdx < 0;
+}
+
+BOOL Reaction::KineticFactor::isMolecule( ) const {
+  return mSoluteIdx < 0 && mMoleculeIdx >= 0;
 }
 
 void Reaction::KineticFactor::setClass(const std::string& value) {
@@ -224,15 +239,35 @@ void Reaction::setMuMax(const REAL& value) {
   mMuMax = value;
 }
 
-REAL Reaction::getKineticFactor( const NbrUBEnv& nbrUBEnv, const VReal& vOffset ) const {
+REAL Reaction::getKineticFactor( const NbrUBEnv& nbrUBEnv, const VReal& vOffset, SpAgentState& state ) const {
+  REAL factor = mMuMax;
+  REAL concentration_value = 0;
+  S32 i;
+  for( i = 0 ; i < (S32) mKineticFactors.size( ) ; i++ ) {
+    if( mKineticFactors[ i ]->isSolute( ) ) {
+      concentration_value = gBioModel->getSubgridValue( mKineticFactors[ i ]->getSolute( ), nbrUBEnv, vOffset );
+    } else if( mKineticFactors[ i ]->isMolecule( ) ) {
+      concentration_value = gBioModel->getAgentSpecies()[ state.getType() ]->getMoleculeValue( mKineticFactors[ i ]->getMolecule( ), state );
+
+    } else if( mKineticFactors[ i ]->getSolute( ) == -1 && mKineticFactors[ i ]->getMolecule( ) == -1 ) {
+      concentration_value = 0;
+    } else {
+      ERROR( "Should be unreachable." );
+    }
+    factor *= mKineticFactors[ i ]->kineticValue( concentration_value );
+  }
+  return factor;
+}
+
+REAL Reaction::getKineticFactor( const UBEnv& ubEnv, const VReal& vOffset ) const {
   REAL factor = mMuMax;
   REAL solute_value = 0;
   S32 i;
   for( i = 0 ; i < (S32) mKineticFactors.size( ) ; i++ ) {
-    if( mKineticFactors[ i ]->getSolute( ) >= 0 ) {
-      solute_value = gBioModel->getSubgridValue( mKineticFactors[ i ]->getSolute( ), nbrUBEnv, vOffset );
-    } else if( mKineticFactors[ i ]->getMolecule( ) >= 0 ) {
-      ERROR( "unimplemented" );
+    if( mKineticFactors[ i ]->isSolute( ) ) {
+      solute_value = gBioModel->getSubgridValue( mKineticFactors[ i ]->getSolute( ), ubEnv, vOffset );
+    } else if( mKineticFactors[ i ]->isMolecule( ) ) {
+      ERROR( "Molecular kinetic factors not allowed here." );
     } else if( mKineticFactors[ i ]->getSolute( ) == -1 && mKineticFactors[ i ]->getMolecule( ) == -1 ) {
       solute_value = 0;
     } else {
@@ -243,23 +278,46 @@ REAL Reaction::getKineticFactor( const NbrUBEnv& nbrUBEnv, const VReal& vOffset 
   return factor;
 }
 
-REAL Reaction::getKineticFactor( const UBEnv& ubEnv, const VReal& vOffset ) const {
+REAL Reaction::getKineticFactor( const NbrUBEnv& nbrUBEnv, const SpAgent& spAgent, const Vector< double >& v_y ) const {
   REAL factor = mMuMax;
-  REAL solute_value = 0;
+  REAL concentration_value = 0.0;
   S32 i;
-  for( i = 0 ; i < (S32) mKineticFactors.size( ) ; i++ ) {
-    if( mKineticFactors[ i ]->getSolute( ) >= 0 ) {
-      solute_value = gBioModel->getSubgridValue( mKineticFactors[ i ]->getSolute( ), ubEnv, vOffset );
-    } else if( mKineticFactors[ i ]->getMolecule( ) >= 0 ) {
-      ERROR( "unimplemented" );
+
+  for( i = 0; i < (S32) mKineticFactors.size(); i++ ) {
+    if( mKineticFactors[ i ]->isSolute( ) ) {
+      concentration_value = gBioModel->getSubgridValue( mKineticFactors[ i ]->getSolute( ), nbrUBEnv, spAgent.vOffset );
+    } else if ( mKineticFactors[ i ]->isMolecule( ) ) {
+      concentration_value = gBioModel->getAgentSpecies()[ spAgent.state.getType() ]->getMoleculeValue( mKineticFactors[ i ]->getMolecule( ), spAgent.state, v_y );
     } else if( mKineticFactors[ i ]->getSolute( ) == -1 && mKineticFactors[ i ]->getMolecule( ) == -1 ) {
-      solute_value = 0;
+      concentration_value = 0;
     } else {
       ERROR( "Should be unreachable." );
     }
-    factor *= mKineticFactors[ i ]->kineticValue( solute_value );
+    factor *= mKineticFactors[ i ]->kineticValue( concentration_value );
+  }
+
+  return factor;
+}
+
+REAL Reaction::getKineticFactor( const UBEnv& ubEnv, const VReal& vOffset, const SpAgent& spAgent ) const {
+  
+  REAL factor = mMuMax;
+  REAL concentration_value = 0;
+  S32 i;
+  for( i = 0 ; i < (S32) mKineticFactors.size( ) ; i++ ) {
+    if( mKineticFactors[ i ]->isSolute( ) ) {
+      concentration_value = gBioModel->getSubgridValue( mKineticFactors[ i ]->getSolute( ), ubEnv, vOffset );
+    } else if( mKineticFactors[ i ]->isMolecule( ) ) {
+      concentration_value = gBioModel->getAgentSpecies()[ spAgent.state.getType() ]->getMoleculeValue( mKineticFactors[ i ]->getMolecule( ), spAgent.state );
+    } else if( mKineticFactors[ i ]->getSolute( ) == -1 && mKineticFactors[ i ]->getMolecule( ) == -1 ) {
+      concentration_value = 0;
+    } else {
+      ERROR( "Should be unreachable." );
+    }
+    factor *= mKineticFactors[ i ]->kineticValue( concentration_value );
   }
   return factor;
+  
 }
 
 /*
@@ -287,6 +345,19 @@ REAL Reaction::getSoluteYield( const S32& solute_idx, const SpAgent& spAgent ) c
       } // if yield matches solute_idx
     } // for all yields
   } // if agent matches catalyst
+  return yield;
+}
+
+
+REAL Reaction::getMoleculeYield( const S32& moleculeIdx, const SpAgent& spAgent ) const {
+  REAL yield = 0.0;
+  S32 i;
+  for( i = 0; i < (S32) mYields.size(); i++ ) {
+    const Yield& currentYield = mYields[ i ];
+    if( currentYield.isMolecule() && currentYield.getItemIdx() == moleculeIdx ) {
+      yield += currentYield.getValue();
+    }
+  }
   return yield;
 }
 

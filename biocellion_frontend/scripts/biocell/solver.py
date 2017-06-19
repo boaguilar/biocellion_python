@@ -91,8 +91,10 @@ class AllSolvers( ItemHolder ):
         refine_ratios = set( )
         for name in self.mOrder:
             refine_ratios.add( self.mItems[ name ].getRefineRatio( ) )
-        if len( refine_ratios ) != 1:
+        if len( refine_ratios ) > 1:
             raise Exception( "ERROR: All refine ratios must be the same. These were found: " + str( refine_ratios ) )
+        if len( refine_ratios ) < 1:
+            raise Exception( "ERROR: All refine ratios must be the same. None were found" )
         return refine_ratios.pop( )
 
     def getBioModelH( self, indent, depth ):

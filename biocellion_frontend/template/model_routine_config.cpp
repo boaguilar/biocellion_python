@@ -47,12 +47,8 @@ void ModelRoutine::updateOptModelRoutineCallInfo( OptModelRoutineCallInfo& callI
 void ModelRoutine::updateDomainBdryType( domain_bdry_type_e a_domainBdryType[DIMENSION] ) {
   /* MODEL START */
 
-  CHECK( DIMENSION == 3 );
-
-  // FIXME: Not controlled by XML yet
-  for( S32 dim = 0 ; dim < DIMENSION ; dim++ ) {
-    a_domainBdryType[dim] = DOMAIN_BDRY_TYPE_NONPERIODIC_HARD_WALL;
-  }
+  initializeBioModel();
+  gBioModel->updateDomainBdryType( a_domainBdryType );
 
   /* MODEL END */
 
@@ -74,10 +70,7 @@ void ModelRoutine::updateTimeStepInfo( TimeStepInfo& timeStepInfo ) {
   /* MODEL START */
 
   initializeBioModel();
-  timeStepInfo.durationBaselineTimeStep = gBioModel->getSimulator().getAgentTimeStep();
-  
-  // FIXME: Not controlled by XML yet
-  timeStepInfo.numStateAndGridTimeStepsPerBaseline = NUM_STATE_AND_GRID_TIME_STEPS_PER_BASELINE;
+  gBioModel->updateTimeStepInfo( timeStepInfo );
 
   /* MODEL END */
 
@@ -166,67 +159,6 @@ void ModelRoutine::updateJunctionEndInfo( Vector<JunctionEndInfo>& v_junctionEnd
   return;
 }
 
-#if USE_PHI_ONE
-static inline void setPhiPDEChemoattractant( Vector<PDEInfo>& v_phiPDEInfo , S32 idx ) {
-  PDEInfo pdeInfo;
-  GridPhiInfo gridPhiInfo;
-  MGSolveInfo mgSolveInfo;
-  SplittingInfo splittingInfo;
-
-  pdeInfo.pdeIdx = idx;
-  pdeInfo.pdeType = PDE_TYPE_REACTION_DIFFUSION_TIME_DEPENDENT_LINEAR;
-  pdeInfo.numLevels = PHI_AMR_LEVELS[idx];
-  //pdeInfo.ifLevel = PHI_AMR_LEVELS[idx]-1;
-  pdeInfo.ifLevel = 0;
-  pdeInfo.v_tagExpansionSize.assign( PHI_AMR_LEVELS[idx], 0 );
-  pdeInfo.numTimeSteps = NUM_PDE_TIME_STEPS_PER_STATE_AND_GRID_TIME_STEP[idx];
-  pdeInfo.callAdjustRHSTimeDependentLinear = false;
-
-  // set mgSolveInfo.* here
-  mgSolveInfo.numPre = 3;/* multigrid parameters */
-  mgSolveInfo.numPost = 3;/* multigrid parameters */
-  mgSolveInfo.numBottom = 3;/* multigrid parameters */
-  mgSolveInfo.vCycle = true;/* multigrid parameters */
-  mgSolveInfo.maxIters = 30;/* multigrid parameters */
-  mgSolveInfo.epsilon = GRID_PHI_EPSILON;/* multigrid parameters */
-  mgSolveInfo.hang = 1e-6;/* multigrid parameters */
-  mgSolveInfo.normThreshold = GRID_PHI_NORM_THRESHOLD;/* multigrid parameters */
-  
-  pdeInfo.mgSolveInfo = mgSolveInfo;
-
-  // set splittingInfo here
-  pdeInfo.splittingInfo = splittingInfo;
-
-  // set gridPhiInfo here
-  pdeInfo.v_gridPhiInfo.resize( 1 );
-
-  gridPhiInfo.elemIdx = idx;
-  gridPhiInfo.name = GRID_PHI_NAMES[idx];
-  gridPhiInfo.syncMethod = VAR_SYNC_METHOD_DELTA;
-  gridPhiInfo.aa_bcType[0][0] = BC_TYPE_NEUMANN_CONST;
-  gridPhiInfo.aa_bcVal[0][0] = 0.0;
-  gridPhiInfo.aa_bcType[0][1] = BC_TYPE_NEUMANN_CONST;
-  gridPhiInfo.aa_bcVal[0][1] = 0.0;
-  gridPhiInfo.aa_bcType[1][0] = BC_TYPE_NEUMANN_CONST;
-  gridPhiInfo.aa_bcVal[1][0] = 0.0;
-  gridPhiInfo.aa_bcType[1][1] = BC_TYPE_NEUMANN_CONST;
-  gridPhiInfo.aa_bcVal[1][1] = 0.0;
-  gridPhiInfo.aa_bcType[2][0] = BC_TYPE_NEUMANN_CONST;
-  gridPhiInfo.aa_bcVal[2][0] = 0.0;
-  gridPhiInfo.aa_bcType[2][1] = BC_TYPE_NEUMANN_CONST;
-  gridPhiInfo.aa_bcVal[2][1] = 0.0;
-
-  gridPhiInfo.errorThresholdVal = GRID_PHI_NORM_THRESHOLD * -1.0;
-  gridPhiInfo.warningThresholdVal = GRID_PHI_NORM_THRESHOLD * -1.0;
-  gridPhiInfo.setNegToZero = true;
-
-  pdeInfo.v_gridPhiInfo[0] = gridPhiInfo;
-
-  v_phiPDEInfo[idx] = pdeInfo;
-}
-#else
-#endif
-
 void ModelRoutine::updatePhiPDEInfo( Vector<PDEInfo>& v_phiPDEInfo ) {
   /* MODEL START */
 
@@ -290,13 +222,6 @@ void ModelRoutine::updateRNGInfo( Vector<RNGInfo>& v_rngInfo ) {
 
 void ModelRoutine::updateFileOutputInfo( FileOutputInfo& fileOutputInfo ) {
   /* MODEL START */
-
-  // FIXME: output not controlled from XML yet
-  WARNING( "particle output not configured by XML yet." )
-    
-  fileOutputInfo.particleOutput = true;
-  fileOutputInfo.v_particleExtraOutputScalarVarName.clear();
-  fileOutputInfo.v_particleExtraOutputVectorVarName.clear();
 
   initializeBioModel();
   gBioModel->updateFileOutputInfo( fileOutputInfo );

@@ -6,7 +6,15 @@ from biocell import *
 
 import os, re
 from xml.etree.ElementTree import Element, SubElement, Comment
-from ElementTree_pretty import prettify
+from xml.etree import ElementTree
+from xml.dom import minidom
+
+def prettify(elem):
+    """Return a pretty-printed XML string for the Element.
+    """
+    rough_string = ElementTree.tostring(elem, 'utf-8')
+    reparsed = minidom.parseString(rough_string)
+    return reparsed.toprettyxml(indent="  ")
 
 class ModelWriter:
 
@@ -91,8 +99,7 @@ class ModelWriter:
         required_output.append( Comment( '  size_x(, y, or z): output box size in the x(, y, or z) direction, must be an integer multiple of refine_ratio^(number of AMR levels - 1), required, integer, [1,)' ) )
     
         required_output.set( 'path', "./output" )
-        print( "FIXME: output interval should not be hard coded" )
-        required_output.set( 'interval', "1" )
+        required_output.set( 'interval', str( biomodel.getIDynoMiCS( ).getSimulator( ).getOutputInterval( ) ) )
         required_output.set( 'particle', "pvtp" )
         required_output.set( 'grid', "vthb" )
         required_output.set( 'start_x', "0" )
@@ -248,6 +255,7 @@ class ModelWriter:
                   'model_routine_grid.cpp', 
                   'model_routine_mech_intrct.cpp', 
                   'model_routine_output.cpp', 
+                  'molecule.cpp', 'molecule.h',
                   'param_holder.cpp', 'param_holder.h',
                   'particle.cpp', 'particle.h',
                   'reaction.cpp', 'reaction.h',

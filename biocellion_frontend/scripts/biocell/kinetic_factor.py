@@ -12,12 +12,28 @@ class KineticFactor( ParamHolder ):
         self.addParam( Param( "Ki", "g.L-1", 0.0, False ) )
         self.addParam( Param( "Ks", "g.L-1", 0.0, False ) )
 
-        self.mPrivateNumberHiddenParams = [ "molecule", "Ki", "Ks", ]
+        self.mPrivateNumberHiddenParams = [ "Ki", "Ks", ]
         self.mPrivateBoolHiddenParams = [  ]
         self.mPrivateStringHiddenParams = [ "class", ]
-        self.mPrivateHiddenParams = [ "solute", ] + self.mPrivateNumberHiddenParams + self.mPrivateBoolHiddenParams + self.mPrivateStringHiddenParams
+        self.mPrivateHiddenParams = [ "solute", "molecule", ] + self.mPrivateNumberHiddenParams + self.mPrivateBoolHiddenParams + self.mPrivateStringHiddenParams
         self.mHiddenParams = self.mHiddenParams + self.mPrivateHiddenParams
-        
+
+        self.mSoluteReference = None
+        self.mMoleculeReference = None
+        return
+
+    def getSoluteReference( self ):
+        return self.mSoluteReference
+
+    def setSoluteReference( self, solute ):
+        self.mSoluteReference = solute
+        return
+
+    def getMoleculeReference( self ):
+        return self.mMoleculeReference
+
+    def setMoleculeReference( self, molecule ):
+        self.mMoleculeReference = molecule
         return
 
     def getInitializeBioModel( self, container_name, indent, depth ):
@@ -37,11 +53,17 @@ class KineticFactor( ParamHolder ):
         if s:
             lines.append( s )
             
-        if self.mReference:
-            token = self.mReference.getEnumToken( )
+        if self.mSoluteReference:
+            token = self.mSoluteReference.getEnumToken( )
         else:
             token = "-1"
         lines.append( (depth*indent) + "%s->setSolute( %s );" % ( varname, token ) )
+        
+        if self.mMoleculeReference:
+            token = self.mMoleculeReference.getEnumToken( )
+        else:
+            token = "-1"
+        lines.append( (depth*indent) + "%s->setMolecule( %s );" % ( varname, token ) )
 
         if container_name:
             lines.append( (depth*indent) + "%s.push_back( %s );" % (container_name, varname, ) )
