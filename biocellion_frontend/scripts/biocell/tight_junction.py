@@ -7,9 +7,9 @@ class TightJunction( ParamHolder ):
 
     def __init__( self ):
         ParamHolder.__init__( self )
-        self.addAttribute( Param( "stiffness", "float", 0, True ) )
         self.addAttribute( Param( "withSpecies", "str", "", True ) )
-        self.addAttribute( Param( "scale", "float", 1.0, False ) )
+        self.addParam( Param( "stiffness", "float", 1.0, False ) )
+        self.addParam( Param( "scale", "um.hour-1", 1.0, False ) )
 
         self.mPrivateNumberHiddenParams = [ "stiffness", "scale" ]
         self.mPrivateBoolHiddenParams = [  ]

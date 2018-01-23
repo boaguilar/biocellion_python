@@ -11,6 +11,9 @@ class World( ParamHolder ):
         self.mComputationDomains = AllComputationDomains()
         return
 
+    def checkResolution( self, resolution ):
+        return self.mComputationDomains.checkResolution( resolution )
+        
     def getBioModelH( self, indent, depth ):
         lines = [ ]
         lines.append( self.mBulks.getBioModelH( indent, depth ) )

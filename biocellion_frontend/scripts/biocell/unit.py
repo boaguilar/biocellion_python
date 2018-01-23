@@ -1,4 +1,5 @@
 from biocell import *
+import re
 
 #####################################################
 # Unit
@@ -29,6 +30,11 @@ class Unit:
         self.updateAllUnits( )
         return
 
+    def getConversion( self, unit ):
+        if not self.contains( unit ):
+            raise BadUnit( unit, None )
+        return self.mConversions[ unit ]
+
     def contains( self, unit ):
         return unit in self.mAllUnits
 
@@ -41,6 +47,14 @@ class Unit:
 class AllUnits:
 
     def __init__( self ):
+        self.mSingleUnits = [ 
+            # time
+            "s", "sec", "second", "h", "hr", "hour", "day",
+            # mass
+            "g", "gram", "mg",  "ug",  "ng",  "pg", "fg", "ag",
+            # length
+            "m", "meter", "pm", "nm", "um", "mm", "cm",
+        ]
         self.mUnits = [ ]
         # yield mass/mass
         self.addUnit( Unit( "fg.fg-1", { "g.g-1": 1.0,
@@ -49,7 +63,8 @@ class AllUnits:
         # diffusion area/time
         self.addUnit( Unit( "um2.hour-1", { "um2.hour-1": 1.0,
                                             "um2.hr-1": 1.0,
-                                            "m2.day-1": 1.0e6*1.0e6/24.0,
+                                            "m2.day-1": 1.0e6*1.0e6 / 24.0,
+                                            "m2.s-1": 1.0e6*1.0e6 / ( 1.0 / ( 60.*60. ) ),
         } ) )
         # density
         self.addUnit( Unit( "fg.um-3", { "pg.um-3": 1.0e3 / 1.0,
@@ -73,12 +88,12 @@ class AllUnits:
                                     "ag": 1.0e-3,
         } ) )
         # length
-        self.addUnit( Unit( "um", { "pm": 1e6,
-                                    "nm": 1e3,
+        self.addUnit( Unit( "um", { "pm": 1e-6,
+                                    "nm": 1e-3,
                                     "um": 1.0,
-                                    "mm": 1e-3,
-                                    "cm": 1e-4,
-                                    "m": 1e-6,
+                                    "mm": 1e3,
+                                    "cm": 1e4,
+                                    "m": 1e6,
         } ) )
         # time
         self.addUnit( Unit( "hour", { "hour": 1.0,
@@ -98,6 +113,70 @@ class AllUnits:
         } ) )
         
         return
+
+
+    def parseSingleUnit( self, u ):
+        match = re.match( r'^([^0-9-]+)(-?)([0-9]*)$', u )
+        if not match:
+            return False
+        
+        single_unit = match.group( 1 )
+        sign = match.group( 2 )
+        if sign == "" or sign == "+":
+            sign = 1
+        else:
+            sign = -1
+        power = match.group( 3 )
+        if power == "":
+            power = 1
+        else:
+            power = int( power )
+
+        return single_unit, sign * power
+
+    def convertToStandardUnit( self, value, unit ):
+        new_unit = ""
+        factor = 1.0
+        units = unit.split( '.' )
+        for u in units:
+            single_unit, power = self.parseSingleUnit( u )
+            
+            found = False
+            for uu in self.getUnits( ):
+                if uu.contains( single_unit ):
+                    c = uu.getConversion( single_unit )
+                    factor *= ( c ** power )
+                    found = True
+                    if new_unit:
+                        new_unit += '.'
+                    power_str = str( power )
+                    if power == 1:
+                        power_str = ""
+                    new_unit += uu.getStandardUnit( ) + power_str
+                    break
+            if not found:
+                raise BadUnit( single_unit, value )
+        return value * factor, new_unit
+            
+
+    def isValidSingleUnit( self, single_unit ):
+        if single_unit in self.mSingleUnits:
+            return True
+        return False
+
+    def isValidPower( self, power ):
+        return True
+
+    def isValidUnit( self, unit ):
+        units = unit.split( '.' )
+        for u in units:
+            single_unit, power = self.parseSingleUnit( u )
+            if not self.isValidSingleUnit( single_unit ):
+                return False
+            if not self.isValidPower( power ):
+                return False
+
+        return True
 
     def addUnit( self, unit ):
         self.mUnits.append( unit )

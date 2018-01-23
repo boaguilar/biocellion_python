@@ -1,6 +1,6 @@
 # files must be listed in dependency order.
 # utilities
-from .utils import get_type_of, same_type, GenericException, BadItemType, BadItemName
+from .utils import get_type_of, same_type, GenericException, BadItemType, BadItemName, BadUnit
 
 # basic generic support
 from .unit import Unit, AllUnits
@@ -16,12 +16,13 @@ from .agent_species_reaction import AgentSpeciesReaction
 from .chemotaxis import Chemotaxis
 from .distance_junction import DistanceJunction
 from .init_area import Blocks, Coordinates, InitArea
+from .ode_network import ODENetwork
 from .tight_junction import TightJunction
 from .agent_species import AgentSpecies, AllAgentSpecies
 
 # simulator and requirements
-from simulator_time_step import SimulatorTimeStep
-from simulator import Simulator
+from .simulator_time_step import SimulatorTimeStep
+from .simulator import Simulator
 
 # world and requirements
 from .agar import Agar, AllAgars
@@ -51,11 +52,16 @@ from .solute import Solute, AllSolutes
 # molecules
 from .molecule import Molecule, AllMolecules
 
+# interactions
+from .interaction import Interaction, AllInteractions
+
 # agent grid
 from .agent_grid import AgentGrid
 
 # top-level classes
 from .idynomics import IDynoMiCS
 from .biomodel import BioModel
-from .model_writer import ModelWriter
+from .model_writer import ModelWriter, prettify
 from .model_scanner import ModelScanner, get_type_of, same_type
+from .xml_processor import XMLProcessor
+

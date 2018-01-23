@@ -6,7 +6,7 @@ class ComputationDomain( ParamHolder ):
         ParamHolder.__init__(self)
         self.setPrefix( "DOMAIN" )
         self.addAttribute( Param( "name", "str", "", True ) )
-        self.addParam( Param( "resolution", "um", 0 ) )
+        self.addParam( Param( "resolution", "um", 0, True ) )
         self.addParam( Param( "specificArea", "m2.m-3", 0 ) )
         self.addParam( Param( "hasBulk", "bool", False ) )
         self.addParam( Param( "boundaryLayer", "um", 0 ) )
@@ -21,6 +21,9 @@ class ComputationDomain( ParamHolder ):
         self.mGrid = ComputationDomainGrid( )
         self.mBoundaryConditions = ItemHolder( ComputationDomainBoundaryCondition )
         return
+
+    def checkResolution( self, resolution ):
+        return self.getParam( 'resolution' ).getValue( ) == resolution
 
     def getEnumToken(self):
         return "%s_%s" % ( self.getPrefix(), self.getAttribute( 'name' ).getValue( ), )
@@ -81,6 +84,12 @@ class AllComputationDomains( ItemHolder ):
     def __init__(self):
         ItemHolder.__init__( self, ComputationDomain )
         return
+
+    def checkResolution( self, resolution ):
+        for name in self.mOrder:
+            if not self.mItems[ name ].checkResolution( resolution ):
+                return False
+        return True
 
     def getBioModelH( self, indent, depth ):
         lines = [ ]

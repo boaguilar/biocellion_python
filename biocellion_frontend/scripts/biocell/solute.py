@@ -14,7 +14,7 @@ class Solute( ParamHolder ):
         self.addAttribute( Param( "domain", "str", "", True ) )
         self.addParam( Param( "diffusivity", "um2.hour-1", 0.0, True ) )
         self.addParam( Param( "airDiffusivity", "um2.hour-1", 0.0, False ) )
-        self.addParam( Param( "decayRate", "float", 0.0, False ) )
+        self.addParam( Param( "decayRate", "hour-1", 0.0, False ) )
         self.addParam( Param( "resolution", "um", -1.0, False ) )
         self.addParam( Param( "concentration", "g.L-1", 0.0, False ) )
         self.addParam( Param( "randomInit", "bool", False, False ) )
@@ -23,7 +23,7 @@ class Solute( ParamHolder ):
         self.addParam( Param( "writeOutput", "bool", False, False ) )
         self.addParam( Param( "AMRLevels", "int", 0, False ) )
         self.addParam( Param( "interfaceAMRLevel", "int", 0, False ) )
-        self.addParam( Param( "numTimeSteps", "int", 1, False ) )
+        self.addParam( Param( "numTimeSteps", "int", 0, False ) )
 
         self.mPrivateNumberHiddenParams = [ "AMRLevels", "interfaceAMRLevel", "numTimeSteps", ]
         self.mPrivateBoolHiddenParams = [ ]
@@ -62,6 +62,16 @@ class Solute( ParamHolder ):
         self.getParam( 'AMRLevels' ).setValue( amr_levels )
         return amr_levels
             
+    def getNumTimeSteps( self ):
+        steps = self.getParam( 'numTimeSteps' ).getValue( )
+        if steps == 0:
+            steps = self.mSolverReference.getParam( 'numTimeSteps' ).getValue( )
+        if steps == 0:
+            raise Exception( "ERROR: solute needs a numTimeSteps specified.  Usually via <solver>." )
+
+        self.getParam( 'numTimeSteps' ).setValue( steps )
+        return steps
+            
     def calcInterfaceAMRLevel( self ):
         self.getResolution( )
         return self.getParam( 'interfaceAMRLevel' ).getValue( )
@@ -73,10 +83,8 @@ class Solute( ParamHolder ):
         resolution = self.getParam( 'resolution' ).getValue( )
         if resolution <= 0.0:
             resolution = self.mDomainReference.getParam( 'resolution' ).getValue( )
-        if resolution <= 0.0:
-            resolution = self.mModel.getAgentGrid( ).getParam( 'resolution' ).getValue( )
             
-        unit_box_resolution = self.mModel.getAgentGrid( ).getParam( 'resolution' ).getValue( )
+        unit_box_resolution = self.mDomainReference.getParam( 'resolution' ).getValue( )
         if resolution > unit_box_resolution:
             resolution = unit_box_resolution
 
@@ -138,6 +146,9 @@ class Solute( ParamHolder ):
                         raise Exception( "ERROR: solute has multiple solvers" )
                     self.mSolverReference = solver
                     break
+        if self.mSolverReference is not None:
+            if self.mSolverReference.isSteadyState( ):
+                self.getParam( 'numTimeSteps' ).setValue( 0 )
         return
         
     def chooseReactions( self ):
@@ -152,14 +163,21 @@ class Solute( ParamHolder ):
             solute = reaction.getYields( ).getSolute( self.mName )
             if solute == self:
                 # look at all kinetic factors
+                found_molecule_or_agent_species = False
                 for kinetic_factor_key in reaction.getKineticFactors( ).getKeys( ):
                     kinetic_factor = reaction.getKineticFactors( ).getItem( kinetic_factor_key )
-                    if kinetic_factor.getMoleculeReference( ) is None:
-                        self.mReactions.append( reaction )
-                        break
+                    if( ( kinetic_factor.getAgentSpeciesReference( ) is None ) and
+                        ( kinetic_factor.getMoleculeReference( ) is None ) ):
+                        pass
                     else:
-                        self.mMoleculeReactions.append( reaction )
+                        found_molecule_or_agent_species = True
                         break
+
+                if found_molecule_or_agent_species:
+                    self.mMoleculeReactions.append( reaction )
+                else:
+                    self.mReactions.append( reaction )
+
         return
         
     def getName(self):
@@ -228,6 +246,16 @@ class AllSolutes( ItemHolder ):
     def __init__( self, model ):
         ItemHolder.__init__( self, Solute )
         self.mModel = model
+        return
+
+    def calcPDEParams( self ):
+        self.calcInterfaceAMRLevel( )
+        self.calcNumTimeSteps( )
+        return
+
+    def calcNumTimeSteps( self ):
+        for name in self.mOrder:
+            self.mItems[ name ].getNumTimeSteps( )
         return
 
     def calcInterfaceAMRLevel( self ):

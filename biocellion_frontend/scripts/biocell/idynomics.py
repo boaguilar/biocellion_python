@@ -16,7 +16,15 @@ class IDynoMiCS( ParamHolder ):
         self.mSolutes = AllSolutes( self )
         self.mMolecules = AllMolecules( self )
         self.mParticles = AllParticles()
+        self.mInteractions = AllInteractions( self )
         
+        self.forceDefaults( )
+        return
+
+    def forceDefaults( self ):
+        interactions = [ 'shove', 'tightJunction', 'adhesion', 'diffusion', 'chemotaxis' ]
+        for interaction in interactions:
+            self.getItemAddIfNeeded( 'interaction', interaction, None )
         return
 
     def getItemAddIfNeeded( self, tag, name, class_name ):
@@ -26,6 +34,8 @@ class IDynoMiCS( ParamHolder ):
             collection = self.getMolecules( )
         elif tag == "particle":
             collection = self.getParticles( )
+        elif tag == "interaction":
+            collection = self.getInteractions( )
         elif tag == "reaction":
             collection = self.getReactions( )
         elif tag == "solver":
@@ -58,6 +68,8 @@ class IDynoMiCS( ParamHolder ):
             collection = self.getMolecules( )
         elif tag == "particle":
             collection = self.getParticles( )
+        elif tag == "interaction":
+            collection = self.getInteractions( )
         elif tag == "reaction":
             collection = self.getReactions( )
         elif tag == "solver":
@@ -96,6 +108,8 @@ class IDynoMiCS( ParamHolder ):
         lines.append( self.mMolecules.getBioModelH( indent, depth ) )
         lines.append( "" )
         lines.append( self.mParticles.getBioModelH( indent, depth ) )
+        lines.append( "" )
+        lines.append( self.mInteractions.getBioModelH( indent, depth ) )
         return "\n".join( lines )
 
     def getInitializeBioModel( self, indent, depth ):
@@ -109,6 +123,7 @@ class IDynoMiCS( ParamHolder ):
         lines.append( self.mSolutes.getInitializeBioModel( indent, depth ) )
         lines.append( self.mMolecules.getInitializeBioModel( indent, depth ) )
         lines.append( self.mParticles.getInitializeBioModel( indent, depth ) )
+        lines.append( self.mInteractions.getInitializeBioModel( indent, depth ) )
         return "\n".join( lines )
 
     def getSimulator( self ):
@@ -137,6 +152,9 @@ class IDynoMiCS( ParamHolder ):
         
     def getParticles( self ):
         return self.mParticles
+        
+    def getInteractions( self ):
+        return self.mInteractions
         
     def getName(self):
         return self.mName
@@ -176,6 +194,12 @@ class IDynoMiCS( ParamHolder ):
     def getParticleEnumToken( self, item_key ):
         return self.getItemEnumToken( self.mParticles, item_key )
 
+    def getInteractionEnumToken( self, item_key ):
+        return self.getItemEnumToken( self.mInteractions, item_key )
+
+    def checkResolution( self ):
+        return self.mWorld.checkResolution( self.mAgentGrid.getParam( 'resolution' ).getValue( ) )
+        
     def organizeChildren( self ):
         for t in self.mChildren:
             print( "Still have children of type: " + str( t ) )
@@ -198,7 +222,11 @@ class IDynoMiCS( ParamHolder ):
 
         ## Set up AMR related features for the model
         self.mSolvers.getRefineRatio( )
-        self.mSolutes.calcInterfaceAMRLevel( )
+        self.mSolutes.calcPDEParams( )
+        
+        ## verify resolution
+        if not self.checkResolution( ):
+            raise Exception( "Resolution not consistent between agentGrid and computationDomain." )
 
         for species_key in self.mAgentSpecies.getKeys( ):
             species = self.mAgentSpecies.getItem( species_key )
@@ -230,6 +258,7 @@ class IDynoMiCS( ParamHolder ):
         s += str( self.mSolutes )  + "\n"
         s += str( self.mMolecules )  + "\n"
         s += str( self.mParticles )  + "\n"
+        s += str( self.mInteractions )  + "\n"
         s += "</%s>\n" % (self.mName)
         return s
 

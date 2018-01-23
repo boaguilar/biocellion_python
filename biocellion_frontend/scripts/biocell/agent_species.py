@@ -28,13 +28,22 @@ class AgentSpecies(ParamHolder):
         self.addParam( Param( "attachDestroyFactor", "float", 2.0 ) )
         self.addParam( Param( "DoNotRandomizeMassOnCreation", "bool", False ) )
         self.addParam( Param( "visible", "bool", True ) )
-        self.addParam( Param( "computationDomain", "str", "" ) )
+        self.addParam( Param( "computationDomain", "str", "", True ) )
 
         self.mInitAreas = ItemHolder( InitArea )
         self.mAdhesions = ItemHolder( Adhesion )
         self.mDistanceJunctions = ItemHolder( DistanceJunction )
         self.mTightJunctions = ItemHolder( TightJunction )
         self.mChemotaxis = ItemHolder( Chemotaxis )
+
+        self.mDomainReference = None
+        return
+
+    def getDomainReference( self ):
+        return self.mDomainReference
+
+    def setDomainReference( self, domain ):
+        self.mDomainReference = domain
         return
 
     def getBioModelH( self, indent, depth ):
@@ -54,7 +63,7 @@ class AgentSpecies(ParamHolder):
         
         lines.append( ParamHolder.getInitializeBioModel( self, varname, indent, depth ) )
 
-        s = (depth*indent) + "%s->setDMax( %s );" % (varname, self.mModel.getAgentGrid( ).getParam( 'resolution' ).getValue(), )
+        s = (depth*indent) + "%s->setDMax( %s );" % (varname, self.mDomainReference.getParam( 'resolution' ).getValue( ), )
         lines.append( s )
         s = (depth*indent) + "%s->setNumModelBools( %s_NUM_BOOLS );" % (varname, self.mEnumToken, )
         lines.append( s )
@@ -70,6 +79,8 @@ class AgentSpecies(ParamHolder):
         else:
             s = (depth*indent) + "%s->setUseMechForceReals( false );" % (varname, )
             lines.append( s )
+        s = (depth*indent) + "%s->setNumMechReals( %s_NUM_MECH_FORCE_REALS );" % (varname, self.mEnumToken, )
+        lines.append( s )
 
         s = (depth*indent) + "%s->setNumODEVariables( %s_NUM_ODE_VAR );" % (varname, self.mEnumToken, )
         lines.append( s )
@@ -89,6 +100,22 @@ class AgentSpecies(ParamHolder):
         container_name = "%s->getChemotaxis()" % ( varname )
         for i in range( len( self.mChemotaxis ) ):
             lines.append( self.mChemotaxis[ i ].getInitializeBioModel( varname, container_name, indent, depth ) )
+        container_name = "%s->getInteractions()" % ( varname )
+        for i_name in self.mModel.getInteractions( ).getKeys( ):
+            interaction = self.mModel.getInteractions( ).getItem( i_name )
+            if interaction.getParam( 'writeOutput' ).getValue( ):
+                realIdx = "%s_%s_%s" % ( self.getEnumToken(), interaction.getEnumToken( ), "x", )
+                if interaction.isMechanical( ):
+                    mechIdx = "%s_MECH_%s_%s" % ( self.getEnumToken(), interaction.getEnumToken( ), "x", )
+                else:
+                    mechIdx = "-1"
+            else:
+                realIdx = "-1"
+                mechIdx = "-1"
+            lines.append( (depth*indent) + "%s.push_back( AgentSpeciesInteraction( %s, %s, %s ) );" % ( container_name, 
+                                                                                                        interaction.getEnumToken( ),
+                                                                                                        realIdx, 
+                                                                                                        mechIdx ) )
         s = self.getSpecificInitializeBioModel( varname, indent, depth )
         if s:
             lines.append( s )
@@ -235,6 +262,14 @@ class AgentSpecies(ParamHolder):
         s = self.getSpecificRealsEnum( indent, depth )
         if s:
             lines.append( s )
+
+        for i_name in self.mModel.getInteractions( ).getKeys( ):
+            interaction = self.mModel.getInteractions( ).getItem( i_name )
+            if interaction.getParam( 'writeOutput' ).getValue( ):
+                for dim in ( 'x', 'y', 'z' ):
+                    s = (depth*indent) + "%s_%s_%s," % ( self.getEnumToken(), interaction.getEnumToken( ), dim, )
+                    lines.append( s )
+            
         s = (depth*indent) + "%s_NUM_REALS" % ( self.getEnumToken(), )
         lines.append( s )
         depth -= 1
@@ -258,6 +293,14 @@ class AgentSpecies(ParamHolder):
         for name in self.mMechForceReals:
             s = (depth*indent) + "%s," % ( name, )
             lines.append( s )
+        for i_name in self.mModel.getInteractions( ).getKeys( ):
+            interaction = self.mModel.getInteractions( ).getItem( i_name )
+            if not interaction.isMechanical( ):
+                continue
+            if interaction.getParam( 'writeOutput' ).getValue( ):
+                for dim in ( 'x', 'y', 'z' ):
+                    s = (depth*indent) + "%s_MECH_%s_%s," % ( self.getEnumToken(), interaction.getEnumToken( ), dim, )
+                    lines.append( s )
         s = (depth*indent) + "%s_NUM_MECH_FORCE_REALS" % ( self.getEnumToken(), )
         lines.append( s )
         depth -= 1
@@ -347,6 +390,7 @@ class AgentSpeciesActive(AgentSpecies):
         self.mParticles = ItemHolder( AgentSpeciesParticle )
         self.mMolecules = ItemHolder( AgentSpeciesMolecule )
         self.mReactions = ItemHolder( AgentSpeciesReaction )
+        self.mODENetworks = ItemHolder( ODENetwork )
         #print("FIXME: <species><agentMolecularReactions></agentMolecularReactions></species> not yet parsed.")
         return
 
@@ -448,6 +492,16 @@ class AgentSpeciesActive(AgentSpecies):
             depth -= 1
             lines.append( (depth*indent) + "}" )
 
+        if len( self.mODENetworks ) > 0:
+            lines.append( (depth*indent) + "{" )
+            depth += 1
+            for i in range( len( self.mODENetworks ) ):
+                n = self.mODENetworks[ i ]
+                container_name = "%s->getODENetworks( )" % ( varname, )
+                lines.append( n.getInitializeBioModel( container_name, indent, depth ) )
+            depth -= 1
+            lines.append( (depth*indent) + "}" )
+
         return "\n".join( lines )
 
     def getParticles( self ):
@@ -458,6 +512,9 @@ class AgentSpeciesActive(AgentSpecies):
 
     def getReactions( self ):
         return self.mReactions
+
+    def getODENetworks( self ):
+        return self.mODENetworks
 
     def toString( self, additional ):
         additional += str( self.mParticles )
@@ -479,7 +536,7 @@ class AgentSpeciesLocated(AgentSpeciesActive):
         self.addParam( Param( "shoveLimit", "um",  0.0) )    # addition to desired radius
         self.addParam( Param( "shoveFactor", "um",  1.15) )  # listed as um/length, but treated as radius scalar
         self.addParam( Param( "shoveScale", "float",  1.0) ) # biocellion-biomodel only
-        self.addParam( Param( "brownianScale", "float",  0.0) ) # biocellion-biomodel only
+        self.addParam( Param( "diffusivity", "um2.hour-1",  0.0) ) # biocellion-biomodel only
         self.addParam( Param( "fixed", "bool",  False) )
         self.addParam( Param( "noSkinBottomLayerBoundary", "int", 0 ) )
         return
@@ -548,9 +605,38 @@ class AllAgentSpecies( ItemHolder ):
         lines = [ ]
         lines.append( self.getAllParamNames( indent, depth ) )
         lines.append( "" )
+        lines.append( self.getODENetworkParamNames( indent, depth ) )
+        lines.append( "" )
         lines.append( self.getSpeciesEnum( indent, depth ) )
         lines.append( "" )
         lines.append( self.getSpeciesBioModelH( indent, depth ) )
+        return "\n".join( lines )
+
+
+    def getODENetworkParamNames(self, indent, depth):
+        all_params = { }
+        all_order = [ ]
+
+        # make sure we have at least 1 ODE
+        tmp = ODENetwork( )
+        params = tmp.getParams( )
+        for param_name in params:
+            if param_name not in all_params:
+                all_params[ param_name ] = params[ param_name ]
+                all_order.append( param_name )
+        
+        for name in self.mOrder:
+            odes = self.mItems[ name ].getODENetworks( )
+            for oname in odes.getKeys( ):
+                params = odes.getItem( oname ).getParams( )
+                for param_name in params:
+                    if param_name not in all_params:
+                        all_params[ param_name ] = params[ param_name ]
+                        all_order.append( param_name )
+        lines = []
+        for n in all_order:
+            s = (depth*indent) + "const std::string %s = \"%s\";" % ( all_params[ n ].getConstName( ), n, )
+            lines.append( s )
         return "\n".join( lines )
 
     def chooseReactions( self ):

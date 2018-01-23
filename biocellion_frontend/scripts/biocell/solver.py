@@ -12,23 +12,29 @@ class Solver( ParamHolder ):
         self.addAttribute( Param( "class", "str", "", True ) )
         self.addAttribute( Param( "domain", "str", "", True ) )
         self.addParam( Param( "active", "bool", False, True ) )
-        self.addParam( Param( "preStep", "int", 1, True ) )
-        self.addParam( Param( "postStep", "int", 1, True ) )
-        self.addParam( Param( "coarseStep", "int", 1, True ) )
-        self.addParam( Param( "nCycles", "int", 1, True ) )
+        self.addParam( Param( "preStep", "int", 3, True ) )
+        self.addParam( Param( "postStep", "int", 3, True ) )
+        self.addParam( Param( "coarseStep", "int", 3, False ) ) # required in cDynoMiCS
+        self.addParam( Param( "bottomStep", "int", 3, True ) )
+        self.addParam( Param( "nCycles", "int", 5, True ) )
         # biocellion specific
+        self.addParam( Param( "pdeSolverType", "str", "SteadyState", False, "", [ "SteadyState", "TimeDependent", ], ) )
         self.addParam( Param( "refineRatio", "int", 2, False ) )
         self.addParam( Param( "AMRLevels", "int", 3, False ) )
+        self.addParam( Param( "numTimeSteps", "int", 1, False ) )
 
         self.mPrivateTotallyHiddenParams = [ ] 
         self.mPrivateNumberHiddenParams = [  ]
         self.mPrivateBoolHiddenParams = [  ]
         self.mPrivateStringHiddenParams = [ "name", "class", "domain" ]
-        self.mPrivateHiddenParams = self.mPrivateTotallyHiddenParams + self.mPrivateNumberHiddenParams + self.mPrivateBoolHiddenParams + self.mPrivateStringHiddenParams
+        self.mPrivateHiddenParams = [ "pdeSolverType" ] + self.mPrivateTotallyHiddenParams + self.mPrivateNumberHiddenParams + self.mPrivateBoolHiddenParams + self.mPrivateStringHiddenParams
         self.mHiddenParams = self.mHiddenParams + self.mPrivateHiddenParams
         
         self.mReactions = AllSolverReactions( )
         return
+
+    def isSteadyState( self ):
+        return self.getParam( 'pdeSolverType' ).getValue( ) == 'SteadyState' 
 
     def getName(self):
         return self.mName
@@ -58,7 +64,15 @@ class Solver( ParamHolder ):
                                                       self.mPrivateNumberHiddenParams,
                                                       self.mPrivateStringHiddenParams )
         lines.append( s )
-        
+        solver_type = self.getParam( 'pdeSolverType' ).getValue( )
+        if solver_type == 'SteadyState':
+            solver_type_name = "PDE_TYPE_REACTION_DIFFUSION_STEADY_STATE_LINEAR"
+        elif solver_type == 'TimeDependent':
+            solver_type_name = "PDE_TYPE_REACTION_DIFFUSION_TIME_DEPENDENT_LINEAR"
+        else:
+            raise Exception( "Unexpected pdeSolverType: " + str( solver_type ) )
+        lines.append( (depth*indent) + "%s->setPDEType( %s );" % ( varname, solver_type_name, ) )
+
         container_name = "%s->getReactions()" % ( varname, )
         s = self.mReactions.getInitializeBioModel( container_name, indent, depth )
         if s:

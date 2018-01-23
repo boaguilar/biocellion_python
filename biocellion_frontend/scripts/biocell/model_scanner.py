@@ -92,7 +92,13 @@ class ModelScanner:
                     if not param_validator.validateParam( param ):
                         ok = False
                         default_param = param_validator.getParam( name )
-                        msg  = "Param ( " + str( param ) + " ) of ( " + node.tag + " ) not valid, check name, units, and value."
+                        msg  = "Param ( " + str( param ) + " ) of ( " + node.tag + " ) is not valid.\n"
+                        
+                        if not default_param.validateUnit( param ):
+                            msg += "Unit is not valid.\n"
+                        if not default_param.validateAllowedValue( param ):
+                            msg += "Value is not in list of allowed values.\n"
+
                         msg += " Expected param is " + str( default_param )
                         print( msg )
 
@@ -233,7 +239,7 @@ class ModelScanner:
                         item = self.mModel.getItemAddIfNeeded( tag, name, class_name )
                     else:
                         pass
-            elif child.tag in ( 'solute', 'molecule', 'particle', 'reaction', 'solver', 'molecularReactions', 'species' ):
+            elif child.tag in ( 'solute', 'molecule', 'particle', 'interaction', 'reaction', 'solver', 'molecularReactions', 'species' ):
                 tag = child.tag
                 name = child.get( 'name' )
                 class_name = child.get( 'class' )
@@ -244,7 +250,7 @@ class ModelScanner:
         return
         
     def scanIdynomicsXML( self, node, parent_object=None ):
-        may_children = ( "simulator", "input", "solute", "molecule", "particle", "world", "reaction", "molecularReactions", "solver", "agentGrid", "species", )
+        may_children = ( "simulator", "input", "solute", "molecule", "particle", "interaction", "world", "reaction", "molecularReactions", "solver", "agentGrid", "species", )
         required_children = ( "simulator", )
         self.mModel.resetIDynoMiCS( )
         node_object = self.mModel.getIDynoMiCS( )
@@ -254,6 +260,7 @@ class ModelScanner:
             "solute": self.scanSoluteXML,
             "molecule": self.scanMoleculeXML,
             "particle": self.scanParticleXML,
+            "interaction": self.scanInteractionXML,
             "world": self.scanWorldXML,
             "reaction": self.scanReactionXML,
             "molecularReactions": self.scanMolecularReactionsXML,
@@ -332,6 +339,19 @@ class ModelScanner:
         return ok
 
     def scanParticleXML( self, node, parent_object=None ):
+        may_children = ( "param", )
+        required_children = (  )
+        node_object = self.mModel.getItemAddIfNeeded( node.tag, node.get( 'name' ), node.get( 'class' ) )
+        parent_object = None # don't need to add this as a child
+        child_methods = {
+            "param": self.scanGenericParamXML,
+        }
+        
+        ok = self.scanNodeXML( node, may_children, required_children, child_methods, node_object, parent_object )
+        
+        return ok
+
+    def scanInteractionXML( self, node, parent_object=None ):
         may_children = ( "param", )
         required_children = (  )
         node_object = self.mModel.getItemAddIfNeeded( node.tag, node.get( 'name' ), node.get( 'class' ) )
@@ -565,6 +585,10 @@ class ModelScanner:
                 node_object.setSoluteReference( self.mModel.getItem( 'solute', node.get( 'solute' ) ) )
             if node.get( 'molecule' ):
                 node_object.setMoleculeReference( self.mModel.getItem( 'molecule', node.get( 'molecule' ) ) )
+            if node.get( 'species' ):
+                node_object.setAgentSpeciesReference( self.mModel.getItem( 'species', node.get( 'species' ) ) )
+            if node.get( 'class' ) == "KineticAgentSurfaceArea" and ( not node.get( 'species' ) ):
+                raise Exception( '<kineticFactor class="KineticAgentSurfaceArea"> requires species="" attribute.' )
             parent_object = None # don't need to add this as a child
         child_methods = {
             "param": self.scanGenericParamXML,
@@ -662,7 +686,7 @@ class ModelScanner:
         return ok
 
     def scanSpeciesXML( self, node, parent_object=None ):
-        may_children = ( "param", "particle", "molecule", "reaction", "tightJunctions", "adhesions", "initArea", "entryConditions", "chemotaxis", "switchingLags",  )
+        may_children = ( "param", "particle", "molecule", "reaction", "odeNetwork", "tightJunctions", "adhesions", "initArea", "entryConditions", "chemotaxis", "switchingLags",  )
         required_children = (  )
         node_object = self.mModel.getItemAddIfNeeded( node.tag, node.get( 'name' ), node.get( 'class' ) )
         parent_object = None # don't need to add this as a child
@@ -671,6 +695,7 @@ class ModelScanner:
             "particle": self.scanSpeciesParticleXML,
             "molecule": self.scanSpeciesMoleculeXML,
             "reaction": self.scanSpeciesReactionXML,
+            "odeNetwork": self.scanSpeciesODENetworkXML,
             "tightJunctions": self.scanSpeciesTightJunctionsXML,
             "adhesions": self.scanSpeciesAdhesionsXML,
             "initArea": self.scanSpeciesInitAreaXML,
@@ -681,6 +706,11 @@ class ModelScanner:
         }
         
         ok = self.scanNodeXML( node, may_children, required_children, child_methods, node_object, parent_object )
+
+        if node_object.paramExists( 'computationDomain' ):
+            domain_name = node_object.getParam( 'computationDomain' ).getValue( )
+            if domain_name:
+                node_object.setDomainReference( self.mModel.getItem( 'domain', domain_name ) )
         
         return ok
 
@@ -725,6 +755,7 @@ class ModelScanner:
     def scanSpeciesReactionXML( self, node, parent_object=None ):
         may_children = (  )
         required_children = (  )
+        species_object = parent_object
         if parent_object is None:
             node_object = AgentSpeciesReaction( )
         else:
@@ -734,6 +765,29 @@ class ModelScanner:
             node_object.setReference( self.mModel.getItem( node.tag, node.get( 'name' ) ) )
             parent_object = None # don't need to add this as a child
         child_methods = {
+        }
+        
+        ok = self.scanNodeXML( node, may_children, required_children, child_methods, node_object, parent_object )
+
+        # link species in reaction
+        if species_object and node_object.getAttribute( 'status' ).getValue( ) == 'active':
+            global_reaction = self.mModel.getItem( 'reaction', node.get( 'name' ) )
+            global_reaction.getAgentSpecies( ).addItem( species_object.getName( ), species_object )
+        
+        return ok
+
+    def scanSpeciesODENetworkXML( self, node, parent_object=None ):
+        may_children = ( "param", )
+        required_children = ( "param", )
+        if parent_object is None:
+            node_object = ODENetwork( )
+        else:
+            if not parent_object.getODENetworks( ).addItem( node.get('name') ):
+                raise Exception( "ERROR : couldn't add a species ode network." )
+            node_object = parent_object.getODENetworks( ).getLastItem( )
+            parent_object = None # don't need to add this as a child
+        child_methods = {
+            "param": self.scanGenericParamXML,
         }
         
         ok = self.scanNodeXML( node, may_children, required_children, child_methods, node_object, parent_object )
@@ -757,7 +811,7 @@ class ModelScanner:
         return ok
 
     def scanSpeciesTightJunctionXML( self, node, parent_object=None ):
-        may_children = (  )
+        may_children = (  'param' )
         required_children = (  )
         if parent_object is None:
             node_object = TightJunction( )
@@ -769,6 +823,7 @@ class ModelScanner:
                 node_object.setReference( self.mModel.getItem( 'species', node.get( 'withSpecies' ) ) )
             parent_object = None # don't need to add this as a child
         child_methods = {
+            "param": self.scanGenericParamXML,
         }
         
         ok = self.scanNodeXML( node, may_children, required_children, child_methods, node_object, parent_object )
@@ -888,7 +943,7 @@ class ModelScanner:
         return ok
 
     def scanSpeciesChemotacticXML( self, node, parent_object=None ):
-        may_children = (  )
+        may_children = ( 'param' )
         required_children = (  )
         if parent_object is None:
             node_object = Chemotaxis( )
@@ -900,6 +955,7 @@ class ModelScanner:
                 node_object.setReference( self.mModel.getItem( 'solute', node.get( 'withSolute' ) ) )
             parent_object = None # don't need to add this as a child
         child_methods = {
+            "param": self.scanGenericParamXML,
         }
         
         ok = self.scanNodeXML( node, may_children, required_children, child_methods, node_object, parent_object )

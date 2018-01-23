@@ -10,7 +10,7 @@ class Reaction( ParamHolder ):
         self.setPrefix( "REACTION" )
         
         self.addAttribute( Param( "name", "str", "", True ) )
-        self.addAttribute( Param( "class", "str", "", True ) )
+        self.addAttribute( Param( "class", "str", "", True, "", [ "ReactionFactor", ] ) )
         self.addAttribute( Param( "catalyzedBy", "str", "", True ) )  # Particle reference
         self.addAttribute( Param( "catalyst", "str", "", False ) )    # Species reference
         self.addParam( Param( "muMax", "hour-1", 0.0, True ) )
@@ -23,6 +23,7 @@ class Reaction( ParamHolder ):
         
         self.mYields = Yields( )        
         self.mKineticFactors = ItemHolder( KineticFactor )
+        self.mAgentSpecies = ItemHolder( AgentSpecies ) # all AgentSpecies that have this reaction active
         return
     
     def getName(self):
@@ -36,6 +37,9 @@ class Reaction( ParamHolder ):
 
     def getKineticFactors( self ):
         return self.mKineticFactors
+
+    def getAgentSpecies( self ):
+        return self.mAgentSpecies
 
     def getInitializeBioModel(self, indent, depth):
         varname = "reaction"
@@ -61,6 +65,13 @@ class Reaction( ParamHolder ):
         s = self.mKineticFactors.getInitializeBioModel( container_name, indent, depth )
         if s:
             lines.append( s )
+
+        # agent species active with this reaction
+        lines.append( (depth*indent) + "%s->getActiveAgentSpecies( ).resize( NUM_AGENT_SPECIES );" % ( varname, ) )
+        lines.append( (depth*indent) + "%s->getActiveAgentSpecies( ).assign( NUM_AGENT_SPECIES, false );" % ( varname, ) )
+        for species_name in self.mAgentSpecies.getKeys( ):
+            species = self.mAgentSpecies.getItem( species_name )
+            lines.append( (depth*indent) + "%s->getActiveAgentSpecies( )[ %s ] = true;" % ( varname, species.getEnumToken( ) ) )
         
         lines.append( (depth*indent) + "gBioModelRW->getReactions( ).push_back( %s );" % ( varname, ) )
         depth -= 1;

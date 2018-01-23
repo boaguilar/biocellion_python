@@ -7,11 +7,13 @@ class Chemotaxis( ParamHolder ):
 
     def __init__( self ):
         ParamHolder.__init__( self )
-        self.addAttribute( Param( "strength", "float", 0, True ) )
         self.addAttribute( Param( "withSolute", "str", "", True ) )
-        self.addAttribute( Param( "contactInhibition", "int", 0, False ) )
 
-        self.mPrivateNumberHiddenParams = [ "strength", "contactInhibition" ]
+        self.addParam( Param( "strength", "um.hour-1.fg-1.um3", 0, True ) )
+        self.addParam( Param( "contactInhibition", "int", 0, False ) )
+        self.addParam( Param( "alpha", "fg.um-3", 0.0, False ) )
+
+        self.mPrivateNumberHiddenParams = [ "strength", "contactInhibition", "alpha" ]
         self.mPrivateBoolHiddenParams = [  ]
         self.mPrivateStringHiddenParams = [  ]
         self.mPrivateHiddenParams = [ "withSolute", ] + self.mPrivateNumberHiddenParams + self.mPrivateBoolHiddenParams + self.mPrivateStringHiddenParams
