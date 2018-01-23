@@ -33,6 +33,7 @@ BOOL Reaction::Yield::isMolecule( ) const {
   return mType ==  TYPE_MOLECULE;
 }
 
+
 void Reaction::Yield::setSolute( ) {
   mType = TYPE_SOLUTE;
 }
@@ -72,6 +73,7 @@ Reaction::KineticFactor::KineticFactor( )
   : mKineticFactorClass( "" ),
     mSoluteIdx( -1 ),
     mMoleculeIdx( -1 ),
+    mSpeciesIdx( -1 ),
     mKi( 0.0 ),
     mKs( 0.0 )
 {
@@ -85,12 +87,16 @@ const std::string& Reaction::KineticFactor::getClass( ) const {
   return mKineticFactorClass;
 }
 
-S32 Reaction::KineticFactor::getSolute( ) const {
+S32 Reaction::KineticFactor::getSoluteIdx( ) const {
   return mSoluteIdx;
 }
 
-S32 Reaction::KineticFactor::getMolecule( ) const {
+S32 Reaction::KineticFactor::getMoleculeIdx( ) const {
   return mMoleculeIdx;
+}
+
+S32 Reaction::KineticFactor::getSpeciesIdx( ) const {
+  return mSpeciesIdx;
 }
 
 REAL Reaction::KineticFactor::getKi( ) const {
@@ -109,16 +115,28 @@ BOOL Reaction::KineticFactor::isMolecule( ) const {
   return mSoluteIdx < 0 && mMoleculeIdx >= 0;
 }
 
+BOOL Reaction::KineticFactor::isAgent( ) const {
+  return mSpeciesIdx >= 0;
+}
+
+BOOL Reaction::KineticFactor::isNone( ) const {
+  return mSoluteIdx < 0 && mMoleculeIdx < 0 && mSpeciesIdx < 0;
+}
+
 void Reaction::KineticFactor::setClass(const std::string& value) {
   mKineticFactorClass = value;
 }
 
-void Reaction::KineticFactor::setSolute( const S32& value ) {
+void Reaction::KineticFactor::setSoluteIdx( const S32& value ) {
   mSoluteIdx = value;
 }
 
-void Reaction::KineticFactor::setMolecule( const S32& value ) {
+void Reaction::KineticFactor::setMoleculeIdx( const S32& value ) {
   mMoleculeIdx = value;
+}
+
+void Reaction::KineticFactor::setSpeciesIdx( const S32& value ) {
+  mSpeciesIdx = value;
 }
 
 void Reaction::KineticFactor::setKi( const REAL& value) {
@@ -127,6 +145,15 @@ void Reaction::KineticFactor::setKi( const REAL& value) {
 
 void Reaction::KineticFactor::setKs( const REAL& value) {
   mKs = value;
+}
+
+REAL Reaction::KineticFactor::kineticValueAgent( const SpAgentState& state ) const {
+  if( BMD_DO_DEBUG( BMD_KINETIC_FACTOR_DETAIL ) ) {
+    OUTPUT( 0, "Reaction::KineticFactor::kineticValueAgent() "
+            << " radius: " << state.getRadius( )
+            );
+  }
+  return 0;
 }
 
 REAL Reaction::FirstOrderKinetic::kineticValue( const REAL& solute_value ) const {
@@ -148,11 +175,50 @@ REAL Reaction::MonodKinetic::kineticValue( const REAL& solute_value ) const {
 }
 
 REAL Reaction::LinearKinetic::kineticValue( const REAL& solute_value ) const {
+  if( BMD_DO_DEBUG( BMD_KINETIC_FACTOR_DETAIL ) ) {
+    OUTPUT( 0, "Reaction::LinearKinetic::kineticValue() "
+            << " Ks: " << mKs
+            << " solute_value: " << solute_value
+            << " result: " << mKs * solute_value
+            );
+  }
   return mKs * solute_value;
 }
 
+Reaction::KineticPermeability::KineticPermeability( )
+  : mPermeability(0)
+{
+  //empty
+}
+
+REAL Reaction::KineticPermeability::getPermeability() const {
+  return mPermeability;
+};
+
+void Reaction::KineticPermeability::setPermeability( const REAL& permeability ) {
+  mPermeability = permeability;
+};
+
+REAL Reaction::KineticPermeability::kineticValue( const REAL& solute_value ) const {
+  return mPermeability;
+}
+
+REAL Reaction::KineticAgentSurfaceArea::kineticValue( const REAL& solute_value ) const {
+  ERROR( "KineticAgentSurfaceArea::kineticValue() should not be called.  Ever." );
+  return 0;
+}
+
+REAL Reaction::KineticAgentSurfaceArea::kineticValueAgent( const SpAgentState& state ) const {
+  if( BMD_DO_DEBUG( BMD_KINETIC_FACTOR_DETAIL ) ) {
+    OUTPUT( 0, "Reaction::KineticAgentSurfaceArea::kineticValueAgent() "
+            << " radius: " << state.getRadius( )
+            );
+  }
+  return gBioModel->getAgentSpecies()[ state.getType() ]->getSurfaceArea( state ) / gBioModel->getAgentSpecies()[ state.getType() ]->getGeometricVolume( state );
+}
+
 std::ostream& operator<<( std::ostream& os, const Reaction::KineticFactor& rhs ) {
-  os << rhs.getClass( ) << "," << rhs.getSolute( ) << "," << rhs.getMolecule( ) << "," << rhs.getKi( ) << "," << rhs.getKs( );
+  os << rhs.getClass( ) << "," << rhs.getSoluteIdx( ) << "," << rhs.getMoleculeIdx( ) << "," << rhs.getSpeciesIdx( ) << "," << rhs.getKi( ) << "," << rhs.getKs( );
   return os;
 }
 std::ostream& operator<<( std::ostream& os, const Reaction::FirstOrderKinetic& rhs ) {
@@ -210,6 +276,16 @@ Vector< Reaction::Yield >& Reaction::getYields( ) {
   return mYields;
 }
 
+BOOL Reaction::getYieldForMolecule( const S32& moleculeIdx, Yield& yield ) const {
+  S32 i;
+  for( i = 0; i < (S32) mYields.size(); i++ ) {
+    yield = mYields[ i ];
+    return true;
+  }
+  return false;
+}
+
+
 const Vector< Reaction::KineticFactor* >& Reaction::getKineticFactors( ) const {
   return mKineticFactors;
 }
@@ -218,6 +294,13 @@ Vector< Reaction::KineticFactor* >& Reaction::getKineticFactors( ) {
   return mKineticFactors;
 }
 
+const Vector< BOOL >& Reaction::getActiveAgentSpecies( ) const {
+  return mActiveAgentSpecies;
+}
+
+Vector< BOOL >& Reaction::getActiveAgentSpecies( ) {
+  return mActiveAgentSpecies;
+}
 
 void Reaction::setName(const std::string& value) {
   mName = value;
@@ -240,86 +323,213 @@ void Reaction::setMuMax(const REAL& value) {
 }
 
 REAL Reaction::getKineticFactor( const NbrUBEnv& nbrUBEnv, const VReal& vOffset, SpAgentState& state ) const {
+  /* Called by:
+   *   AgentSpecies::updateSpAgentState()
+   */
   REAL factor = mMuMax;
   REAL concentration_value = 0;
   S32 i;
   for( i = 0 ; i < (S32) mKineticFactors.size( ) ; i++ ) {
     if( mKineticFactors[ i ]->isSolute( ) ) {
-      concentration_value = gBioModel->getSubgridValue( mKineticFactors[ i ]->getSolute( ), nbrUBEnv, vOffset );
+      concentration_value = gBioModel->getSubgridValue( mKineticFactors[ i ]->getSoluteIdx( ), nbrUBEnv, vOffset );
+      factor *= mKineticFactors[ i ]->kineticValue( concentration_value );
+      if( BMD_DO_DEBUG( BMD_KINETIC_FACTOR ) ) {
+        OUTPUT( 0, ""
+                << " KineticFactor: " << *(this->mKineticFactors[ i ])
+                << " solute: " << gBioModel->getSolutes( )[ mKineticFactors[ i ]->getSoluteIdx( ) ]->getName( )
+                << " concentration: " << concentration_value
+                << " value: " << mKineticFactors[ i ]->kineticValue( concentration_value )
+                );
+      }
     } else if( mKineticFactors[ i ]->isMolecule( ) ) {
-      concentration_value = gBioModel->getAgentSpecies()[ state.getType() ]->getMoleculeValue( mKineticFactors[ i ]->getMolecule( ), state );
-
-    } else if( mKineticFactors[ i ]->getSolute( ) == -1 && mKineticFactors[ i ]->getMolecule( ) == -1 ) {
+      concentration_value = gBioModel->getAgentSpecies()[ state.getType() ]->getMoleculeValue( mKineticFactors[ i ]->getMoleculeIdx( ), state );
+      factor *= mKineticFactors[ i ]->kineticValue( concentration_value );
+      if( BMD_DO_DEBUG( BMD_KINETIC_FACTOR ) ) {
+        OUTPUT( 0, ""
+                << " KineticFactor: " << *(this->mKineticFactors[ i ])
+                << " molecule: " << gBioModel->getMolecules( )[ mKineticFactors[ i ]->getMoleculeIdx( ) ]->getName( )
+                << " concentration: " << concentration_value
+                << " value: " << mKineticFactors[ i ]->kineticValue( concentration_value )
+                );
+      }
+    } else if ( mKineticFactors[ i ]->isAgent( ) ) {
+      factor *= mKineticFactors[ i ]->kineticValueAgent( state );
+      if( BMD_DO_DEBUG( BMD_KINETIC_FACTOR ) ) {
+        OUTPUT( 0, ""
+                << " KineticFactor: " << *(this->mKineticFactors[ i ])
+                << " agent: " << gBioModel->getAgentSpecies( )[ state.getType( ) ]->getName( )
+                << " value: " << mKineticFactors[ i ]->kineticValueAgent( state )
+                );
+      }
+    } else if( mKineticFactors[ i ]->isNone( ) ) {
       concentration_value = 0;
+      factor *= mKineticFactors[ i ]->kineticValue( concentration_value );
+      if( BMD_DO_DEBUG( BMD_KINETIC_FACTOR ) ) {
+        OUTPUT( 0, ""
+                << " KineticFactor: " << *(this->mKineticFactors[ i ])
+                << " none: " 
+                << " value: " << mKineticFactors[ i ]->kineticValue( concentration_value )
+                );
+      }
     } else {
       ERROR( "Should be unreachable." );
     }
-    factor *= mKineticFactors[ i ]->kineticValue( concentration_value );
   }
   return factor;
 }
 
 REAL Reaction::getKineticFactor( const UBEnv& ubEnv, const VReal& vOffset ) const {
+  /* Called by:
+   *   Solute::updateIfSubgridRHSLinear()  // non-agent related
+   */
   REAL factor = mMuMax;
-  REAL solute_value = 0;
+  REAL concentration_value = 0;
   S32 i;
   for( i = 0 ; i < (S32) mKineticFactors.size( ) ; i++ ) {
     if( mKineticFactors[ i ]->isSolute( ) ) {
-      solute_value = gBioModel->getSubgridValue( mKineticFactors[ i ]->getSolute( ), ubEnv, vOffset );
+      concentration_value = gBioModel->getSubgridValue( mKineticFactors[ i ]->getSoluteIdx( ), ubEnv, vOffset );
+      factor *= mKineticFactors[ i ]->kineticValue( concentration_value );
+      if( BMD_DO_DEBUG( BMD_KINETIC_FACTOR ) ) {
+        OUTPUT( 0, ""
+                << " KineticFactor: " << *(this->mKineticFactors[ i ])
+                << " solute: " << gBioModel->getSolutes( )[ mKineticFactors[ i ]->getSoluteIdx( ) ]->getName( )
+                << " concentration: " << concentration_value
+                << " value: " << mKineticFactors[ i ]->kineticValue( concentration_value )
+                );
+      }
     } else if( mKineticFactors[ i ]->isMolecule( ) ) {
       ERROR( "Molecular kinetic factors not allowed here." );
-    } else if( mKineticFactors[ i ]->getSolute( ) == -1 && mKineticFactors[ i ]->getMolecule( ) == -1 ) {
-      solute_value = 0;
+    } else if ( mKineticFactors[ i ]->isAgent( ) ) {
+      ERROR( "Agent kinetic factors not allowed here." );
+    } else if ( mKineticFactors[ i ]->isNone( ) ) {
+      concentration_value = 0;
+      factor *= mKineticFactors[ i ]->kineticValue( concentration_value );
+      if( BMD_DO_DEBUG( BMD_KINETIC_FACTOR ) ) {
+        OUTPUT( 0, ""
+                << " KineticFactor: " << *(this->mKineticFactors[ i ])
+                << " none: " 
+                << " value: " << mKineticFactors[ i ]->kineticValue( concentration_value )
+                );
+      }
     } else {
       ERROR( "Should be unreachable." );
     }
-    factor *= mKineticFactors[ i ]->kineticValue( solute_value );
   }
   return factor;
 }
 
 REAL Reaction::getKineticFactor( const NbrUBEnv& nbrUBEnv, const SpAgent& spAgent, const Vector< double >& v_y ) const {
+  /* Called by:
+   *   AgentSpecies::spAgentCRNODERHS()
+   */
   REAL factor = mMuMax;
   REAL concentration_value = 0.0;
   S32 i;
-
   for( i = 0; i < (S32) mKineticFactors.size(); i++ ) {
     if( mKineticFactors[ i ]->isSolute( ) ) {
-      concentration_value = gBioModel->getSubgridValue( mKineticFactors[ i ]->getSolute( ), nbrUBEnv, spAgent.vOffset );
+      concentration_value = gBioModel->getSubgridValue( mKineticFactors[ i ]->getSoluteIdx( ), nbrUBEnv, spAgent.vOffset );
+      factor *= mKineticFactors[ i ]->kineticValue( concentration_value );
+      if( BMD_DO_DEBUG( BMD_KINETIC_FACTOR ) ) {
+        OUTPUT( 0, ""
+                << " KineticFactor: " << *(this->mKineticFactors[ i ])
+                << " solute: " << gBioModel->getSolutes( )[ mKineticFactors[ i ]->getSoluteIdx( ) ]->getName( )
+                << " concentration: " << concentration_value
+                << " value: " << mKineticFactors[ i ]->kineticValue( concentration_value )
+                );
+      }
     } else if ( mKineticFactors[ i ]->isMolecule( ) ) {
-      concentration_value = gBioModel->getAgentSpecies()[ spAgent.state.getType() ]->getMoleculeValue( mKineticFactors[ i ]->getMolecule( ), spAgent.state, v_y );
-    } else if( mKineticFactors[ i ]->getSolute( ) == -1 && mKineticFactors[ i ]->getMolecule( ) == -1 ) {
+      concentration_value = gBioModel->getAgentSpecies()[ spAgent.state.getType() ]->getMoleculeValue( mKineticFactors[ i ]->getMoleculeIdx( ), spAgent.state, v_y );
+      factor *= mKineticFactors[ i ]->kineticValue( concentration_value );
+      if( BMD_DO_DEBUG( BMD_KINETIC_FACTOR ) ) {
+        OUTPUT( 0, ""
+                << " KineticFactor: " << *(this->mKineticFactors[ i ])
+                << " molecule: " << gBioModel->getMolecules( )[ mKineticFactors[ i ]->getMoleculeIdx( ) ]->getName( )
+                << " concentration: " << concentration_value
+                << " value: " << mKineticFactors[ i ]->kineticValue( concentration_value )
+                );
+      }
+    } else if ( mKineticFactors[ i ]->isAgent( ) ) {
+      factor *= mKineticFactors[ i ]->kineticValueAgent( spAgent.state );
+      if( BMD_DO_DEBUG( BMD_KINETIC_FACTOR ) ) {
+        OUTPUT( 0, ""
+                << " KineticFactor: " << *(this->mKineticFactors[ i ])
+                << " agent: " << gBioModel->getAgentSpecies( )[ spAgent.state.getType( ) ]->getName( )
+                << " value: " << mKineticFactors[ i ]->kineticValueAgent( spAgent.state )
+                );
+      }
+    } else if( mKineticFactors[ i ]->isNone( ) ) {
       concentration_value = 0;
+      factor *= mKineticFactors[ i ]->kineticValue( concentration_value );
+      if( BMD_DO_DEBUG( BMD_KINETIC_FACTOR ) ) {
+        OUTPUT( 0, ""
+                << " KineticFactor: " << *(this->mKineticFactors[ i ])
+                << " none: " 
+                << " value: " << mKineticFactors[ i ]->kineticValue( concentration_value )
+                );
+      }
     } else {
       ERROR( "Should be unreachable." );
     }
-    factor *= mKineticFactors[ i ]->kineticValue( concentration_value );
   }
-
   return factor;
 }
 
 REAL Reaction::getKineticFactor( const UBEnv& ubEnv, const VReal& vOffset, const SpAgent& spAgent ) const {
+  /* Called by:
+   *   Solute::updateIfSubgridRHSLinear() // agent related
+   */
   
   REAL factor = mMuMax;
   REAL concentration_value = 0;
   S32 i;
   for( i = 0 ; i < (S32) mKineticFactors.size( ) ; i++ ) {
     if( mKineticFactors[ i ]->isSolute( ) ) {
-      concentration_value = gBioModel->getSubgridValue( mKineticFactors[ i ]->getSolute( ), ubEnv, vOffset );
+      concentration_value = gBioModel->getSubgridValue( mKineticFactors[ i ]->getSoluteIdx( ), ubEnv, vOffset );
+      factor *= mKineticFactors[ i ]->kineticValue( concentration_value );
+      if( BMD_DO_DEBUG( BMD_KINETIC_FACTOR ) ) {
+        OUTPUT( 0, ""
+                << " KineticFactor: " << *(this->mKineticFactors[ i ])
+                << " solute: " << gBioModel->getSolutes( )[ mKineticFactors[ i ]->getSoluteIdx( ) ]->getName( )
+                << " concentration: " << concentration_value
+                << " value: " << mKineticFactors[ i ]->kineticValue( concentration_value )
+                );
+      }
     } else if( mKineticFactors[ i ]->isMolecule( ) ) {
-      concentration_value = gBioModel->getAgentSpecies()[ spAgent.state.getType() ]->getMoleculeValue( mKineticFactors[ i ]->getMolecule( ), spAgent.state );
-    } else if( mKineticFactors[ i ]->getSolute( ) == -1 && mKineticFactors[ i ]->getMolecule( ) == -1 ) {
+      concentration_value = gBioModel->getAgentSpecies()[ spAgent.state.getType() ]->getMoleculeValue( mKineticFactors[ i ]->getMoleculeIdx( ), spAgent.state );
+      factor *= mKineticFactors[ i ]->kineticValue( concentration_value );
+      if( BMD_DO_DEBUG( BMD_KINETIC_FACTOR ) ) {
+        OUTPUT( 0, ""
+                << " KineticFactor: " << *(this->mKineticFactors[ i ])
+                << " molecule: " << gBioModel->getMolecules( )[ mKineticFactors[ i ]->getMoleculeIdx( ) ]->getName( )
+                << " concentration: " << concentration_value
+                << " value: " << mKineticFactors[ i ]->kineticValue( concentration_value )
+                );
+      }
+    } else if ( mKineticFactors[ i ]->isAgent( ) ) {
+      factor *= mKineticFactors[ i ]->kineticValueAgent( spAgent.state );
+      if( BMD_DO_DEBUG( BMD_KINETIC_FACTOR ) ) {
+        OUTPUT( 0, ""
+                << " KineticFactor: " << *(this->mKineticFactors[ i ])
+                << " agent: " << gBioModel->getAgentSpecies( )[ spAgent.state.getType( ) ]->getName( )
+                << " value: " << mKineticFactors[ i ]->kineticValueAgent( spAgent.state )
+                );
+      }
+    } else if( mKineticFactors[ i ]->isNone( ) ) {
       concentration_value = 0;
+      factor *= mKineticFactors[ i ]->kineticValue( concentration_value );
+      if( BMD_DO_DEBUG( BMD_KINETIC_FACTOR ) ) {
+        OUTPUT( 0, ""
+                << " KineticFactor: " << *(this->mKineticFactors[ i ])
+                << " none: " 
+                << " value: " << mKineticFactors[ i ]->kineticValue( concentration_value )
+                );
+      }
     } else {
       ERROR( "Should be unreachable." );
     }
-    factor *= mKineticFactors[ i ]->kineticValue( concentration_value );
   }
-  return factor;
-  
+ return factor;
 }
-
 /*
  * Assumes that spAgent is within the subgrid container in question.
  * Finds the total yield this agent produces for this solute, due
@@ -329,8 +539,9 @@ REAL Reaction::getSoluteYield( const S32& solute_idx, const SpAgent& spAgent ) c
   S32 i, j;
   REAL yield = 0.0;
   S32 agentType = spAgent.state.getType( );
-  if( getCatalyst( ) == -1 || getCatalyst( ) == agentType ) {
-    // Agent's type matches catalyst
+  if( ( getCatalyst( ) == -1 || getCatalyst( ) == agentType ) &&
+      mActiveAgentSpecies[ agentType ] ) {
+    // Agent's type matches catalyst, and agent's type is active
     for( i = 0; i < (S32) mYields.size( ) ; i++ ) {
       if( mYields[ i ].isSolute( ) && mYields[ i ].getItemIdx( ) == solute_idx ) {
         // Yield matches solute

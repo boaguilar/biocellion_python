@@ -21,12 +21,15 @@ class BioModel;
 #include "computation_domain.h"
 #include "solute.h"
 #include "molecule.h"
+#include "interaction.h"
 #include "reaction.h"
 #include "bulk.h"
 #include "agar.h"
 #include "world.h"
 #include "solver.h"
+#include "ode_network.h"
 #include "agent_species.h"
+#include "biomodel_debug.h"
 
 #include "biomodel_auto.h"
 
@@ -54,6 +57,8 @@ public:
   AgentGrid& getAgentGrid( );
   const Vector<Particle *>& getParticles( ) const;
   Vector<Particle *>& getParticles( );
+  const Vector<Interaction *>& getInteractions( ) const;
+  Vector<Interaction *>& getInteractions( );
   const Vector<MechIntrctSpAgent *>& getMechIntrctSpAgent( ) const;
   Vector<MechIntrctSpAgent *>& getMechIntrctSpAgent( );
   const Vector< Vector<BOOL> >& getMechIntrctShoveEnabled( ) const;
@@ -86,6 +91,7 @@ public:
    **********************************************/
   void updateDomainBdryType( domain_bdry_type_e a_domainBdryType[DIMENSION] ) const;
   void updateTimeStepInfo( TimeStepInfo& timeStepInfo ) const;
+  void updateSpAgentInfo( Vector<SpAgentInfo>& v_spAgentInfo ) const;
   void updateBoundaryConditions( );
   void updatePhiPDEInfo( Vector<PDEInfo>& v_phiPDEInfo ) const;
   void updateFileOutputInfo( FileOutputInfo& fileOutputInfo ) const;
@@ -133,6 +139,7 @@ protected:
   Simulator mSimulator;
   AgentGrid mAgentGrid;
   Vector<Particle *> mParticles;
+  Vector<Interaction *> mInteractions;
   Vector<MechIntrctSpAgent *> mMechIntrctSpAgent;
   Vector< Vector<BOOL> > mMechIntrctShoveEnabled;
 };

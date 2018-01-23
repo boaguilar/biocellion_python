@@ -40,26 +40,31 @@ public:
     virtual ~KineticFactor( );
 
     const std::string& getClass( ) const;
-    S32 getSolute( ) const;
-    S32 getMolecule( ) const;
+    S32 getSoluteIdx( ) const;
+    S32 getMoleculeIdx( ) const;
+    S32 getSpeciesIdx( ) const;
     REAL getKi( ) const;
     REAL getKs( ) const;
     BOOL isSolute( ) const;
     BOOL isMolecule( ) const;
-
+    BOOL isAgent( ) const;
+    BOOL isNone( ) const;
+    
     void setClass( const std::string& value );
-    void setSolute( const S32& value );
-    void setMolecule( const S32& value );
+    void setSoluteIdx( const S32& value );
+    void setMoleculeIdx( const S32& value );
+    void setSpeciesIdx( const S32& value );
     void setKi( const REAL& value );
     void setKs( const REAL& value );
-
+    
     virtual REAL kineticValue( const REAL& solute_value ) const = 0;
-
+    virtual REAL kineticValueAgent( const SpAgentState& state ) const;
   protected:
     
     std::string mKineticFactorClass;
     S32 mSoluteIdx;
     S32 mMoleculeIdx;
+    S32 mSpeciesIdx;
     REAL mKi;
     REAL mKs;
   };
@@ -83,7 +88,23 @@ public:
   public:
     virtual REAL kineticValue( const REAL& solute_value ) const;
   };
+
+  class KineticPermeability : public KineticFactor {
+  public:
+    KineticPermeability();
+    virtual REAL kineticValue( const REAL& solute_value ) const;
+    REAL getPermeability() const;
+    void setPermeability( const REAL& permeability );
+  protected:
+    REAL mPermeability;
+  };
   
+  class KineticAgentSurfaceArea : public  KineticFactor {
+  public:
+    virtual REAL kineticValue( const REAL& solute_value ) const;
+    virtual REAL kineticValueAgent( const SpAgentState& state ) const;
+  };
+
   Reaction( );
   Reaction( const std::string& name, const std::string& reactionClass,
             const S32& catalyzedBy, const S32& catalyst, const REAL& muMax
@@ -98,8 +119,11 @@ public:
 
   const Vector< Yield >& getYields( ) const;
   Vector< Yield >& getYields( );
+  BOOL getYieldForMolecule( const S32& moleculeIdx, Yield& yield ) const;
   const Vector< KineticFactor* >& getKineticFactors( ) const;
   Vector< KineticFactor* >& getKineticFactors( );
+  const Vector< BOOL >& getActiveAgentSpecies( ) const;
+  Vector< BOOL >& getActiveAgentSpecies( );
 
   void setName(const std::string& value);
   void setClass(const std::string& value);
@@ -124,6 +148,8 @@ protected:
 
   Vector< Yield > mYields;
   Vector< KineticFactor* > mKineticFactors;
+  // index is SpeciesIdx, value is whether this reaction is active in that species
+  Vector< BOOL > mActiveAgentSpecies;
 };
 
 std::ostream& operator<<( std::ostream& os, const Reaction::Yield& rhs );

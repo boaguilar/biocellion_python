@@ -82,6 +82,32 @@ void MechIntrctSpAgentShove::compute( const S32 iter, const VIdx& vIdx0, const S
     } else {
       /* No need to set to 0, since DELTA updates are used */
     }
+    
+    if( BMD_DO_DEBUG( BMD_INTERACTION_OUTPUT ) ) {
+      OUTPUT( 0, "Shove: Pre write mechIntrctData for output."
+              );
+    }
+    if( gBioModel->getInteractions( )[ INTERACTION_shove ]->getParamBool( INTERACTION_writeOutput ) ) {
+      S32 dim;
+      for( dim = 0 ; dim < 3 ; dim ++ ) {
+        if( BMD_DO_DEBUG( BMD_INTERACTION_OUTPUT ) ) {
+          OUTPUT( 0, "Shove: Write"
+                  << " type0: " << gBioModel->getAgentSpecies()[ agentType0 ]->getName( )
+                  << " type1: " << gBioModel->getAgentSpecies()[ agentType1 ]->getName( )
+                  << " dim: " << dim
+                  << " idx: " << gBioModel->getInteractions( )[ INTERACTION_shove ]->getInteractionIdx( )
+                  << " value: " << dir[ dim ] * mag
+                  );
+        }
+
+        gBioModel->getAgentSpecies()[ agentType0 ]->setMechInteractionValue( gBioModel->getInteractions( )[ INTERACTION_shove ]->getInteractionIdx( ), dim,  dir[ dim ] * mag, mechIntrctData0 );
+        gBioModel->getAgentSpecies()[ agentType1 ]->setMechInteractionValue( gBioModel->getInteractions( )[ INTERACTION_shove ]->getInteractionIdx( ), dim, -dir[ dim ] * mag, mechIntrctData1 );
+      }
+    }
+    if( BMD_DO_DEBUG( BMD_INTERACTION_OUTPUT ) ) {
+      OUTPUT( 0, "Shove: Post write mechIntrctData for output."
+              );
+    }
   }
 }
 
@@ -189,6 +215,15 @@ void MechIntrctSpAgentAdhesion::compute( const S32 iter, const VIdx& vIdx0, cons
     mechIntrctData1.setModelReal( gBioModel->getAgentSpecies()[ agentType1 ]->getIdxMechForceRealX(), -dir[0] * mag );
     mechIntrctData1.setModelReal( gBioModel->getAgentSpecies()[ agentType1 ]->getIdxMechForceRealY(), -dir[1] * mag );
     mechIntrctData1.setModelReal( gBioModel->getAgentSpecies()[ agentType1 ]->getIdxMechForceRealZ(), -dir[2] * mag );
+
+    if( gBioModel->getInteractions( )[ INTERACTION_adhesion ]->getParamBool( INTERACTION_writeOutput ) ) {
+      S32 dim;
+      for( dim = 0 ; dim < 3 ; dim ++ ) {
+        gBioModel->getAgentSpecies()[ agentType0 ]->setMechInteractionValue( gBioModel->getInteractions( )[ INTERACTION_adhesion ]->getInteractionIdx( ), dim,  dir[ dim ] * mag, mechIntrctData0 );
+        gBioModel->getAgentSpecies()[ agentType1 ]->setMechInteractionValue( gBioModel->getInteractions( )[ INTERACTION_adhesion ]->getInteractionIdx( ), dim, -dir[ dim ] * mag, mechIntrctData1 );
+      }
+    }
+    
   }
 }
 
@@ -504,34 +539,58 @@ void MechIntrctSpAgentTightJunction::compute( const S32 iter, const VIdx& vIdx0,
 {
   S32 agentType0 = spAgent0.state.getType();
   S32 agentType1 = spAgent1.state.getType();
+  REAL scale = mScales[ agentType0 ][ agentType1 ];
+  REAL stiffness = mStiffnesses[ agentType0 ][ agentType1 ];
 
-  if( mScales[ agentType0 ][ agentType1 ] <= 0.0 || mStiffnesses[ agentType0 ][ agentType1 ] <= 0.0 ) {
+  if( scale <= 0.0 || stiffness <= 0.0 ) {
+    if( BMD_DO_DEBUG( BMD_TIGHT_JUNCTION ) ) {
+      OUTPUT( 0, "tightJunction::compute: bail out: scale: " << scale << " stiffness: " << stiffness );
+    }
     return;
   }
 
   S32 idx0, idx1;
   if( !spAgent0.junctionData.isLinked( spAgent1.junctionData, idx0, idx1 ) ) {
     // these two agents do not have a link, not close enough for tight junction
+    if( BMD_DO_DEBUG( BMD_TIGHT_JUNCTION ) ) {
+      OUTPUT( 0, "tightJunction::compute: bail out: no junction" );
+    }
     return;
   }
   // Tight Junctions only occur if the agents have touched
   if( !spAgent0.junctionData.getJunctionEndRef( idx0 ).getModelInt( mIntTouchedIdx ) ) {
+    if( BMD_DO_DEBUG( BMD_TIGHT_JUNCTION ) ) {
+      OUTPUT( 0, "tightJunction::compute: bail out: junction, but not touched." );
+    }
     return;
   }
 
   REAL R = spAgent0.state.getRadius() + spAgent1.state.getRadius();
   REAL difference = (dist - R) / R;
-  REAL stiffness = mStiffnesses[ agentType0 ][ agentType1 ];
   // If two agents are separated by part of another agent,
   // we don't want them pulling through the sandwiched agent.
   // reducing max difference from 1.0 to 0.6
-  if( difference > 0.6 || stiffness == 0.0 ) { // too far apart
+  // FIXME: 0.6, 1.0, ???
+  if( difference > 1.0 || stiffness == 0.0 ) { // too far apart
+    if( BMD_DO_DEBUG( BMD_TIGHT_JUNCTION ) ) {
+      OUTPUT( 0, "tightJunction::compute: bail out: difference: " << difference << " stiffness: " << stiffness );
+    }
     return;
   }
-  REAL scale = mScales[ agentType0 ][ agentType1 ];
   REAL hyper = tanh( difference * stiffness );
   // FIXME: unit analysis.  compare with cDynoMiCS
   // 0.5 to share between the agents
+  // scale = um.hour-1
+  // difference = unitless [ -1, 1 ]
+  // hyper = unitless [ -1, 1 ]
+  // stiffness = unitless [ 0, oo ) 
+  // scales the responsiveness of tanh to difference
+  // if <= 1, also limits the maximum value of tanh
+  //             0   -> hyper = 0
+  //             0.5 -> medium
+  //             1   -> fast
+  //             10  -> faster
+  //             
   REAL mag = - 0.5 * scale * fabs( difference ) * hyper * gBioModel->getAgentTimeStep( );
   
   mechIntrctData0.setModelReal( gBioModel->getAgentSpecies()[ agentType0 ]->getIdxMechForceRealX(), dir[0] * mag );
@@ -541,6 +600,18 @@ void MechIntrctSpAgentTightJunction::compute( const S32 iter, const VIdx& vIdx0,
   mechIntrctData1.setModelReal( gBioModel->getAgentSpecies()[ agentType1 ]->getIdxMechForceRealX(), -dir[0] * mag );
   mechIntrctData1.setModelReal( gBioModel->getAgentSpecies()[ agentType1 ]->getIdxMechForceRealY(), -dir[1] * mag );
   mechIntrctData1.setModelReal( gBioModel->getAgentSpecies()[ agentType1 ]->getIdxMechForceRealZ(), -dir[2] * mag );
+
+  if( gBioModel->getInteractions( )[ INTERACTION_tightJunction ]->getParamBool( INTERACTION_writeOutput ) ) {
+    S32 dim;
+    if( BMD_DO_DEBUG( BMD_TIGHT_JUNCTION ) ) {
+      OUTPUT( 0, "tightJunction::compute: setting output values." );
+    }
+    for( dim = 0 ; dim < 3 ; dim ++ ) {
+      gBioModel->getAgentSpecies()[ agentType0 ]->setMechInteractionValue( gBioModel->getInteractions( )[ INTERACTION_tightJunction ]->getInteractionIdx( ), dim,  dir[ dim ] * mag, mechIntrctData0 );
+      gBioModel->getAgentSpecies()[ agentType1 ]->setMechInteractionValue( gBioModel->getInteractions( )[ INTERACTION_tightJunction ]->getInteractionIdx( ), dim, -dir[ dim ] * mag, mechIntrctData1 );
+    }
+  }
+  
 }
 
 void MechIntrctSpAgentTightJunction::setScale(const S32& agent_type0, const S32& agent_type1, const REAL& value)

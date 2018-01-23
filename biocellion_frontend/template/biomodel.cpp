@@ -60,6 +60,14 @@ BioModel::~BioModel( ) {
   }
   mParticles.clear();
 
+  for( i = 0; i < (S32) mInteractions.size(); i++ ) {
+    if( mInteractions[i] ) {
+      delete mInteractions[i];
+      mInteractions[i] = 0;
+    }
+  }
+  mInteractions.clear();
+
   for( i = 0; i < (S32) mMechIntrctSpAgent.size(); i++ ) {
     if( mMechIntrctSpAgent[i] ) {
       delete mMechIntrctSpAgent[i];
@@ -148,6 +156,14 @@ const Vector< Particle* >& BioModel::getParticles( ) const {
 
 Vector< Particle * >& BioModel::getParticles( ) {
   return mParticles;
+}
+
+const Vector< Interaction* >& BioModel::getInteractions( ) const {
+  return mInteractions;
+}
+
+Vector< Interaction * >& BioModel::getInteractions( ) {
+  return mInteractions;
 }
 
 const Vector<MechIntrctSpAgent *>& BioModel::getMechIntrctSpAgent( ) const
@@ -272,6 +288,14 @@ void BioModel::updateTimeStepInfo( TimeStepInfo& timeStepInfo ) const {
   
 }
 
+void BioModel::updateSpAgentInfo( Vector<SpAgentInfo>& v_spAgentInfo ) const {
+  S32 i;
+  v_spAgentInfo.resize( getAgentSpecies().size() );
+  for( i = 0 ; i < (S32) mAgentSpecies.size( ) ; i++ ) {
+    mAgentSpecies[ i ]->updateSpAgentInfo( v_spAgentInfo[ i ] );
+  }
+}
+
 void BioModel::updateBoundaryConditions( ) {
   S32 i;
   for( i = 0 ; i < (S32) mSolutes.size( ) ; i++ ) {
@@ -308,6 +332,13 @@ void BioModel::updateFileOutputInfo( FileOutputInfo& fileOutputInfo ) const {
     for( i = 0 ; i < (S32) mMolecules.size( ) ; i++ ) {
       if( mMolecules[ i ]->getParamBool( mMolecules[ i ]->getIdxBool( MOLECULE_writeOutput ) ) ) {
         fileOutputInfo.v_particleExtraOutputScalarVarName.push_back( mMolecules[ i ]->getName( ) );
+      }
+    }
+    for( i = 0 ; i < (S32) mInteractions.size( ) ; i++ ) {
+      if( mInteractions[ i ]->getParamBool( mInteractions[ i ]->getIdxBool( INTERACTION_writeOutput ) ) ) {
+        fileOutputInfo.v_particleExtraOutputScalarVarName.push_back( mInteractions[ i ]->getName( ) + "_x" );
+        fileOutputInfo.v_particleExtraOutputScalarVarName.push_back( mInteractions[ i ]->getName( ) + "_y" );
+        fileOutputInfo.v_particleExtraOutputScalarVarName.push_back( mInteractions[ i ]->getName( ) + "_z" );
       }
     }
     fileOutputInfo.v_particleExtraOutputVectorVarName.clear();
@@ -540,6 +571,7 @@ void initializeBioModel() {
   }
   gBioModelRW->getMechIntrctSpAgent().push_back( MechIntrctSpAgentShove::create() );
   gBioModelRW->getMechIntrctSpAgent().push_back( MechIntrctSpAgentAdhesion::create() );
+  gBioModelRW->getMechIntrctSpAgent().push_back( MechIntrctSpAgentTightJunction::create() );
   if( gBioModel->getDistanceJunctionsEnabled( ) ) {
     gBioModelRW->getMechIntrctSpAgent().push_back( MechIntrctSpAgentDistanceJunction::create() );
   }

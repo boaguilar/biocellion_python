@@ -117,21 +117,80 @@ void Solute::calcSubgridDimension() {
   return;
 }
 
+/* 
+ * inputs:
+ * vOffset[ * ] range should be -resolution/2 <= offset < resolution/2
+ *
+ * outputs:
+ * subgridVOffset range should be 0 <= offset < subgrid_dimension
+ */
 void Solute::getSubgridOffset( const VReal& vOffset, VIdx& subgridVOffset ) const {
   for( S32 dim = 0; dim < 3; dim++ ) {
-    REAL fractional_offset  = vOffset[ dim ] / gBioModel->getAgentGrid().getResolution( );
+    /* input checks */
+    CHECK( vOffset[ dim ] >= - gBioModel->getAgentGrid().getResolution( ) / 2.0 );
+    CHECK( vOffset[ dim ] <= gBioModel->getAgentGrid().getResolution( ) / 2.0 );
+
+    REAL fractional_offset  = 0.5 + ( vOffset[ dim ] / gBioModel->getAgentGrid().getResolution( ) );
+    // protect against overflow if on the boundary
+    if( fractional_offset == 1.0 ) {
+      fractional_offset -= 1.0e-6;
+    }
     subgridVOffset[ dim ] = fractional_offset * getSubgridDimension();
+    if( false ) {
+      OUTPUT( 0, ""
+              << " fractional_offset: " << fractional_offset
+              << " vOffset[ " << dim << " ]: " << vOffset[ dim ]
+              << " resolution: " << gBioModel->getAgentGrid().getResolution( )
+              << " subgridDimension: " << getSubgridDimension()
+              << " subgridVOffset[ " << dim << " ]: " << subgridVOffset[ dim ]
+              );
+    }
+
+    /* output checks */
+    CHECK( fractional_offset >= 0.0 );
+    CHECK( fractional_offset < 1.0 );
+    CHECK( subgridVOffset[ dim ] >= 0 );
+    CHECK( subgridVOffset[ dim ] < getSubgridDimension( ) );
   }
 }
 
+/* 
+ * inputs:
+ * subgridVOffset range should be 0 <= offset < subgrid_dimension
+ *
+ * outputs:
+ * vOffset[ * ] range should be -resolution/2 <= offset < resolution/2
+ */
 void Solute::getSubgridCenter( const VIdx& subgridVOffset, VReal& vOffset ) const {
   S32 dim;
   for( dim = 0 ; dim < 3 ; dim++ ) {
-    vOffset[ dim ] = ( subgridVOffset[ dim ] + 0.5 ) * gBioModel->getAgentGrid().getResolution( ) / mSubgridDimension;
+    /* input checks */
+    CHECK( subgridVOffset[ dim ] >= 0 );
+    CHECK( subgridVOffset[ dim ] < getSubgridDimension( ) );
+
+    vOffset[ dim ] = ( subgridVOffset[ dim ] - ( ( mSubgridDimension - 1 ) / 2.0 ) ) * gBioModel->getAgentGrid().getResolution( ) / mSubgridDimension;
+
+    /* output checks */
+    CHECK( vOffset[ dim ] >= - gBioModel->getAgentGrid().getResolution( ) / 2.0 );
+    CHECK( vOffset[ dim ] <= gBioModel->getAgentGrid().getResolution( ) / 2.0 );
   }
 }
 
 BOOL Solute::offsetIsInSubgrid(const VReal& vOffset, const VIdx& vSubgrid) const {
+  /* input checks */
+  CHECK( vOffset[ 0 ] >= - gBioModel->getAgentGrid().getResolution( ) / 2.0 );
+  CHECK( vOffset[ 0 ] <= gBioModel->getAgentGrid().getResolution( ) / 2.0 );
+  CHECK( vOffset[ 1 ] >= - gBioModel->getAgentGrid().getResolution( ) / 2.0 );
+  CHECK( vOffset[ 1 ] <= gBioModel->getAgentGrid().getResolution( ) / 2.0 );
+  CHECK( vOffset[ 2 ] >= - gBioModel->getAgentGrid().getResolution( ) / 2.0 );
+  CHECK( vOffset[ 2 ] <= gBioModel->getAgentGrid().getResolution( ) / 2.0 );
+  CHECK( vSubgrid[ 0 ] >= 0 );
+  CHECK( vSubgrid[ 0 ] < getSubgridDimension( ) );
+  CHECK( vSubgrid[ 1 ] >= 0 );
+  CHECK( vSubgrid[ 1 ] < getSubgridDimension( ) );
+  CHECK( vSubgrid[ 2 ] >= 0 );
+  CHECK( vSubgrid[ 2 ] < getSubgridDimension( ) );
+
   VIdx sgridVOffset;
   getSubgridOffset( vOffset, sgridVOffset );
   return sgridVOffset == vSubgrid;
@@ -165,6 +224,14 @@ REAL Solute::getSubgridValue(const NbrUBEnv& nbrUBEnv, const VReal& vOffset) con
 }
 
 REAL Solute::getSubgridValue( const UBEnv& ubEnv, const VReal& vOffset ) const {
+  /* input checks */
+  CHECK( vOffset[ 0 ] >= - gBioModel->getAgentGrid().getResolution( ) / 2.0 );
+  CHECK( vOffset[ 0 ] < gBioModel->getAgentGrid().getResolution( ) / 2.0 );
+  CHECK( vOffset[ 1 ] >= - gBioModel->getAgentGrid().getResolution( ) / 2.0 );
+  CHECK( vOffset[ 1 ] < gBioModel->getAgentGrid().getResolution( ) / 2.0 );
+  CHECK( vOffset[ 2 ] >= - gBioModel->getAgentGrid().getResolution( ) / 2.0 );
+  CHECK( vOffset[ 2 ] < gBioModel->getAgentGrid().getResolution( ) / 2.0 );
+  
   VIdx subgridVOffset;
   getSubgridOffset( vOffset, subgridVOffset );
   return getSubgridValue( ubEnv, subgridVOffset );
@@ -190,8 +257,19 @@ REAL Solute::getPDETimeStepDuration( ) const {
 // support for model_routine_config.cpp
 void Solute::calculateBoundaryConditions( ) {
   
-  mGridBeta = getParamReal( getIdxReal( SOLUTE_diffusivity ) );
+  CHECK( mSolverIdx >= 0 && mSolverIdx < NUM_SOLVERS );
+  const Solver* solver = gBioModel->getSolvers( )[ mSolverIdx ];
+  CHECK( solver != 0 );
   
+  mGridAlpha = getParamReal( getIdxReal( SOLUTE_decayRate ) );
+  mGridBeta = getParamReal( getIdxReal( SOLUTE_diffusivity ) );
+  if( solver->getPDEType( ) == PDE_TYPE_REACTION_DIFFUSION_STEADY_STATE_LINEAR ) {
+    if( mGridBeta == 0.0 ) {
+      mGridBeta = 0.0001;
+    }
+  }
+  
+
   const ComputationDomain* domain = mModel->getWorld( ).getComputationDomains( )[0];
   S32 dim, face;
   for( dim = 0 ; dim < DIMENSION ; dim++ ) {
@@ -208,6 +286,13 @@ void Solute::calculateBoundaryConditions( ) {
                                            mGridBCType[ dim ][ face ],
                                            mGridBCVal[ dim ][ face ],
                                            mGridBoundaryBeta[ dim ][ face ] );
+
+        if( solver->getPDEType( ) == PDE_TYPE_REACTION_DIFFUSION_STEADY_STATE_LINEAR ) {
+          if( mGridBoundaryBeta[ dim ][ face ] == 0.0 ) {
+            mGridBoundaryBeta[ dim ][ face ] = 0.0001;
+          }
+        }
+
         if( false ) {
           OUTPUT( 0, ""
                   << "Solute: " << mName
@@ -225,16 +310,19 @@ void Solute::updatePhiPDEInfo( PDEInfo& pdeInfo ) const {
   // WARNING( "updatePhiPDEInfo still has numerous hard-coded values." );
   GridPhiInfo gridPhiInfo;
   SplittingInfo splittingInfo;
+  
+  CHECK( mSolverIdx >= 0 && mSolverIdx < NUM_SOLVERS );
+  const Solver* solver = gBioModel->getSolvers( )[ mSolverIdx ];
+  CHECK( solver != 0 );
 
   pdeInfo.pdeIdx = mSoluteIdx;
-  pdeInfo.pdeType = PDE_TYPE_REACTION_DIFFUSION_TIME_DEPENDENT_LINEAR;
+  pdeInfo.pdeType = solver->getPDEType( );
   pdeInfo.numLevels = mAMRLevels;
   pdeInfo.ifLevel = mInterfaceAMRLevel;
   pdeInfo.v_tagExpansionSize.assign( mAMRLevels, 0 ); // ???FIXME: Need to configure this correctly
-  pdeInfo.numTimeSteps = mNumTimeSteps; // ???FIXME: Need to configure this correctly
+  pdeInfo.numTimeSteps = mNumTimeSteps;
   pdeInfo.callAdjustRHSTimeDependentLinear = false;
-
-
+  
   { /* this code configures the multi grid part of the CHOMBO solver
      * see 4.4.4 Class AMRMultiGrid in the CHOMBO documentation */
     
@@ -248,11 +336,9 @@ void Solute::updatePhiPDEInfo( PDEInfo& pdeInfo ) const {
     // – eps is the solution tolerance.
     // – normThresh is how close to zero eps*resid is allowed to get.
     
-    CHECK( mSolverIdx >= 0 && mSolverIdx < NUM_SOLVERS );
-    const Solver* solver = gBioModel->getSolvers( )[ mSolverIdx ];
     pdeInfo.mgSolveInfo.numPre = solver->getParamInt( solver->getIdxInt( SOLVER_preStep ) );
     pdeInfo.mgSolveInfo.numPost = solver->getParamInt( solver->getIdxInt( SOLVER_postStep ) );
-    pdeInfo.mgSolveInfo.numBottom = 3;
+    pdeInfo.mgSolveInfo.numBottom = solver->getParamInt( solver->getIdxInt( SOLVER_bottomStep ) );
     pdeInfo.mgSolveInfo.vCycle = true;/* multigrid parameters */
     pdeInfo.mgSolveInfo.maxIters =  solver->getParamInt( solver->getIdxInt( SOLVER_nCycles ) );
     pdeInfo.mgSolveInfo.epsilon = 1e-8;/* multigrid parameters */
@@ -286,6 +372,14 @@ void Solute::updatePhiPDEInfo( PDEInfo& pdeInfo ) const {
   gridPhiInfo.setNegToZero = true;
 
   pdeInfo.v_gridPhiInfo[0] = gridPhiInfo;
+
+  if( BMD_DO_DEBUG( BMD_SOLUTE ) ) {
+    OUTPUT( 0, ""
+            << " solute: " << getName( )
+            << " numLevels: " << pdeInfo.numLevels
+            << " ifLevel: " << pdeInfo.ifLevel
+            );
+  }
 }
 
 
@@ -325,18 +419,51 @@ void Solute::updateIfSubgridKappa( const VIdx& vIdx, const VIdx& subgridVOffset,
 }
 
 void Solute::updateIfSubgridAlpha( const VIdx& vIdx, const VIdx& subgridVOffset, const UBAgentData& ubAgentData, const UBEnv& ubEnv, REAL& gridAlpha/* decay (-) */ ) const {
-  //gridAlpha = -mDecayRate;
-  gridAlpha = -0.04;
+  /* decay rate */
+  gridAlpha = -mGridAlpha;
+
+  if( BMD_DO_DEBUG( BMD_SOLUTE_ALPHA ) ) {
+    OUTPUT( 0, ""
+            << " loc: " << vIdx[ 0 ] << "," << vIdx[ 1 ] << "," << vIdx[ 2 ]
+            << " " << subgridVOffset[ 0 ] << "," << subgridVOffset[ 1 ] << "," << subgridVOffset[ 2 ]
+            << " solute: " << getName( ) << ":" << getSoluteIdx( )
+            << " gridAlpha: " << gridAlpha
+            );
+  }
 }
 
 void Solute::updateIfSubgridBetaInIfRegion( const S32 dim, const VIdx& vIdx0, const VIdx& subgridVOffset0, const UBAgentData& ubAgentData0, const UBEnv& ubEnv0, const VIdx& vIdx1, const VIdx& subgridVOffset1, const UBAgentData& ubAgentData1, const UBEnv& ubEnv1, REAL& gridBeta ) const {
   /* flux between subgrids */
   gridBeta = mGridBeta;
+
+  if( BMD_DO_DEBUG( BMD_SOLUTE_BETA ) ) {
+    OUTPUT( 0, ""
+            << " loc: " << vIdx0[ 0 ] << "," << vIdx0[ 1 ] << "," << vIdx0[ 2 ]
+            << " " << subgridVOffset0[ 0 ] << "," << subgridVOffset0[ 1 ] << "," << subgridVOffset0[ 2 ]
+            << " loc: " << vIdx1[ 0 ] << "," << vIdx1[ 1 ] << "," << vIdx1[ 2 ]
+            << " " << subgridVOffset1[ 0 ] << "," << subgridVOffset1[ 1 ] << "," << subgridVOffset1[ 2 ]
+            << " solute: " << getName( ) << ":" << getSoluteIdx( )
+            << " dim: " << dim
+            << " gridBeta: " << gridBeta
+            );
+  }
+
 }
 
 void Solute::updateIfSubgridBetaPDEBufferBdry( const S32 dim, const VIdx& vIdx, const VIdx& subgridVOffset, const UBAgentData& ubAgentData, const UBEnv& ubEnv, REAL& gridBeta ) const {
   /* flux between grid and buffer */
   gridBeta = mGridBeta;
+
+  if( BMD_DO_DEBUG( BMD_SOLUTE_BETA ) ) {
+    OUTPUT( 0, ""
+            << " loc: " << vIdx[ 0 ] << "," << vIdx[ 1 ] << "," << vIdx[ 2 ]
+            << " " << subgridVOffset[ 0 ] << "," << subgridVOffset[ 1 ] << "," << subgridVOffset[ 2 ]
+            << " solute: " << getName( ) << ":" << getSoluteIdx( )
+            << " dim: " << dim
+            << " gridBeta: " << gridBeta
+            );
+  }
+  
 }
 
 void Solute::updateIfSubgridBetaDomainBdry( const S32 dim, const VIdx& vIdx, const VIdx& subgridVOffset, const UBAgentData& ubAgentData, const UBEnv& ubEnv, REAL& gridBeta ) const {
@@ -344,47 +471,47 @@ void Solute::updateIfSubgridBetaDomainBdry( const S32 dim, const VIdx& vIdx, con
   S32 face = -1;
   if( vIdx[ dim ] == 0 && subgridVOffset[ dim ] == 0 ) {
     face = 0;
-    if( false ) {
+    if( BMD_DO_DEBUG( BMD_SOLUTE_BETA ) ) {
       OUTPUT( 0, "lower: "
-              << " solute: " << mName
+              << " solute: " << getName( ) << ":" << getSoluteIdx( )
               << " dim: " << dim
-              << " vIdx: " << vIdx[0] << "," << vIdx[1] << "," << vIdx[2]
-              << " subgridVOffset: " << subgridVOffset[0] << "," << subgridVOffset[1] << "," << subgridVOffset[2]
+              << " loc: " << vIdx[ 0 ] << "," << vIdx[ 1 ] << "," << vIdx[ 2 ]
+              << " " << subgridVOffset[ 0 ] << "," << subgridVOffset[ 1 ] << "," << subgridVOffset[ 2 ]
               << " domain_size: " << Info::getDomainSize( dim )
               << " subgrid_dimension:" << getSubgridDimension( )
               );
     }
   } else if( vIdx[ dim ] == ( Info::getDomainSize( dim ) - 1 ) && subgridVOffset[ dim ] == ( getSubgridDimension( ) - 1 ) ) {
     face = 1;
-    if( false ) {
+    if( BMD_DO_DEBUG( BMD_SOLUTE_BETA ) ) {
       OUTPUT( 0, "upper: "
-              << " solute: " << mName
+              << " solute: " << getName( ) << ":" << getSoluteIdx( )
               << " dim: " << dim
-              << " vIdx: " << vIdx[0] << "," << vIdx[1] << "," << vIdx[2]
-              << " subgridVOffset: " << subgridVOffset[0] << "," << subgridVOffset[1] << "," << subgridVOffset[2]
+              << " loc: " << vIdx[ 0 ] << "," << vIdx[ 1 ] << "," << vIdx[ 2 ]
+              << " " << subgridVOffset[ 0 ] << "," << subgridVOffset[ 1 ] << "," << subgridVOffset[ 2 ]
               << " domain_size: " << Info::getDomainSize( dim )
               << " subgrid_dimension:" << getSubgridDimension( )
               );
     }
   } else {
     OUTPUT( 0, "updateIfSubgridBetaDomainBdry called. "
-            << " solute: " << mName
+            << " solute: " << getName( ) << ":" << getSoluteIdx( )
             << " dim: " << dim
-            << " vIdx: " << vIdx[0] << "," << vIdx[1] << "," << vIdx[2]
-            << " subgridVOffset: " << subgridVOffset[0] << "," << subgridVOffset[1] << "," << subgridVOffset[2]
+            << " loc: " << vIdx[ 0 ] << "," << vIdx[ 1 ] << "," << vIdx[ 2 ]
+            << " " << subgridVOffset[ 0 ] << "," << subgridVOffset[ 1 ] << "," << subgridVOffset[ 2 ]
             << " domain_size: " << Info::getDomainSize( dim )
             << " subgrid_dimension:" << getSubgridDimension( )
             );
     ERROR( "Called on non-boundary subgrid." );
   }
   gridBeta = mGridBoundaryBeta[ dim ][ face ];
-  if( false ) {
+  if( BMD_DO_DEBUG( BMD_SOLUTE_BETA ) ) {
     OUTPUT( 0, "updateIfSubgridBetaDomainBdry called. "
-            << " solute: " << mName
+            << " solute: " << getName( ) << ":" << getSoluteIdx( )
             << " dim: " << dim
             << " face: " << face
-            << " vIdx: " << vIdx[0] << "," << vIdx[1] << "," << vIdx[2]
-            << " subgridVOffset: " << subgridVOffset[0] << "," << subgridVOffset[1] << "," << subgridVOffset[2]
+            << " loc: " << vIdx[ 0 ] << "," << vIdx[ 1 ] << "," << vIdx[ 2 ]
+            << " " << subgridVOffset[ 0 ] << "," << subgridVOffset[ 1 ] << "," << subgridVOffset[ 2 ]
             << " domain_size: " << Info::getDomainSize( dim )
             << " subgrid_dimension:" << getSubgridDimension( )
             << " gridBeta: " << gridBeta
@@ -411,7 +538,7 @@ void Solute::updateIfSubgridRHSLinear( const VIdx& vIdx, const VIdx& subgridVOff
   for( i = 0 ; i < (S32) mReactions.size( ) ; i++ ) {
     const Reaction *reaction = reactions[ mReactions[ i ] ];
     REAL factor = reaction->getKineticFactor( ubEnv, vOffset );
-    if( false ) {
+    if( BMD_DO_DEBUG( BMD_SOLUTE_SECRETION ) ) {
       std::stringstream kf;
       S32 ii;
       for( ii = 0 ; ii < (S32) reaction->getKineticFactors( ).size( ) ; ii++ ) {
@@ -421,11 +548,12 @@ void Solute::updateIfSubgridRHSLinear( const VIdx& vIdx, const VIdx& subgridVOff
       OUTPUT( 0, ""
               << " loc: " << vIdx[ 0 ] << "," << vIdx[ 1 ] << "," << vIdx[ 2 ]
               << " " << subgridVOffset[ 0 ] << "," << subgridVOffset[ 1 ] << "," << subgridVOffset[ 2 ]
-              << " solute: " << getSoluteIdx( )
-              << " reaction: " << i
+              << " solute: " << getName( )
+              << " reaction: " << reaction->getName( )
               << " factor: " << factor
               << " muMax: " << reaction->getMuMax( )
               << " KF: " << kf.str( )
+              << " AgentCount: " << ubAgentData.v_spAgent.size()
               );
     }
     
@@ -435,24 +563,34 @@ void Solute::updateIfSubgridRHSLinear( const VIdx& vIdx, const VIdx& subgridVOff
       const SpAgent& spAgent = ubAgentData.v_spAgent[ l ];
       VIdx sgridVOffset;
       getSubgridOffset( spAgent.vOffset, sgridVOffset );
+      if( BMD_DO_DEBUG( BMD_SOLUTE_SECRETION ) ) {
+        OUTPUT( 0, ""
+                << " loc: " << vIdx[ 0 ] << "," << vIdx[ 1 ] << "," << vIdx[ 2 ]
+                << " " << subgridVOffset[ 0 ] << "," << subgridVOffset[ 1 ] << "," << subgridVOffset[ 2 ]
+                << " agent:subgridOffset: " << sgridVOffset[ 0 ] << "," << sgridVOffset[ 1 ] << "," << sgridVOffset[ 2 ]
+                << " agent.vOffset: " << spAgent.vOffset[ 0 ] << "," << spAgent.vOffset[ 1 ] << "," << spAgent.vOffset[ 2 ]
+                );
+      }
       if( sgridVOffset == subgridVOffset ) {
         // agent is in the subgrid
-        yield += reaction->getSoluteYield( getSoluteIdx( ), spAgent );
-        if( false ) {
-          std::stringstream y;
+        REAL y = reaction->getSoluteYield( getSoluteIdx( ), spAgent );
+        yield += y;
+        if( BMD_DO_DEBUG( BMD_SOLUTE_SECRETION ) ) {
+          std::stringstream yss;
           S32 ii;
           for( ii = 0 ; ii < (S32) reaction->getYields( ).size( ) ; ii++ ) {
-            y << "  YLD:" << ii << " " << reaction->getYields( )[ ii ];
+            yss << "  YLD:" << ii << " " << reaction->getYields( )[ ii ];
           }
           REAL mass = spAgent.state.getModelReal( reaction->getCatalyzedBy( ) );
           OUTPUT( 0, ""
                   << " loc: " << vIdx[ 0 ] << "," << vIdx[ 1 ] << "," << vIdx[ 2 ]
                   << " " << subgridVOffset[ 0 ] << "," << subgridVOffset[ 1 ] << "," << subgridVOffset[ 2 ]
-                  << " solute: " << getSoluteIdx( )
-                  << " reaction: " << i
+                  << " solute: " << getName( )
+                  << " reaction: " << reaction->getName( )
                   << " agent: " << l
                   << " yield: " << yield
-                  << " YIELDS: " << y.str( )
+                  << " deltaGridRHS: " << y * factor / getSubgridVolume( )
+                  << " YIELDS: " << yss.str( )
                   << " mass: " << mass
                   );
         }
@@ -474,7 +612,7 @@ void Solute::updateIfSubgridRHSLinear( const VIdx& vIdx, const VIdx& subgridVOff
       if( sgridVOffset == subgridVOffset ) {
         // agent is in the subgrid
         REAL factor = reaction->getKineticFactor( ubEnv, vOffset, spAgent );
-        if( false ) {
+        if( BMD_DO_DEBUG( BMD_SOLUTE_SECRETION ) ) {
           std::stringstream kf;
           S32 ii;
           for( ii = 0 ; ii < (S32) reaction->getKineticFactors( ).size( ) ; ii++ ) {
@@ -484,16 +622,20 @@ void Solute::updateIfSubgridRHSLinear( const VIdx& vIdx, const VIdx& subgridVOff
           OUTPUT( 0, ""
                   << " loc: " << vIdx[ 0 ] << "," << vIdx[ 1 ] << "," << vIdx[ 2 ]
                   << " " << subgridVOffset[ 0 ] << "," << subgridVOffset[ 1 ] << "," << subgridVOffset[ 2 ]
-                  << " solute: " << getSoluteIdx( )
-                  << " reaction: " << i
+                  << " solute: " << getName( )
+                  << " reaction: " << reaction->getName( )
                   << " factor: " << factor
                   << " muMax: " << reaction->getMuMax( )
                   << " KF: " << kf.str( )
+                  << " agentIndex: " << l
                   );
         }
 
         REAL yield = reaction->getSoluteYield( getSoluteIdx( ), spAgent );
-        if( false ) {
+        //(fg.um-3.hour-1) =(fg)  * (hour-1) * (um-3)
+        gridRHS += yield * factor / getSubgridVolume( );
+
+        if( BMD_DO_DEBUG( BMD_SOLUTE_SECRETION ) ) {
           std::stringstream y;
           S32 ii;
           for( ii = 0 ; ii < (S32) reaction->getYields( ).size( ) ; ii++ ) {
@@ -503,26 +645,26 @@ void Solute::updateIfSubgridRHSLinear( const VIdx& vIdx, const VIdx& subgridVOff
           OUTPUT( 0, ""
                   << " loc: " << vIdx[ 0 ] << "," << vIdx[ 1 ] << "," << vIdx[ 2 ]
                   << " " << subgridVOffset[ 0 ] << "," << subgridVOffset[ 1 ] << "," << subgridVOffset[ 2 ]
-                  << " solute: " << getSoluteIdx( )
-                  << " reaction: " << i
+                  << " solute: " << getName( )
+                  << " reaction: " << reaction->getName( )
                   << " agent: " << l
                   << " yield: " << yield
+                  << " deltaGridRHS: " << yield * factor / getSubgridVolume( )
+                  << " gridRHS: " << gridRHS
                   << " YIELDS: " << y.str( )
                   << " mass: " << mass
                   );
         }
-        //(fg.um-3.hour-1) =(fg)  * (hour-1) * (um-3)
-        gridRHS += yield * factor / getSubgridVolume();
       }
     }
   }
 
-  if( false ) {
+  if( BMD_DO_DEBUG( BMD_SOLUTE_SECRETION_SUMMARY ) ) {
     if( true || !( gridRHS >= 0. || ( ubEnv.getSubgridPhi( subgridVOffset, getSoluteIdx() ) >= -gridRHS ) ) ) {
       OUTPUT( 0, ""
               << " loc: " << vIdx[ 0 ] << "," << vIdx[ 1 ] << "," << vIdx[ 2 ]
               << " " << subgridVOffset[ 0 ] << "," << subgridVOffset[ 1 ] << "," << subgridVOffset[ 2 ]
-              << " solute: " << getSoluteIdx( )
+              << " solute: " << getName( ) << ":" << getSoluteIdx( )
               << " volume: " << getSubgridVolume()
               << " gridRHS: " << gridRHS
               << " currentValue: " << ubEnv.getSubgridPhi( subgridVOffset, getSoluteIdx() )
@@ -550,7 +692,7 @@ void Solute::updateIfSubgridRHSTimeDependentSplitting( const VIdx& vIdx, const V
 
 void Solute::updateIfGridAMRTags( const VIdx& vIdx, const NbrUBAgentData& nbrUBAgentData, const NbrUBEnv& nbrUBEnv, S32& finestLevel ) const {
   // this is the default maximum.
-  finestLevel = mInterfaceAMRLevel;
+  finestLevel = mAMRLevels - 1;
 }
 
 void Solute::updateIfGridDirichletBCVal( const VReal& pos, const S32 dim, const BOOL lowSide, const UBEnvModelVar a_ubEnvModelVar[3], const Vector<REAL> av_gridPhi[3]/* av_gridPhi[].size() == ratio * raito * ratio (ratio = Info::envAuxDataInfo.v_phiRatioFromIfGridToIfSubgrid[elemIdx]), use VIdx::getIdx3DTo1D() to index */, REAL& bcVal ) const {
@@ -574,18 +716,29 @@ void Solute::updatePDEBufferKappa( const VIdx& startVIdx, const VIdx& pdeBufferB
 }
 
 void Solute::updatePDEBufferAlpha( const VIdx& startVIdx, const VIdx& pdeBufferBoxSize, REAL& gridAlpha/* decay (-) */ ) const {
-  ERROR( "unimplmented." );
+  /* decay rate */
+  gridAlpha = -mGridAlpha;
+  if( BMD_DO_DEBUG( BMD_SOLUTE_ALPHA ) ) {
+    OUTPUT( 0, ""
+            << " loc: " << startVIdx[ 0 ] << "," << startVIdx[ 1 ] << "," << startVIdx[ 2 ]
+            << " solute: " << getName( ) << ":" << getSoluteIdx( )
+            << " gridAlpha: " << gridAlpha
+            );
+  }
 }
 
 void Solute::updatePDEBufferBetaInPDEBufferRegion( const S32 dim, const VIdx& startVIdx0, const VIdx& startVIdx1, const VIdx& pdeBufferBoxSize, REAL& gridBeta ) const {
-  ERROR( "unimplmented." );
+  /* flux between subgrids in buffer */
+  gridBeta = mGridBeta;
 }
 
 void Solute::updatePDEBufferBetaDomainBdry( const S32 dim, const VIdx& startVIdx, const VIdx& pdeBufferBoxSize, REAL& gridBeta ) const {
+  /* flux between subgrid and boundary in buffer */
   ERROR( "unimplmented." );
 }
 
 void Solute::updatePDEBufferRHSLinear( const VIdx& startVIdx, const VIdx& pdeBufferBoxSize, const REAL gridPhi, REAL& gridRHS/* uptake(-) and secretion (+) */ ) const {
+  /* update/secretion in buffer */
   gridRHS = 0.0; // no uptake or secretion
 }
 

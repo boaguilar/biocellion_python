@@ -45,6 +45,22 @@ const std::string& ParamHolder::getParamString(const S32& idx) const
   return mParamsString[idx];
 }
 
+REAL ParamHolder::getParamReal(const std::string& param_name) const {
+  return getParamReal( getIdxReal( param_name ) );
+}
+
+S32 ParamHolder::getParamInt(const std::string& param_name) const {
+  return getParamInt( getIdxInt( param_name ) );
+}
+
+BOOL ParamHolder::getParamBool(const std::string& param_name) const {
+  return getParamBool( getIdxBool( param_name ) );
+}
+
+const std::string& ParamHolder::getParamString(const std::string& param_name) const {
+  return getParamString( getIdxString( param_name ) );
+}
+
 template <class T, class U>
 S32 getIdxGeneric( const std::string& param_name, std::map<std::string, T>& idx_map, Vector<U>& params )
 {
@@ -77,6 +93,15 @@ S32 getIdxGeneric( const std::string& param_name, const std::map<std::string, T>
   typename std::map<std::string, T>::const_iterator it = idx_map.find(param_name);
   if( it != idx_map.end() ) {
     i = it->second;
+  }
+  if( false ) {
+    if( i < 0 || i >= (S32) params.size( ) ) {
+      OUTPUT( 0, "PARAM_IDX out of range: "
+              << " param_name: " << param_name
+              << " index: " << i
+              << " size: " << params.size( )
+              );
+    }
   }
   CHECK( i >= 0 );
   CHECK( i < (S32) params.size( ) );

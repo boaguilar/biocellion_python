@@ -17,6 +17,12 @@ public:
   BOOL getParamBool(const S32& idx) const;
   const std::string& getParamString(const S32& idx) const;
 
+  // It is an error to use invalid name strings.
+  REAL getParamReal(const std::string& param_name) const;
+  S32 getParamInt(const std::string& param_name) const;
+  BOOL getParamBool(const std::string& param_name) const;
+  const std::string& getParamString(const std::string& param_name) const;
+
   // These routines make an index, if there isn't one.
   // They are not efficient for inside tight loops.
   // This needs to be replaced with enumerated indexes.

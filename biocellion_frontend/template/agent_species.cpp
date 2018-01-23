@@ -1,5 +1,6 @@
 #include "biomodel.h"
 #include <cmath>
+#include <iomanip>
 
 /*
  * replace contents of vUnit with a unit vector
@@ -60,7 +61,7 @@ void AgentSpeciesParticle::setInitialValue( const REAL& value ) {
  *  AgentSpeciesMolecule
  *********************************/
 
-AgentSpeciesMolecule::AgentSpeciesMolecule( const S32& moleculeIdx, const S32& ODEIdx, const S32& initialValue)
+AgentSpeciesMolecule::AgentSpeciesMolecule( const S32& moleculeIdx, const S32& ODEIdx, const REAL& initialValue)
   : mMoleculeIdx(moleculeIdx), mODEIdx(ODEIdx), mInitialValue(initialValue)
 {
   //empty
@@ -76,7 +77,7 @@ S32 AgentSpeciesMolecule::getODEIdx() const
   return mODEIdx;
 }
 
-S32 AgentSpeciesMolecule::getInitialValue() const
+REAL AgentSpeciesMolecule::getInitialValue() const
 {
   return mInitialValue;
 }
@@ -91,10 +92,51 @@ void AgentSpeciesMolecule::setODEIdx( const S32& value )
   mODEIdx = value;
 }
 
-void AgentSpeciesMolecule::setInitialValue( const S32& value )
+void AgentSpeciesMolecule::setInitialValue( const REAL& value )
 {
   mInitialValue = value;
 }
+
+/*********************************
+ *  AgentSpeciesInteraction
+ *********************************/
+
+AgentSpeciesInteraction::AgentSpeciesInteraction( const S32& interactionIdx, const S32& modelRealIdx, const S32& mechRealIdx )
+  : mInteractionIdx(interactionIdx), mModelRealIdx(modelRealIdx), mMechRealIdx(mechRealIdx)
+{
+  //empty
+}
+
+S32 AgentSpeciesInteraction::getInteractionIdx() const
+{
+  return mInteractionIdx;
+}
+
+S32 AgentSpeciesInteraction::getModelRealIdx() const
+{
+  return mModelRealIdx;
+}
+
+S32 AgentSpeciesInteraction::getMechRealIdx() const
+{
+  return mMechRealIdx;
+}
+
+void AgentSpeciesInteraction::setInteractionIdx( const S32& value )
+{
+  mInteractionIdx = value;
+}
+
+void AgentSpeciesInteraction::setModelRealIdx( const S32& value )
+{
+  mModelRealIdx = value;
+}
+
+void AgentSpeciesInteraction::setMechRealIdx( const S32& value )
+{
+  mMechRealIdx = value;
+}
+
 
 /*********************************
  *  AgentSpecies
@@ -106,6 +148,7 @@ AgentSpecies::AgentSpecies( )
     mName( "" ), mSpeciesName( "" ), mSpeciesIdx( -1),
     mDMax( 0.0 ),
     mNumModelBools( 0 ), mNumModelReals( 0 ), mNumModelInts( 0 ),
+    mNumMechReals( 0 ), mNumODEVariables( 0 ), 
     mUseMechForceReals(false)    
 {
   // empty
@@ -117,6 +160,7 @@ AgentSpecies::AgentSpecies(const std::string& name, const std::string& speciesNa
     mName(name), mSpeciesName(speciesName), mSpeciesIdx(species_idx),
     mDMax(0.0),
     mNumModelBools(0), mNumModelReals(0), mNumModelInts(0), 
+    mNumMechReals( 0 ), mNumODEVariables( 0 ), 
     mUseMechForceReals(false)
 {
   //empty
@@ -197,6 +241,11 @@ S32 AgentSpecies::getNumModelReals() const
 S32 AgentSpecies::getNumModelInts() const
 {
   return mNumModelInts;
+}
+
+S32 AgentSpecies::getNumMechReals() const
+{
+  return mNumMechReals;
 }
 
 BOOL AgentSpecies::getUseMechForceReals() const
@@ -318,6 +367,14 @@ Vector< S32 >& AgentSpecies::getReactions()
   return mReactions;
 }
 
+const Vector< ODENetwork >& AgentSpecies::getODENetworks( ) const {
+  return mODENetworks;
+}
+
+Vector< ODENetwork >& AgentSpecies::getODENetworks( ) {
+  return mODENetworks;
+}
+
 const Vector< EntryCondition* >& AgentSpecies::getEntryConditions( ) const
 {
   return mEntryConditions;
@@ -338,12 +395,57 @@ Vector< AgentSpeciesMolecule >& AgentSpecies::getMolecules()
   return mMolecules;
 }
 
+const Vector< AgentSpeciesInteraction >& AgentSpecies::getInteractions() const {
+  return mInteractions;
+}
+
+Vector< AgentSpeciesInteraction >& AgentSpecies::getInteractions() {
+  return mInteractions;
+}
+
+S32 AgentSpecies::globalInteractionIdxToLocalIdx( const S32& interactionIdx ) const {
+  S32 idx = -1;
+  for( idx = 0 ; idx < (S32) mInteractions.size( ) ; idx++ ) {
+    if( mInteractions[ idx ].getInteractionIdx( ) == interactionIdx ) {
+      break;
+    }
+  }
+  return idx;
+}
+
 const Vector< S32 >& AgentSpecies::getODEReactions() const {
   return mODEReactions;
 }
 
 Vector< S32 >& AgentSpecies::getODEReactions() {
   return mODEReactions;
+}
+
+REAL AgentSpecies::getSurfaceArea( const SpAgentState& state ) const {
+  if( false ) {
+    OUTPUT( 0, "AgentSpecies::getSurfaceArea() "
+            << " radius: " << state.getRadius( )
+            << " radius^2: " << state.getRadius() * state.getRadius()
+            << " PI: " << MODEL_PI
+            << " area: " << 4.0 * MODEL_PI * ( state.getRadius() * state.getRadius() )
+            );
+  }
+  return 4.0 * MODEL_PI * ( state.getRadius() * state.getRadius() );
+}
+
+REAL AgentSpecies::getGeometricVolume( const SpAgentState & state ) const {
+  return ( 4.0 / 3.0 ) * MODEL_PI * ( state.getRadius() * state.getRadius() * state.getRadius() );
+}
+
+REAL AgentSpecies::getMassVolume( const SpAgentState & state ) const {
+  REAL mass = 0.0;
+  REAL volume = 0.0;
+  S32 i;
+  for( i = 0; i < (S32) mParticles.size( ); i++) {
+    mass = state.getModelReal( mParticles[ i ].getModelRealIdx( ) );
+    volume += mass / mModel->getParticles()[ mParticles[ i ].getParticleIdx() ]->getDensity( );
+  }
+  return volume;
 }
 
 void AgentSpecies::setModel(const BioModel*& biomodel ) {
@@ -385,6 +487,11 @@ void AgentSpecies::setNumModelInts(const S32& value)
   mNumModelInts = value;
 }
 
+void AgentSpecies::setNumMechReals(const S32& value)
+{
+  mNumMechReals = value;
+}
+
 void AgentSpecies::setUseMechForceReals(const BOOL& value)
 {
   mUseMechForceReals = value;
@@ -414,7 +521,16 @@ void AgentSpecies::setInitialAgentState( SpAgentState& state ) const {
   }
   updateSpAgentRadius( state );
   for( i = 0 ; i < (S32)mMolecules.size() ; i++ ) {
-    state.setODEVal( 0, i, mMolecules[ i ].getInitialValue( ) );
+    if( false ) {
+      OUTPUT( 0, ""
+	      << " ODEVar: " << gBioModel->getMolecules()[ mMolecules[ i ].getMoleculeIdx( ) ]->getName( )
+	      << " mIdx: " << mMolecules[ i ].getMoleculeIdx( )
+	      << " odeIdx: " << mMolecules[ i ].getODEIdx( )
+	      << " init_value: " << mMolecules[ i ].getInitialValue( )
+	      << " this: " << this
+	      );
+    }
+    state.setODEVal( 0, mMolecules[ i ].getODEIdx( ), mMolecules[ i ].getInitialValue( ) );
   }
 }
 
@@ -422,6 +538,66 @@ void AgentSpecies::setNumODEVariables( const S32& numODEVariables ) {
   mNumODEVariables = numODEVariables;
 }
 
+REAL AgentSpecies::getInteractionValue( const S32& interactionIdx, const S32& dim, const SpAgentState& state ) const {
+  S32 idx = globalInteractionIdxToLocalIdx( interactionIdx );
+  CHECK( idx >= 0 );
+  CHECK( idx < (S32) mInteractions.size( ) );
+  CHECK( mInteractions[ idx ].getModelRealIdx( ) + dim >= 0 );
+  CHECK( mInteractions[ idx ].getModelRealIdx( ) + dim < (S32) state.getModelRealArray( ).size( ) );
+  return state.getModelReal( mInteractions[ idx ].getModelRealIdx( ) + dim );
+}
+
+void AgentSpecies::setInteractionValue( const S32& interactionIdx, const S32& dim, const REAL& value, SpAgentState& state ) const {
+  S32 idx = globalInteractionIdxToLocalIdx( interactionIdx );
+  CHECK( idx >= 0 );
+  CHECK( idx < (S32) mInteractions.size( ) );
+  CHECK( mInteractions[ idx ].getModelRealIdx( ) + dim >= 0 );
+  CHECK( mInteractions[ idx ].getModelRealIdx( ) + dim < (S32) state.getModelRealArray( ).size( ) );
+  state.setModelReal( mInteractions[ idx ].getModelRealIdx( ) + dim, value );
+}
+
+REAL AgentSpecies::getMechInteractionValue( const S32& interactionIdx, const S32& dim, const MechIntrctData& mechIntrctData ) const {
+  S32 idx = globalInteractionIdxToLocalIdx( interactionIdx );
+  if( BMD_DO_DEBUG( BMD_INTERACTION_OUTPUT ) ) {
+    OUTPUT( 0, "AgentSpecies::getMechInteractionValue(): "
+            << " interactionIdx: " << interactionIdx
+            << " dim: " << dim
+            << " local idx: " << idx
+            << " local interaction size: " << mInteractions.size( )
+            << " mechRealIdx: " << mInteractions[ idx ].getMechRealIdx( )
+            << " mechRealSize: " << mechIntrctData.getModelRealArray( ).size( )
+            << " >= 0: " << ( mInteractions[ idx ].getMechRealIdx( ) + dim >= 0 )
+            );
+  }
+
+  CHECK( idx >= 0 );
+  CHECK( idx < (S32) mInteractions.size( ) );
+  CHECK( mInteractions[ idx ].getMechRealIdx( ) + dim >= 0 );
+  CHECK( mInteractions[ idx ].getMechRealIdx( ) + dim < (S32) mechIntrctData.getModelRealArray( ).size( ) );
+  return mechIntrctData.getModelReal( mInteractions[ idx ].getMechRealIdx( ) + dim );
+}
+
+void AgentSpecies::setMechInteractionValue( const S32& interactionIdx, const S32& dim, const REAL& value, MechIntrctData& mechIntrctData ) const {
+  S32 idx = globalInteractionIdxToLocalIdx( interactionIdx );
+  if( BMD_DO_DEBUG( BMD_INTERACTION_OUTPUT ) ) {
+    OUTPUT( 0, "AgentSpecies::setMechInteractionValue(): "
+            << " interactionIdx: " << interactionIdx
+            << " dim: " << dim
+            << " value: " << value
+            << " local idx: " << idx
+            << " local interaction size: " << mInteractions.size( )
+            << " mechRealIdx: " << mInteractions[ idx ].getMechRealIdx( )
+            << " mechRealSize: " << mechIntrctData.getModelRealArray( ).size( )
+            << " >= 0: " << ( mInteractions[ idx ].getMechRealIdx( ) + dim >= 0 )
+            );
+  }
+
+  CHECK( idx >= 0 );
+  CHECK( idx < (S32) mInteractions.size( ) );
+  CHECK( mInteractions[ idx ].getMechRealIdx( ) + dim >= 0 );
+  CHECK( mInteractions[ idx ].getMechRealIdx( ) + dim < (S32) mechIntrctData.getModelRealArray( ).size( ) );
+  mechIntrctData.setModelReal( mInteractions[ idx ].getMechRealIdx( ) + dim, value );
+}
 
 /**********************************************
  * support for model_routine_agent.cpp
@@ -451,7 +627,7 @@ void AgentSpecies::spAgentCRNODERHS( const S32 odeNetIdx, const VIdx& vIdx, cons
     v_f[ i ] = 0.0;
   }
 
-  const Vector< Reaction *>& reactions = gBioModel->getReactions();
+  const Vector< Reaction *>& reactions = mModel->getReactions();
   for( i = 0; i < (S32) mODEReactions.size(); i++ ) {
     REAL kinetic_factor;
     REAL yield;
@@ -459,15 +635,86 @@ void AgentSpecies::spAgentCRNODERHS( const S32 odeNetIdx, const VIdx& vIdx, cons
     kinetic_factor = currentReaction->getKineticFactor( nbrUBEnv, spAgent, v_y );
     for( j = 0; j < (S32) mMolecules.size(); j++ ) {
       yield = currentReaction->getMoleculeYield( mMolecules[ j ].getMoleculeIdx( ), spAgent );
-      v_f[ mMolecules[ j ].getODEIdx() ] += kinetic_factor * yield; // FIXME: unit analysis.  ??*mModel->getAgentTimeStep()??
+      // time step is not used here.  The ODE solver does time steps for us.
+      v_f[ mMolecules[ j ].getODEIdx() ] += kinetic_factor * yield; // FIXME: unit analysis.
+
+      if( BMD_DO_DEBUG( BMD_CRNODERHS_DETAILS ) ) { // enable in biomodel_debug.h
+        // Display one term in the ODE
+
+        S32 ii;
+        // all Kinetic Factors for this term
+        std::stringstream kf;
+        kf << std::setprecision(9);
+        kf << "  KF: ";
+        for( ii = 0 ; ii < (S32) currentReaction->getKineticFactors( ).size( ) ; ii++ ) {
+          REAL concentration_value = 0.0;
+          if( currentReaction->getKineticFactors( )[ ii ]->isSolute( ) ) {
+            concentration_value = gBioModel->getSubgridValue( currentReaction->getKineticFactors( )[ ii ]->getSoluteIdx( ), nbrUBEnv, spAgent.vOffset );
+            kf << " KineticFactor: " << *(currentReaction->getKineticFactors( )[ ii ])
+               << " solute: " << gBioModel->getSolutes( )[ currentReaction->getKineticFactors( )[ ii ]->getSoluteIdx( ) ]->getName( )
+               << " concentration: " << concentration_value
+               << " value: " << currentReaction->getKineticFactors( )[ ii ]->kineticValue( concentration_value );
+          } else if ( currentReaction->getKineticFactors( )[ ii ]->isMolecule( ) ) {
+            concentration_value = gBioModel->getAgentSpecies()[ spAgent.state.getType() ]->getMoleculeValue( currentReaction->getKineticFactors( )[ ii ]->getMoleculeIdx( ), spAgent.state, v_y );
+            kf << " KineticFactor: " << *(currentReaction->getKineticFactors( )[ ii ])
+               << " molecule: " << gBioModel->getMolecules( )[ currentReaction->getKineticFactors( )[ ii ]->getMoleculeIdx( ) ]->getName( )
+               << " concentration: " << concentration_value
+               << " value: " << currentReaction->getKineticFactors( )[ ii ]->kineticValue( concentration_value );
+          } else if ( currentReaction->getKineticFactors( )[ ii ]->isAgent( ) ) {
+            kf << " KineticFactor: " << *(currentReaction->getKineticFactors( )[ ii ])
+               << " agent: " << gBioModel->getAgentSpecies( )[ spAgent.state.getType( ) ]->getName( )
+               << " value: " << currentReaction->getKineticFactors( )[ ii ]->kineticValueAgent( spAgent.state );
+          } else if( currentReaction->getKineticFactors( )[ ii ]->isNone( ) ) {
+            kf << " KineticFactor: " << *(currentReaction->getKineticFactors( )[ ii ])
+               << " none: " 
+               << " value: " << currentReaction->getKineticFactors( )[ ii ]->kineticValue( concentration_value );
+          } else {
+            ERROR( "Should be unreachable." );
+          }
+        }
+
+        // The yield for this term
+        std::stringstream molecularYieldStream;
+        molecularYieldStream << std::setprecision(9);
+        Reaction::Yield molecule_yield;
+        if( currentReaction->getYieldForMolecule( mMolecules[ j ].getMoleculeIdx( ), molecule_yield ) ) {
+          molecularYieldStream << "Yield: Value: " << molecule_yield.getValue( ) << " "
+                               << "isSolute: " << (int)molecule_yield.isSolute( ) << " "
+                               << "isParticle: " << (int)molecule_yield.isParticle( ) << " "
+                               << "isMolecule: " << (int)molecule_yield.isMolecule( ) << " ";
+        } else {
+          molecularYieldStream << "No Molecule Yield ";
+        }
+
+        OUTPUT( 0, ""
+                << std::setprecision(9)
+                << "reaction: " << currentReaction->getName( ) << " "
+                << "molecule: " << gBioModel->getMolecules( )[ mMolecules[ j ].getMoleculeIdx( ) ]->getName( ) << " "
+                << "kinetic_factor: " << kinetic_factor << " "
+                << "yield: " << yield << " "
+                << "delta: " << kinetic_factor * yield << " "
+                << molecularYieldStream.str( )
+                << " muMax: " << currentReaction->getMuMax( )
+                << " KF: " << kf.str( )
+                );
+      }
     }
   }
-
+ 
+  if ( false ) {
+    for( i = 0; i < (S32) mMolecules.size(); i++ ) {
+      OUTPUT( 0,
+              "Molecule Index : " << mMolecules[ i ].getMoleculeIdx( ) << " \n"
+              << "v_y value : " << v_y[ i ] << " \n"
+              << "v_f value : " << v_f[ i ] << " \n"
+              );
+    }
+  }
 }
 
 void AgentSpecies::updateSpAgentState( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const NbrUBEnv& nbrUBEnv, SpAgentState& state) const {
 
-  const Vector< Reaction * >& reactions = gBioModel->getReactions( );
+  const Vector< Reaction * >& reactions = mModel->getReactions( );
   S32 i, pIdx;
   for( i = 0 ; i < (S32) mReactions.size( ) ; i++ ) {
     const Reaction* currentReaction = reactions[ mReactions[ i ] ];
@@ -494,7 +741,7 @@ void AgentSpecies::updateSpAgentState( const VIdx& vIdx, const JunctionData& jun
   if( false ) {
     for ( pIdx = 0; pIdx < (S32) mParticles.size( ); pIdx++) {
       OUTPUT( 0,
-              "Agent particle: " << gBioModel->getParticles()[ mParticles[ pIdx ].getParticleIdx( ) ]->getName()
+              "Agent particle: " << mModel->getParticles()[ mParticles[ pIdx ].getParticleIdx( ) ]->getName()
               << " mass: " << state.getModelReal( mParticles[ pIdx ].getModelRealIdx( ) )
               );
     }
@@ -506,13 +753,7 @@ void AgentSpecies::updateSpAgentState( const VIdx& vIdx, const JunctionData& jun
 void AgentSpecies::updateSpAgentRadius( SpAgentState& state ) const {
 
   //calculate new volume based off of updated mass
-  S32 i;
-  REAL mass = 0.0;
-  REAL volume = 0.0;
-  for( i = 0; i < (S32) mParticles.size( ); i++) {
-    mass = state.getModelReal( mParticles[ i ].getModelRealIdx( ) );
-    volume += mass / gBioModel->getParticles()[ mParticles[ i ].getParticleIdx() ]->getDensity( );
-  }
+  REAL volume = getMassVolume( state );
   //calculate new radius based off of updated mass
   REAL radius = cbrt( 3.0 * volume / (4.0 * MODEL_PI ) );
   
@@ -549,17 +790,25 @@ void AgentSpecies::updateSpAgentBirthDeath( const VIdx& vIdx, const SpAgent& spA
 }
 
 /*
- **************************************** ADJUSTSPAGENT BEGIN ****************************************************
- */
+**************************************** ADJUSTSPAGENT BEGIN ****************************************************
+*/
 
-void AgentSpecies::brownianMotion( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, const SpAgentState& state, VReal& disp ) const {
+void AgentSpecies::brownianMotion( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, SpAgentState& state, VReal& disp ) const {
 
   for( S32 dim = 0 ; dim < 3 ; dim++ ) { // FIXME:  Use computation domain grid for dimension
     if( dim == 3-1 ) { 
       continue; 
     }
     // FIXME: Unit analysis.  Find cDynoMiCS brownian motion for comparison
-    disp[ dim ] += state.getRadius() * ( Util::getModelRand( MODEL_RNG_GAUSSIAN ) ) * getParamReal( getIdxReal( SPECIES_brownianScale ) ) * mModel->getAgentTimeStep( );
+    // diffusivity = um2.hour-1
+    REAL diffusivity = getParamReal( getIdxReal( SPECIES_diffusivity ) );
+    // dt = hour
+    REAL dt = mModel->getAgentTimeStep( );
+    REAL dx = sqrt( 2.0 * diffusivity * dt ) * Util::getModelRand( MODEL_RNG_GAUSSIAN );
+    if( mModel->getInteractions( )[ INTERACTION_diffusion ]->getParamBool( INTERACTION_writeOutput ) ) {
+      setInteractionValue( mModel->getInteractions( )[ INTERACTION_diffusion ]->getInteractionIdx( ), dim, dx, state );
+    }
+    disp[ dim ] += dx;
   }
 
 }
@@ -569,11 +818,11 @@ void AgentSpecies::limitMotion(VReal& disp) const {
   /* limit the maximum displacement within a single time step */
   // FIXME: Should use resolution or radius?
   for( S32 dim = 0 ; dim < DIMENSION ; dim++ ) {
-    if( disp[ dim ] > gBioModel->getAgentGrid( ).getResolution( ) ) {
-      disp[ dim ] = gBioModel->getAgentGrid( ).getResolution( );
+    if( disp[ dim ] > mModel->getAgentGrid( ).getResolution( ) ) {
+      disp[ dim ] = mModel->getAgentGrid( ).getResolution( );
     }
-    else if( disp[ dim ] < ( gBioModel->getAgentGrid( ).getResolution( ) * -1.0 ) ) {
-      disp[ dim ] = gBioModel->getAgentGrid( ).getResolution( ) * -1.0;
+    else if( disp[ dim ] < ( mModel->getAgentGrid( ).getResolution( ) * -1.0 ) ) {
+      disp[ dim ] = mModel->getAgentGrid( ).getResolution( ) * -1.0;
     }
     if( false ) {
       OUTPUT( 0, "limited disp[ " << dim <<" ]: " << disp[ dim ] );
@@ -591,25 +840,50 @@ void AgentSpecies::setDisplacementFromMechanicalInteraction( const VIdx& vIdx, c
       OUTPUT( 0, "disp[ " << dim <<" ]: " << disp[ dim ] );
     }
   }
+
+  // Copy any desired mechIntrctData to modelReal, for output
+  S32 i;
+  REAL value;
+  const Vector< Interaction* >& interactions = mModel->getInteractions( );
+  for( i = 0 ; i < (S32) interactions.size( ) ; i++ ) {
+    if( interactions[ i ]->getParamBool( interactions[ i ]->getIdxBool( INTERACTION_writeOutput ) ) ) {
+      S32 idx = globalInteractionIdxToLocalIdx( interactions[ i ]->getInteractionIdx( ) );
+      if( mInteractions[ idx ].getMechRealIdx( ) < 0 ) {
+        continue;
+      }
+
+      for( dim = 0 ; dim < 3 ; dim++ ) {
+        value = getMechInteractionValue( interactions[ i ]->getInteractionIdx( ), dim, mechIntrctData );
+        setInteractionValue( interactions[ i ]->getInteractionIdx( ), dim, value, state );
+      }
+    }
+  }
+  
   
 }
 
 void AgentSpecies::adjustSpAgent( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, SpAgentState& state/* INOUT */, VReal& disp ) const {
 
+  if( getParamBool( getIdxBool( SPECIES_fixed ) ) ) {
+    S32 i;
+    for( i = 0 ; i < 3 ; i++ ) {
+      disp[ i ] = 0.0;
+    }
+    return;
+  }
   setDisplacementFromMechanicalInteraction( vIdx, junctionData, vOffset, mechIntrctData, nbrUBEnv, state, disp );  
   brownianMotion( vIdx, junctionData, vOffset, mechIntrctData, nbrUBEnv, state, disp );
   adjustSpAgentChemotaxis( vIdx, junctionData, vOffset, mechIntrctData, nbrUBEnv, state, disp );
   limitMotion(disp);
-
 }
 /*
- **************************************** ADJUSTSPAGENT END ****************************************************
- */
+**************************************** ADJUSTSPAGENT END ****************************************************
+*/
 
 
 /*
- **************************************** CHEMOTAXIS BEGIN ****************************************************
- */
+**************************************** CHEMOTAXIS BEGIN ****************************************************
+*/
 static inline S32 countTouches( const JunctionData& junctionData ) {
   S32 count = 0;
   S32 i;
@@ -621,7 +895,7 @@ static inline S32 countTouches( const JunctionData& junctionData ) {
   return count;
 }
 
-static inline void findChemoTaxisDirectionAndConcentration( const S32 elemIdx,  const VReal& vOffset, const NbrUBEnv& nbrUBEnv, const SpAgentState& state, VReal& dir, REAL& delta ) {
+static inline void findChemoTaxisDirectionAndConcentration( const S32 elemIdx,  const VReal& vOffset, const NbrUBEnv& nbrUBEnv, const SpAgentState& state, const REAL& alpha, VReal& dir, REAL& delta ) {
 
   // Random direction of motion
   VReal fwdDir, bckDir;
@@ -645,12 +919,14 @@ static inline void findChemoTaxisDirectionAndConcentration( const S32 elemIdx,  
 
   // this scaling reduces the sharpness of the chemotactic pull
   // makes it about the relative difference, not the absolute difference
-  // number borrowed from cDynoMiCS implementation
   // this results in the maximum value asymptotically approaching 1/alpha
-  REAL alpha = 0.1;
+  // alpha = fg.um-3
+  // fwdVal = fg.um-3
+  // bckVal = fg.um-3
   fwdVal = fwdVal / (1.0 + alpha * fwdVal);
   bckVal = bckVal / (1.0 + alpha * bckVal);
 
+  // delta = fg.um-3
   delta = fwdVal - bckVal;
   dir = fwdDir;
 }
@@ -663,32 +939,45 @@ void AgentSpecies::adjustSpAgentChemotaxis( const VIdx& vIdx, const JunctionData
     REAL delta;
     
     // contact inhibition
-    if( mChemotaxis[ i ]->getContactInhibition( ) != 0 &&
+    if( mChemotaxis[ i ]->getContactInhibition( ) > 0 &&
         countTouches( junctionData ) >= mChemotaxis[ i ]->getContactInhibition( ) ) {
       return;
     }
     
-    findChemoTaxisDirectionAndConcentration( mChemotaxis[ i ]->getSolute( ),  vOffset, nbrUBEnv, state, dir, delta );
+    findChemoTaxisDirectionAndConcentration( mChemotaxis[ i ]->getSolute( ),  vOffset, nbrUBEnv, state, mChemotaxis[ i ]->getAlpha( ), dir, delta );
     if( delta > 0 ) {
       if( false ) {
         OUTPUT( 0, " Chemotaxis: magnitude: " << delta );
       }
+      // strength = um.hour-1.fg-1.um3
+      // delta = fg.um-3
       VReal chemDisp = dir * ( mChemotaxis[ i ]->getStrength( ) * delta );
       // FIXME: Unit analysis and cDynoMiCS comparison
+      // chemDisp = um.hour-1
+      // dt = hour
+      // disp = um
       disp += chemDisp * mModel->getAgentTimeStep( );
+      if( mModel->getInteractions( )[ INTERACTION_chemotaxis ]->getParamBool( INTERACTION_writeOutput ) ) {
+        S32 dim;
+        for( dim = 0 ; dim < 3 ; dim++ ) {
+          setInteractionValue( mModel->getInteractions( )[ INTERACTION_chemotaxis ]->getInteractionIdx( ), dim, chemDisp[ dim ] * mModel->getAgentTimeStep( ), state );
+        }
+      }
     }
   }
 }
 /*
- **************************************** CHEMOTAXIS END ****************************************************
- */
+**************************************** CHEMOTAXIS END ****************************************************
+*/
 
 void AgentSpecies::divideSpAgent( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, SpAgentState& motherState/* INOUT */, VReal& motherDisp, SpAgentState& daughterState, VReal& daughterDisp, Vector<BOOL>& v_junctionDivide, BOOL& motherDaughterLinked, JunctionEnd& motherEnd, JunctionEnd& daughterEnd ) const {
   
   S32 i;
   REAL motherFraction = 0.4 + 0.05 * Util::getModelRand( MODEL_RNG_UNIFORM );
   REAL motherMass = 0;
-  REAL motherVar = 0;
+  REAL originalVolume = getMassVolume( motherState );
+  REAL originalDensity = 0;
+  
   daughterState.setType( motherState.getType( ) );
   for( i = 0; i < (S32) mParticles.size(); i++) {
     motherMass = motherState.getModelReal( mParticles[ i ].getModelRealIdx( ) );
@@ -696,12 +985,36 @@ void AgentSpecies::divideSpAgent( const VIdx& vIdx, const JunctionData& junction
     motherState.setModelReal( mParticles[ i ].getModelRealIdx( ), newMass );
     daughterState.setModelReal( mParticles[ i ].getModelRealIdx( ), motherMass - newMass );
   }
+
+  REAL newMotherVolume = getMassVolume( motherState );
+  REAL newDaughterVolume = getMassVolume( daughterState );
   
   for( i = 0; i < (S32) mMolecules.size() ; i++ ) {
-    motherVar = motherState.getODEVal( 0, mMolecules[ i ].getODEIdx( ) );
-    REAL newVar = motherVar * motherFraction;
-    motherState.setODEVal( 0, mMolecules[ i ].getODEIdx( ), newVar );
-    daughterState.setODEVal( 0, mMolecules[ i ].getODEIdx( ), motherVar - newVar );
+    originalDensity = motherState.getODEVal( 0, mMolecules[ i ].getODEIdx( ) );
+    REAL originalMass = originalDensity * originalVolume;
+    REAL newMotherMass = originalMass * motherFraction;
+    REAL newDaughterMass = originalMass - newMotherMass;
+    REAL newMotherDensity = newMotherMass / newMotherVolume;
+    REAL newDaughterDensity = newDaughterMass / newDaughterVolume;
+    motherState.setODEVal( 0, mMolecules[ i ].getODEIdx( ), newMotherDensity );
+    daughterState.setODEVal( 0, mMolecules[ i ].getODEIdx( ), newDaughterDensity );
+    if( false ) {
+      OUTPUT( 0,
+              "Original Density : " << originalDensity << "\n"
+              << "New Mother density : " << newMotherDensity << "\n"
+              << "New Daughter density : " << newDaughterDensity << "\n"
+              << "Original Mass : " << originalMass << "\n"
+              << "Mother Mass : " << newMotherMass << "\n"
+              << "Daughter Mass : " << newDaughterMass << "\n"
+              << "Original volume : " << originalVolume << "\n"
+              << "New Mother volume : " << newMotherVolume << "\n"
+              << "New Daughter volume : " << newDaughterVolume << "\n"	    
+              << "Mother " << mModel->getMolecules( )[ i ]->getName() << ": "
+              << motherState.getODEVal( 0, mMolecules[ i ].getODEIdx( ) ) << "\n"
+              << "Daughter " << mModel->getMolecules( )[ i ]->getName() << ": "
+              << daughterState.getODEVal( 0, mMolecules[ i ].getODEIdx( ) ) << "\n"
+              );
+    }
   }
 
   updateSpAgentRadius( motherState );
@@ -731,15 +1044,64 @@ void AgentSpecies::divideSpAgent( const VIdx& vIdx, const JunctionData& junction
   
 }
 
-// support for model_routine_output.cpp
+/**********************************************
+ * support for model_routine_config.cpp
+ **********************************************/
+void AgentSpecies::updateSpAgentInfo( SpAgentInfo& spAgentInfo ) const {
+  
+  MechModelVarInfo mechModelVarInfo;
+  mechModelVarInfo.syncMethod = VAR_SYNC_METHOD_DELTA;
+
+  // FIXME: DMax not controlled from XML yet
+  spAgentInfo.dMax = getDMax();
+  CHECK( spAgentInfo.dMax <= mModel->getAgentGrid().getResolution( ) );
+  // FIXME: num*ModelVars not controlled from XML yet
+  spAgentInfo.numBoolVars = getNumModelBools( );
+  spAgentInfo.numStateModelReals = getNumModelReals( );
+  spAgentInfo.numStateModelInts = getNumModelInts( );
+  if( getNumMechReals( ) > 0 ) {
+    spAgentInfo.v_mechIntrctModelRealInfo.assign( getNumMechReals(), mechModelVarInfo );
+  } else {
+    spAgentInfo.v_mechIntrctModelRealInfo.clear( );
+  }
+  if( getNumMechModelInts( ) > 0 ) {
+    spAgentInfo.v_mechIntrctModelIntInfo.assign( getNumMechModelInts( ), mechModelVarInfo );
+  } else {
+    spAgentInfo.v_mechIntrctModelIntInfo.clear();
+  }
+  if( getNumODEVariables( ) > 0 ) {
+    // Currently, only 1 ODE Network is allowed.
+    CHECK( mODENetworks.size( ) > 0 ); 
+    CHECK( mODENetworks.size( ) < 2 );
+
+    ODENetInfo odeNetInfo;
+    odeNetInfo.numVars = getNumODEVariables( );
+    odeNetInfo.stiff = mODENetworks[ 0 ].getStiffness( );
+    odeNetInfo.h = mODENetworks[ 0 ].getParamReal( mODENetworks[ 0 ].getIdxReal( ODE_initStepSize ) );
+    odeNetInfo.hm = mODENetworks[ 0 ].getParamReal( mODENetworks[ 0 ].getIdxReal( ODE_minimumStepSize ) );
+    odeNetInfo.epsilon = mODENetworks[ 0 ].getParamReal( mODENetworks[ 0 ].getIdxReal( ODE_epsilon ) );
+    odeNetInfo.threshold = mODENetworks[ 0 ].getParamReal( mODENetworks[ 0 ].getIdxReal( ODE_threshold ) );
+    odeNetInfo.errorThresholdVal = 0.0;
+    odeNetInfo.warningThresholdVal = 0.0;
+    odeNetInfo.setNegToZero = false;
+    
+    spAgentInfo.v_odeNetInfo.assign( 1, odeNetInfo );
+  } else {
+    spAgentInfo.v_odeNetInfo.clear( );
+  }
+}
+
+/**********************************************
+ * support for model_routine_output.cpp
+ **********************************************/
 void AgentSpecies::updateSpAgentOutput( const VIdx& vIdx, const SpAgent& spAgent, REAL& color, Vector<REAL>& v_extraScalar, Vector<VReal>& v_extraVector ) const {
 
   color = spAgent.state.getType();
 
-  S32 i,j;
+  S32 i, j, dim;
   S32 scalar_count = 0;
 
-  const Vector< Particle* >& particles = gBioModel->getParticles( );
+  const Vector< Particle* >& particles = mModel->getParticles( );
   for( i = 0 ; i < (S32) particles.size( ) ; i++ ) {
     if( particles[ i ]->getParamBool( particles[ i ]->getIdxBool( PARTICLE_writeOutput ) ) ) {
       v_extraScalar[ scalar_count ] = 0.0;
@@ -752,7 +1114,8 @@ void AgentSpecies::updateSpAgentOutput( const VIdx& vIdx, const SpAgent& spAgent
       scalar_count++;
     }
   }
-  const Vector< Molecule* >& molecules = gBioModel->getMolecules( );
+
+  const Vector< Molecule* >& molecules = mModel->getMolecules( );
   for( i = 0 ; i < (S32) molecules.size( ) ; i++ ) {
     if( molecules[ i ]->getParamBool( molecules[ i ]->getIdxBool( MOLECULE_writeOutput ) ) ) {
       v_extraScalar[ scalar_count ] = 0.0;
@@ -766,7 +1129,17 @@ void AgentSpecies::updateSpAgentOutput( const VIdx& vIdx, const SpAgent& spAgent
     }
   }
   
-  CHECK( v_extraScalar.size() == scalar_count );
+  const Vector< Interaction* >& interactions = mModel->getInteractions( );
+  for( i = 0 ; i < (S32) interactions.size( ) ; i++ ) {
+    if( interactions[ i ]->getParamBool( interactions[ i ]->getIdxBool( INTERACTION_writeOutput ) ) ) {
+      for( dim = 0 ; dim < 3 ; dim++ ) {
+        v_extraScalar[ scalar_count ] = getInteractionValue( interactions[ i ]->getInteractionIdx( ), dim, spAgent.state );
+        scalar_count ++;
+      }
+    }
+  }
+  
+  CHECK( v_extraScalar.size() == (size_t) scalar_count );
   CHECK( v_extraVector.size() == 0 );
 
 }

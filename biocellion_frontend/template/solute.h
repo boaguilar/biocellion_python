@@ -83,7 +83,8 @@ protected:
   S32         mSoluteIdx;
   S32         mDomainIdx;
   S32         mSolverIdx;
-  REAL        mGridBeta; // diffisivity within the domain
+  REAL        mGridAlpha; // decay rate within the domain
+  REAL        mGridBeta; // diffusivity within the domain
   bc_type_e   mGridBCType[3][2]; // Boundary type 
   REAL        mGridBCVal[3][2]; // Boundary value
   REAL        mGridBoundaryBeta[3][2]; // mGridBeta[ dim ][ face ] diffusivity at the boundary

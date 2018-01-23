@@ -21,8 +21,8 @@ INCLUDE += -I $(BIOCELLION_ROOT)/libmodel/include
 
 CXXFLAG += -fPIC
 
-DEP_HEADERS := model_define.h model_mechanisms.h agent_species.h biomodel.h particle.h reaction.h simulator.h agent_grid.h tight_junction.h init_area.h adhesion.h distance_junction.h solute.h param_holder.h computation_domain.h bulk.h agar.h world.h chemotaxis.h biomodel_auto.h entry_condition.h solver.h molecule.h
-BIOMODEL_OBJECTS := biomodel_auto.o agent_species.o biomodel.o model_mechanisms.o particle.o reaction.o simulator.o agent_grid.o tight_junction.o init_area.o adhesion.o distance_junction.o solute.o param_holder.o computation_domain.o bulk.o agar.o world.o chemotaxis.o entry_condition.o solver.o molecule.o
+DEP_HEADERS := model_define.h model_mechanisms.h agent_species.h biomodel.h particle.h reaction.h simulator.h agent_grid.h tight_junction.h init_area.h adhesion.h distance_junction.h solute.h param_holder.h computation_domain.h bulk.h agar.h world.h chemotaxis.h biomodel_auto.h entry_condition.h solver.h molecule.h ode_network.h interaction.h biomodel_debug.h
+BIOMODEL_OBJECTS := biomodel_auto.o agent_species.o biomodel.o model_mechanisms.o particle.o reaction.o simulator.o agent_grid.o tight_junction.o init_area.o adhesion.o distance_junction.o solute.o param_holder.o computation_domain.o bulk.o agar.o world.o chemotaxis.o entry_condition.o solver.o molecule.o ode_network.o interaction.o
 
 libmodel${PRECISION}${SUPPORT_MP}${SUPPORT_SP}.so: interface_config.o interface_agent.o interface_mech_intrct.o interface_grid.o interface_output.o model_routine_config.o model_routine_grid.o model_routine_agent.o model_routine_mech_intrct.o model_routine_output.o interface_check.o $(BIOMODEL_OBJECTS)
 	$(CXX) -shared $(LINKFLAG) -Wl,-soname,libmodel${PRECISION}${SUPPORT_MP}${SUPPORT_SP}.so -o libmodel${PRECISION}${SUPPORT_MP}${SUPPORT_SP}.so interface_config.o interface_agent.o interface_mech_intrct.o interface_grid.o interface_output.o model_routine_config.o model_routine_grid.o model_routine_agent.o model_routine_mech_intrct.o model_routine_output.o interface_check.o $(BIOMODEL_OBJECTS)

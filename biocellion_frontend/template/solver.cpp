@@ -1,7 +1,7 @@
 #include "biomodel.h"
 
 Solver::Solver()
-  :  ParamHolder( ), mName(""), mClass(""), mDomain(""), mSolverIdx(-1)
+  :  ParamHolder( ), mName(""), mClass(""), mDomain(""), mSolverIdx(-1), mPDEType( PDE_TYPE_REACTION_DIFFUSION_STEADY_STATE_LINEAR )
 {
   //empty
 }
@@ -28,4 +28,8 @@ void Solver::setDomain(const std::string& value)
 void Solver::setSolverIdx(const S32& value)
 {
   mSolverIdx = value;
+}
+
+void Solver::setPDEType( const pde_type_e& value ) {
+  mPDEType = value;
 }

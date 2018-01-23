@@ -93,48 +93,7 @@ void ModelRoutine::updateSpAgentInfo( Vector<SpAgentInfo>& v_spAgentInfo ) {/* s
   /* MODEL START */
   
   initializeBioModel();
-
-  v_spAgentInfo.resize( gBioModel->getAgentSpecies().size() );
-  S32 i;
-  for( i = 0; i < (S32) gBioModel->getAgentSpecies().size(); i++ ) {
-    MechModelVarInfo mechModelVarInfo;
-    mechModelVarInfo.syncMethod = VAR_SYNC_METHOD_DELTA;
-    SpAgentInfo info;
-    ODENetInfo odeNetInfo;
-    odeNetInfo.numVars = gBioModel->getAgentSpecies()[ i ]->getNumODEVariables( );
-    odeNetInfo.stiff = ODE_STIFF_NORMAL;
-    odeNetInfo.h = 0.1;
-    odeNetInfo.hm = 0.01;
-    odeNetInfo.epsilon = 1e-6;
-    odeNetInfo.threshold = 1e-3;
-    odeNetInfo.errorThresholdVal = 0.0;
-    odeNetInfo.warningThresholdVal = 0.0;
-    odeNetInfo.setNegToZero = false;
-  
-    // FIXME: DMax not controlled from XML yet
-    info.dMax = gBioModel->getAgentSpecies()[ i ]->getDMax();
-    CHECK( info.dMax <= gBioModel->getAgentGrid().getResolution( ) );
-    // FIXME: num*ModelVars not controlled from XML yet
-    info.numBoolVars = gBioModel->getAgentSpecies()[ i ]->getNumModelBools();
-    info.numStateModelReals = gBioModel->getAgentSpecies()[ i ]->getNumModelReals();
-    info.numStateModelInts = gBioModel->getAgentSpecies()[ i ]->getNumModelInts();
-    if( gBioModel->getAgentSpecies()[ i ]->getNumMechModelReals() > 0 ) {
-      info.v_mechIntrctModelRealInfo.assign( gBioModel->getAgentSpecies()[ i ]->getNumMechModelReals(), mechModelVarInfo );
-    } else {
-      info.v_mechIntrctModelRealInfo.clear();
-    }
-    if( gBioModel->getAgentSpecies()[ i ]->getNumMechModelInts() > 0 ) {
-      info.v_mechIntrctModelIntInfo.assign( gBioModel->getAgentSpecies()[ i ]->getNumMechModelInts(), mechModelVarInfo );
-    } else {
-      info.v_mechIntrctModelIntInfo.clear();
-    }
-    if( gBioModel->getAgentSpecies()[ i ]->getNumODEVariables() > 0 ) {
-      info.v_odeNetInfo.assign( 1, odeNetInfo );
-    } else {
-      info.v_odeNetInfo.clear();
-    }
-    v_spAgentInfo[i] = info;
-  }
+  gBioModel->updateSpAgentInfo( v_spAgentInfo );
 
   /* MODEL END */
 

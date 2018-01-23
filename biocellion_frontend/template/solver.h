@@ -13,17 +13,21 @@ public:
   std::string getClass() const { return mClass; };
   std::string getDomain() const { return mDomain; };
   S32 getSolverIdx() const { return mSolverIdx; };
-  void setName(const std::string& value);
-  void setClass(const std::string& value);
-  void setDomain(const std::string& value);
-  void setSolverIdx(const S32& value);
-  const Vector < S32 >& getReactions() const { return mReactions; };
-  Vector < S32 >& getReactions() { return mReactions; };
+  pde_type_e getPDEType( ) const { return mPDEType; };
+  
+  void setName( const std::string& value );
+  void setClass( const std::string& value );
+  void setDomain( const std::string& value );
+  void setSolverIdx( const S32& value );
+  void setPDEType( const pde_type_e& value );
+  const Vector < S32 >& getReactions( ) const { return mReactions; };
+  Vector < S32 >& getReactions( ) { return mReactions; };
 protected:
   std::string mName;
   std::string mClass;
   std::string mDomain;
   S32 mSolverIdx;
+  pde_type_e mPDEType;
   Vector< S32 > mReactions;  
 };
 
