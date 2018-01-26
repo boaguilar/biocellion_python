@@ -37,7 +37,7 @@ class XMLProcessor:
                     elem.set( name, str( self.mValues[ match.group( 1 ) ] ) )
                 elif match and match.group( 1 ) not in self.mValues:
                     msg = "ERROR: VAR_" + str( match.group( 1 ) )
-                    msg += " found in the template."
+                    msg += " found in the template. "
                     msg += str( match.group( 1 ) )
                     msg += " is not in the substitution values."
                     raise Exception( msg )
@@ -47,7 +47,7 @@ class XMLProcessor:
                     elem.text = str( self.mValues[ match.group( 1 ) ] )
                 elif match and match.group( 1 ) not in self.mValues:
                     msg = "ERROR: VAR_" + str( match.group( 1 ) )
-                    msg += " found in the template."
+                    msg += " found in the template. "
                     msg += str( match.group( 1 ) )
                     msg += " is not in the substitution values."
                     raise Exception( msg )
