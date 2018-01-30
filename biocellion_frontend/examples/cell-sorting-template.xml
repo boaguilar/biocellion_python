@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!--
+#########################################################################
+Simplified model to demonstrate a two species cell sorting in 2D.
+This is a model template.  You can specify adhesion strength and other
+interaction parameters using model_template_to_model.py.
+#########################################################################
+-->
+<idynomics>
+  <!--
+      #####################################################################
+      SIMULATOR SECTION
+      ######################################################################
+  -->
+  <simulator>
+    <param name="restartPreviousRun">false</param>
+    <param name="randomSeed">5515</param>
+    <param name="outputPeriod" unit="hour">0.01</param>
+
+    <timeStep>
+      <param name="adaptive">false</param>
+      <param name="timeStepIni" unit="hour">0.01</param>
+      <param name="timeStepMin" unit="hour">0.01</param>
+      <param name="timeStepMax" unit="hour">0.01</param>
+      <param name="endOfSimulation" unit="hour">10.00</param>
+    </timeStep>
+    <!-- The AGENTTIMESTEP which should always be EQUAL or LOWER than the global time step -->
+    <param name="agentTimeStep" unit="hour">0.01</param>
+  </simulator>
+  <!--
+      #####################################################################
+      INPUT SECTION
+      ######################################################################
+  -->
+  <input>
+    <param name="useAgentFile">false</param>
+    <param name="useBulkFile">false</param>
+  </input>
+  <!--
+      #####################################################################
+      SOLUTES AND BIOMASS TYPES SECTION
+      ######################################################################
+  -->
+  <!-- solutes -->
+  <solute name="DummySolute" domain="MyColony">
+    <param name="diffusivity" unit="m2.day-1" >7.8e-5</param>
+    <param name="writeOutput">true</param>
+    <param name="decayRate" unit="hour-1">0.1</param>
+    <param name="concentration" unit="g.L-1">0</param>
+  </solute>
+
+  <!-- particles -->
+  <particle name="biomass">
+    <param name="density" unit="g.L-1">150</param>
+  </particle>
+  <particle name="inert">
+    <param name="density" unit="g.L-1">150</param>
+  </particle>
+  <particle name="capsule">
+    <param name="density" unit="g.L-1">75</param>
+  </particle>
+  <!--
+      #####################################################################
+      WORLD SECTION
+      ######################################################################
+  -->
+  <world>
+    <bulk name="MyTank">
+      <param name="isConstant">true</param>  
+      <param name="D" unit="h-1">0.6</param>      
+      <solute name="DummySolute">
+	<param name="Sbulk" unit="fg.L-1">0.0</param>
+	<param name="Sin" unit="fg.L-1">0</param>
+	<param name="isConstant">true</param>
+      </solute>
+    </bulk>
+    <computationDomain name="MyColony">
+      <!-- this is the grid size, counts of UBs 
+           in um it is 32*4 = 128, 32*4 = 128, 8*4 = 32 -->
+      <grid nDim="3" nI="32" nJ="32" nK="8"/>
+      <!-- this is the UB size -->
+      <param name="resolution" unit="um">4</param>
+      <param name="boundaryLayer" unit="um">1</param>
+      <param name="biofilmDiffusivity">0.8</param>
+      <param name="specificArea" unit="m2.m-3">80</param>
+    </computationDomain>
+  </world>
+  <!--
+      #####################################################################
+      REACTION SECTION
+      ######################################################################
+  -->
+  <!-- Dummy reaction -->
+  <reaction catalyzedBy="biomass" class="ReactionFactor" name="dummyReaction">
+    <param name="muMax" unit="hour-1">0.0</param>
+    <kineticFactor class="FirstOrderKinetic"/>
+    <yield>
+      <param name="DummySolute" unit="g.g-1">0.0</param>
+    </yield>
+  </reaction>
+  
+  <!--
+      #####################################################################
+      SOLVER SECTION
+      ######################################################################
+  -->
+  <!-- Dummy PDE reaction solver -->
+  <solver class="SolverSimple" domain="MyColony" name="solutes">
+    <!-- solver parameters -->
+    <param name="active">true</param>
+    <param name="preStep">150</param>
+    <param name="postStep">150</param>
+    <param name="bottomStep">150</param>
+    <param name="nCycles">5</param>
+    <param name="numTimeSteps" unit="int">1</param>
+    <param name="pdeSolverType">TimeDependent</param>
+    <param name="refineRatio">2</param>
+    <param name="AMRLevels">3</param>
+    
+    <!-- reactions -->
+    <reaction name="dummyReaction"/>
+
+  </solver> 
+
+  <!--
+      #####################################################################
+      AGENT GRID SECTION
+      ######################################################################
+  -->
+   <agentGrid>
+    <param name="computationDomain">MyColony</param>
+    <param name="resolution" unit="um">4</param>
+  </agentGrid>
+
+  <!--
+      #####################################################################
+      SPECIES SECTION
+      ######################################################################
+  -->
+
+  <species class="Yeast" name="RedCells">
+    <particle name="biomass">
+      <param name="mass" unit="fg">500</param>
+    </particle>
+    <particle name="inert">
+      <param name="mass" unit="fg">0</param>
+    </particle>
+    <particle name="capsule">
+      <param name="mass" unit="fg">0</param>
+    </particle>
+    <param name="color">red</param>
+    <param name="computationDomain">MyColony</param>
+    <param name="divRadius" unit="um">3000</param>
+    <param name="deathRadius" unit="um">0</param>
+    <param name="diffusivity" unit="um2.hour-1">0.2</param>
+    <param name="shoveScale">0.3</param>
+    <param name="shoveFactor" unit="um">1</param>
+    <param name="shoveLimit" unit="um">0.0</param>
+    <adhesions>
+      <!-- scale is a gain factor, only used by biocellion
+	   strength is the divisor in the exponent argument
+      -->
+      <adhesion strength="0.3" withSpecies="RedCells" scale="VAR_RED_RED_ADHESION"/>
+      <adhesion strength="0.3" withSpecies="BlueCells" scale="VAR_RED_BLUE_ADHESION"/>
+    </adhesions>
+    <initArea number="1000">
+      <param name="birthday" unit="hour">0</param>
+      <coordinates x="1" y="1" z="15"/>
+      <coordinates x="121" y="121" z="15"/>
+    </initArea>
+  </species>
+
+  <species class="Yeast" name="BlueCells">
+    <particle name="biomass">
+      <param name="mass" unit="fg">1000</param>
+    </particle>
+    <particle name="inert">
+      <param name="mass" unit="fg">0</param>
+    </particle>
+    <param name="color">blue</param>
+    <param name="computationDomain">MyColony</param>
+    <param name="divRadius" unit="um">3000</param>
+    <param name="deathRadius" unit="um">0</param>
+    <param name="diffusivity" unit="um2.hour-1">0.2</param>
+    <param name="shoveScale">0.3</param>
+    <param name="shoveFactor" unit="um">1</param>
+    <param name="shoveLimit" unit="um">0.0</param>
+    <adhesions>
+      <!-- scale is a gain factor, only used by biocellion
+	   strength is the divisor in the exponent argument
+      -->
+      <adhesion strength="0.3" withSpecies="RedCells" scale="VAR_RED_BLUE_ADHESION"/>
+      <adhesion strength="0.3" withSpecies="BlueCells" scale="VAR_BLUE_BLUE_ADHESION"/>
+    </adhesions>
+    <initArea number="1000">
+      <param name="birthday" unit="hour">0</param>
+      <coordinates x="1" y="1" z="15"/>
+      <coordinates x="121" y="121" z="15"/>
+    </initArea>
+  </species>
+  
+</idynomics>

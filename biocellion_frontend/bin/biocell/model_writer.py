@@ -12,9 +12,10 @@ from xml.dom import minidom
 def prettify(elem):
     """Return a pretty-printed XML string for the Element.
     """
-    rough_string = ElementTree.tostring(elem, 'utf-8')
-    reparsed = minidom.parseString(rough_string)
-    return reparsed.toprettyxml(indent="  ", newl="")
+    rough_string = ElementTree.tostring( elem, 'utf-8' )
+    reparsed = minidom.parseString( rough_string )
+    #return reparsed.toprettyxml( indent="  ", newl="" )
+    return reparsed.toprettyxml( indent="  " )
 
 class ModelWriter:
 
@@ -23,7 +24,7 @@ class ModelWriter:
 
     def write_config_xml( self, biomodel, directory, source_directory ):
         filename = 'config.xml'
-        name = directory + '/' + filename
+        name = os.path.join( directory, filename )
         fout = open(name, 'w')
         if not fout:
             raise Exception( 'ERROR: unable to open ' + name )
@@ -57,7 +58,7 @@ class ModelWriter:
         required_domain = SubElement( required, 'domain' )
         required_domain.append( Comment( 'domain, required, parameters describing the simulation domain' ) )
         required_domain.append( Comment( '  x(, y, or z): simulation grid size in the x(, y, or z) direction' ) )
-        required_domain.append( Comment( '  x(, y, or z) should be equal to or larger than 4 (minimum parition size)' ) )
+        required_domain.append( Comment( '  x(, y, or z) should be equal to or larger than 4 (minimum partition size)' ) )
         required_domain.append( Comment( '  x(, y, or z) should be positive integer multiple of refine_ratio^(interface grid level in AMR)' ) )
         required_domain.append( Comment( '  x(, y, or z) should be equal to or larger than refine_ratio^(interface grid level in AMR) * 2 (minimum box size)' ) )
         required_domain.append( Comment( '  x(, y, or z) is integer, [4,)' ) )
@@ -70,7 +71,7 @@ class ModelWriter:
         required_initdata = SubElement( required, 'init_data' )
         required_initdata.append( Comment( 'init_data, required, parameters related to initial cell and grid data, required' ) )
         required_initdata.append( Comment( '  partition_size: partition size, required' ) )
-        required_initdata.append( Comment( '    partition_size should be equal to or larger than 4 (minimum parition size)' ) )
+        required_initdata.append( Comment( '    partition_size should be equal to or larger than 4 (minimum partition size)' ) )
         required_initdata.append( Comment( '    partition_size should be positive integer multiple of refine_ratio^(interface grid level in AMR)' ) )
         required_initdata.append( Comment( '    partition_size should be equal to or larger than refine_ratio^(interface grid level in AMR) * 2 (minimum box size)' ) )
         required_initdata.append( Comment( '    partition_size is integer, [4,)' ) )
@@ -183,7 +184,7 @@ class ModelWriter:
 
     def write_biomodel_h( self, biomodel, directory, source_directory ):
         filename = 'biomodel_auto.h'
-        name = directory + '/' + filename
+        name = os.path.join( directory, filename )
         fout = open(name, 'w')
         if not fout:
             raise Exception( 'ERROR: unable to open ' + name )
@@ -201,7 +202,7 @@ class ModelWriter:
 
     def write_biomodel_cpp( self, biomodel, directory, source_directory ):
         filename = 'biomodel_auto.cpp'
-        name = directory + '/' + filename
+        name = os.path.join( directory, filename )
         fout = open(name, 'w')
         if not fout:
             raise Exception( 'ERROR: unable to open ' + name )
@@ -219,12 +220,12 @@ class ModelWriter:
         return
 
     def copy_file( self, directory, source_directory, filename ):
-        name = directory + '/' + filename
+        name = os.path.join( directory, filename )
         fout = open(name, 'w')
         if not fout:
             raise Exception( 'ERROR: unable to open ' + name )
         
-        name = source_directory + '/template/' + filename
+        name = os.path.join( source_directory , filename )
         fin  = open(name, 'r')
         if not fin:
             raise Exception( 'ERROR: unable to open ' + name )
@@ -267,7 +268,7 @@ class ModelWriter:
                   'solver.cpp', 'solver.h',
                   'tight_junction.cpp', 'tight_junction.h',
                   'world.cpp', 'world.h',
-                  'Makefile', 
+                  'Makefile', 'Makefile.model', 
                   'RUN.bash', 
         ]
         for name in names:

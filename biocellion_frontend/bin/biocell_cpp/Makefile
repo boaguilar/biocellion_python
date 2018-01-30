@@ -1,4 +1,4 @@
-include ../Makefile.model
+include ./Makefile.model
 
 ifeq ("$(REAL)", "float")
 PRECISION = .SP
