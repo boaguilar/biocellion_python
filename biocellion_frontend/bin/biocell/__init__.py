@@ -65,3 +65,5 @@ from .model_writer import ModelWriter, prettify
 from .model_scanner import ModelScanner, get_type_of, same_type
 from .xml_processor import XMLProcessor
 
+# auxiliary support utilities
+from .remote import Command, RemoteCommand

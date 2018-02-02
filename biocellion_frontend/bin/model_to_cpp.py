@@ -87,7 +87,6 @@ def read_args( argv, args ):
                 reassign_paths( args )
             elif o in ('-b', '--build-dir'):
                 args[ BUILD_DIR ] = a
-                print( a )
             elif o in ('-h', '-?', '--help'):
                 do_help = True
             else:
