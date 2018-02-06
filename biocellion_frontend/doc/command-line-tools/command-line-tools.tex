@@ -86,5 +86,16 @@ Use \inlinecode{-t} and \inlinecode{-x} OR \inlinecode{-m} and \inlinecode{-d}. 
   show a help message and quit
 \end{itemize}
 
+\subsection{Examples}
+
+\begin{itemize}
+
+\item The following command creates a model instance from the cell-sorting-template.xml, using adhesion values specified on the command line.  It stores the temporary
+  model XML file in foo.xml, creates the C++ model in the directory bar, builds and runs the model.  The model is only allowed 180 seconds to execute.
+
+  \inlinecode{bin/biocellion.py --all-commands -t examples/cell-sorting-template.xml -x foo.xml -p RED\_RED\_ADHESION=0.2 -p BLUE\_BLUE\_ADHESION=0.3 -p RED\_BLUE\_ADHESION=0.0 --build-dir bar --command-timeout 180}
+  
+\end{itemize}
+
 
 \end{document}
