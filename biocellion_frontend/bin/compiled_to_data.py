@@ -11,37 +11,6 @@ BUILD_DIR = 'build-dir'
 CPP_DIR   = 'cpp-dir'
 CMD_TIMEOUT = 'cmd-timeout'
 
-def compiled_to_data( args ):
-    """
-    Requires: 
-    args[ BUILD_DIR ] = directory containing compiled library
-    args[ CMD_TIMEOUT ] = maximum amount of time for sub process to complete
-    """
-
-    if not os.path.exists( args[ BUILD_DIR ] ):
-        raise Exception( "Build directory does not exist: %s" % ( args[ BUILD_DIR ], ) )
-    if not os.path.exists( os.path.join( args[ BUILD_DIR ], "libmodel.DP.SPAGENT.so" )  ):
-        raise Exception( "Built library does not exist: %s" % ( args[ BUILD_DIR ], ) )
-
-    cwd = os.getcwd( )
-    os.chdir( args[ BUILD_DIR ] )
-    
-    cmd = "make -j run"
-    c = biocell.Command( cmd )
-    c.set_timeout( int( args[ CMD_TIMEOUT ] ) )
-    c.run_command( )
-    if c.get_exit_code() != 0:
-        os.chdir( cwd )
-        print( "-----------------------" )
-        for line in c.get_lines( ):
-            print( line )
-        print( "-----------------------" )
-        raise Exception( cmd + " failed in " + args[ BUILD_DIR ] )
-
-    os.chdir( cwd )
-
-    return
-
 def usage( argv, args ):
     print( "usage: %s -b build-dir -t cmd-timeout" % (argv[0], ) )
     print( "-b | --build-dir build-dir       # directory containing compiled library to be run; default: %s" % (args[ BUILD_DIR ], ) )
@@ -85,7 +54,7 @@ def main( argv ):
 
     args = { }
     read_args( argv, args )
-    compiled_to_data( args )
+    biocell.run_compiled_model( args[ BUILD_DIR ], args[ CMD_TIMEOUT ] )
 
     return
 

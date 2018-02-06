@@ -10,34 +10,6 @@ MODEL_DIR = 'model-dir'
 BUILD_DIR = 'build-dir'
 CPP_DIR   = 'cpp-dir'
 
-def cpp_to_compiled( args ):
-    """
-    Requires: 
-    args[ BUILD_DIR ] = directory containing cpp files to be built
-    """
-
-    if not os.path.exists( args[ BUILD_DIR ] ):
-        raise Exception( "C++ directory does not exist: %s" % ( args[ BUILD_DIR ], ) )
-
-    cwd = os.getcwd( )
-    os.chdir( args[ BUILD_DIR ] )
-    
-    cmd = "make -j"
-    c = biocell.Command( cmd )
-    c.set_timeout( 120 )
-    c.run_command( )
-    if c.get_exit_code() != 0:
-        os.chdir( cwd )
-        print( "-----------------------" )
-        for line in c.get_lines( ):
-            print( line )
-        print( "-----------------------" )
-        raise Exception( cmd + " failed in " + args[ BUILD_DIR ] )
-
-    os.chdir( cwd )
-
-    return
-
 def usage( argv, args ):
     print( "usage: %s -b build-dir" % (argv[0], ) )
     print( "-b | --build-dir build-dir       # directory containing C++ code to be built; default: %s" % (args[ BUILD_DIR ], ) )
@@ -77,7 +49,7 @@ def main( argv ):
 
     args = { }
     read_args( argv, args )
-    cpp_to_compiled( args )
+    biocell.compile_cpp_model( args[ BUILD_DIR ] )
 
     return
 
