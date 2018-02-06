@@ -10,32 +10,6 @@ MODEL_DIR = 'model-dir'
 BUILD_DIR = 'build-dir'
 CPP_DIR   = 'cpp-dir'
 
-def model_to_cpp( args ):
-    """
-    Requires: 
-    args[ XML_FILE ] = input xml model file name
-    args[ CPP_DIR ] = input directory for cpp files
-    args[ BUILD_DIR ] = output model directory for cpp files
-    """
-
-    if not os.path.exists( args[ XML_FILE ] ):
-        raise Exception( "Input file doesn't exist: %s" % ( args[ XML_FILE ], ) )
-    if not os.path.exists( args[ CPP_DIR ] ):
-        raise Exception( "Input directory doesn't exist: %s" % ( args[ CPP_DIR ], ) )
-    if os.path.exists( args[ BUILD_DIR ] ):
-        raise Exception( "Output dir already exists: %s" % ( args[ BUILD_DIR ], ) )
-    else:
-        os.makedirs( args[ BUILD_DIR ] )
-
-    biomodel = biocell.BioModel( )
-    scanner = biocell.ModelScanner( biomodel )
-    scanner.parseXML( args[ XML_FILE ] )
-    writer = biocell.ModelWriter( )
-    writer.write_biomodel_files( biomodel, args[ BUILD_DIR ], args[ CPP_DIR ] )
-    
-    return
-
-
 def reassign_paths( args ):
     args[ XML_FILE ] = os.path.join( args[ MODEL_DIR] , args[ MODEL ] + '.xml' )
     return
@@ -107,7 +81,7 @@ def main( argv ):
 
     args = { }
     read_args( argv, args )
-    model_to_cpp( args )
+    biocell.create_custom_cpp_model( args[ XML_FILE ], args[ CPP_DIR ], args[ BUILD_DIR ] )
 
     return
 

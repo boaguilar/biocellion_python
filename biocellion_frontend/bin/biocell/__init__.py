@@ -67,3 +67,4 @@ from .xml_processor import XMLProcessor
 
 # auxiliary support utilities
 from .remote import Command, RemoteCommand
+from .applications import create_custom_cpp_model
