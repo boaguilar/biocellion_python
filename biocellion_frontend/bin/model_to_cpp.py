@@ -81,7 +81,7 @@ def main( argv ):
 
     args = { }
     read_args( argv, args )
-    biocell.create_custom_cpp_model( args[ XML_FILE ], args[ CPP_DIR ], args[ BUILD_DIR ] )
+    biocell.create_cpp_model_from_xml_model( args[ XML_FILE ], args[ CPP_DIR ], args[ BUILD_DIR ] )
 
     return
 

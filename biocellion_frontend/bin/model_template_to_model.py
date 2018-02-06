@@ -8,24 +8,6 @@ PARMS = 'parms'
 MODEL = 'model'
 MODEL_DIR = 'model-dir'
 
-def translate_template( args ):
-    """
-    Requires: 
-    args[ TEMPLATE_FILE ] = input template xml file name
-    args[ XML_FILE ] = output xml file name
-    args[ PARMS ] = dictionary where key == VAR_key pattern to replace and value = replacement value.
-    """
-
-    if not os.path.exists( args[ TEMPLATE_FILE ] ):
-        raise Exception( "Input file doesn't exist: %s" % ( args[ TEMPLATE_FILE ], ) )
-    if os.path.exists( args[ XML_FILE ] ):
-        raise Exception( "Output file already exists: %s" % ( args[ XML_FILE ], ) )
-    
-    # creating the translator completes the translation
-    p = biocell.XMLProcessor( args[ TEMPLATE_FILE ], args[ XML_FILE ], args[ PARMS ] )
-    return
-
-
 def reassign_paths( args ):
     args[ TEMPLATE_FILE ] = os.path.join( args[ MODEL_DIR] , args[ MODEL ] + '-template.xml' )
     args[ XML_FILE ] = os.path.join( args[ MODEL_DIR] , args[ MODEL ] + '.xml' )
@@ -98,7 +80,7 @@ def main( argv ):
 
     args = { }
     read_args( argv, args )
-    translate_template( args )
+    biocell.create_xml_model_from_xml_model_template( args[ TEMPLATE_FILE ], args[ XML_FILE ], args[ PARMS ] )
 
     return
 
