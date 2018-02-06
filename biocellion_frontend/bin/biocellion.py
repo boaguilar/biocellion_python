@@ -22,23 +22,38 @@ def reassign_paths( args ):
     return
 
 def usage( argv, args ):
+    print( """
+%s: run biological models described with XML using the biocellion agent based simulation system.
+    The XML model description file may be specified directly via the --xml-file option, or
+    it make be created from a template XML file using the --template-file option and repeated use
+    of the --parm option.
+""" % ( argv[ 0 ], ) )
     print( "usage: %s -A -T -X -C -R -p var=val -t template-file -x xml-file -m model-name -d model-dir -c cpp-dir -b build-dir -o cmd-timeout" % (argv[0], ) )
-    print( "-A | --all-commands              # process all starting with template xml model file, ending with running model; default: %s" % ( str( args[ COMMAND_ALL ] ) , ) )
+    print( )
+    print( "Choose one or more commands." )
+    print( "----------------------------" )
+    print( "-A | --all-commands              # process all starting with template xml model file, ending with running model; default: %s" % ( str( args[ COMMAND_ALL_COMMANDS ] ) , ) )
     print( "-T | --process-xml-template      # process template xml model file into xml model file; default: %s" % ( str( args[ COMMAND_PROCESS_XML_TEMPLATE ] ) , ) )
     print( "-X | --process-xml-model         # process xml model file into cpp model files; default: %s" % ( str( args[ COMMAND_PROCESS_XML_MODEL ] ) , ) )
     print( "-C | --compile-cpp-model         # compile cpp model files into model library file; default: %s" % ( str( args[ COMMAND_COMPILE_CPP_MODEL ] ) , ) )
     print( "-R | --run-model                 # run the model; default: %s" % ( str( args[ COMMAND_RUN_MODEL ] ) , ) )
-    print( "-p | --parm parm=value           # name and value of parameter for the model; may be specified more than once; default: %s" % ( str( args[ PARMS ] ) , ) )
+    print( )
+    print( "Command options" )
+    print( "---------------" )
+    print( "XML specifications" )
     print( "-t | --template-file file-name   # name of input model template XML file; default: %s" % (args[ TEMPLATE_FILE ], ) )
+    print( "-p | --parm parm=value           # name and value of parameter for the model; may be specified more than once; default: %s" % ( str( args[ PARMS ] ) , ) )
     print( "-x | --xml-file file-name        # name of output model XML file; default: %s" % (args[ XML_FILE ], ) )
     print( "-m | --model-name model-name     # descriptor for model; default: %s" % (args[ MODEL ], ) )
     print( "-d | --model-dir model-dir       # location of template and model files; default: %s" % (args[ MODEL_DIR ], ) )
+    print( "Use -t and -x OR -m and -d.  Don't mix them." )
     print( "-c | --cpp-dir cpp-dir           # location of cpp model library files; default: %s" % (args[ CPP_DIR ], ) )
     print( "-b | --build-dir build-dir       # directory to create with c++ code; default: %s" % (args[ BUILD_DIR ], ) )
     print( "-o | --command-timeout seconds   # seconds to let the subprocess run the simulation; default: %s" % (args[ CMD_TIMEOUT ], ) )
     print( "-h | -? | --help                 # show this message and quit" )
-    print( "Use -t and -x OR -m and -d.  Don't mix them." ) 
-    print( argv )
+    print( )
+    print( "Arguments received: " + " ".join( argv ) )
+    print( )
     return
 
 def read_args( argv, args ):
