@@ -22,7 +22,7 @@ def cpp_to_compiled( args ):
     cwd = os.getcwd( )
     os.chdir( args[ BUILD_DIR ] )
     
-    cmd = "make"
+    cmd = "make -j"
     c = biocell.Command( cmd )
     c.set_timeout( 120 )
     c.run_command( )
