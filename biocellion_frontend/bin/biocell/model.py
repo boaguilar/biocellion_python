@@ -1,9 +1,9 @@
 from biocell import *
 
-class IDynoMiCS( ParamHolder ):
+class Model( ParamHolder ):
 
     def __init__( self, biomodel ):
-        self.mName = "idynomics"
+        self.mName = "model"
         self.mBioModel = biomodel
         ParamHolder.__init__(self)
 

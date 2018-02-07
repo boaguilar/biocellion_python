@@ -3,22 +3,22 @@ from biocell import *
 class BioModel:
 
     def __init__( self ):
-        self.mIDynoMiCS = IDynoMiCS( self )
+        self.mModel = Model( self )
         self.mDistanceJunctionsEnabled = False
         return
 
-    def resetIDynoMiCS( self ):
-        self.mIDynoMiCS = IDynoMiCS( self )
+    def resetModel( self ):
+        self.mModel = Model( self )
         return
     
-    def getIDynoMiCS( self ):
-        return self.mIDynoMiCS
+    def getModel( self ):
+        return self.mModel
 
     def getItemAddIfNeeded( self, tag, name, class_name ):
-        return self.mIDynoMiCS.getItemAddIfNeeded( tag, name, class_name )
+        return self.mModel.getItemAddIfNeeded( tag, name, class_name )
 
     def getItem( self, tag, name ):
-        return self.mIDynoMiCS.getItem( tag, name )
+        return self.mModel.getItem( tag, name )
 
     def getDistanceJunctionsEnabled( self ):
         return self.mDistanceJunctionsEnabled
@@ -28,10 +28,10 @@ class BioModel:
         return
 
     def getBioModelH( self, indent, depth ):
-        return self.mIDynoMiCS.getBioModelH( indent, depth )
+        return self.mModel.getBioModelH( indent, depth )
 
     def organizeChildren( self ):
-        self.mIDynoMiCS.organizeChildren( )
+        self.mModel.organizeChildren( )
         return
 
     def getInitializeBioModel( self, indent, depth ):
@@ -45,12 +45,12 @@ class BioModel:
         depth -= 1;
         lines.append( (depth*indent) + "}" )
 
-        lines.append( self.mIDynoMiCS.getInitializeBioModel( indent, depth ) )
+        lines.append( self.mModel.getInitializeBioModel( indent, depth ) )
         return "\n".join( lines )
 
     def __str__( self ):
         s = "<BioModel>\n"
-        s += str( self.mIDynoMiCS ) + "\n"
+        s += str( self.mModel ) + "\n"
         s += "</BioModel>"
         return s
 

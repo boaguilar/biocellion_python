@@ -59,7 +59,7 @@ from .interaction import Interaction, AllInteractions
 from .agent_grid import AgentGrid
 
 # top-level classes
-from .idynomics import IDynoMiCS
+from .model import Model
 from .biomodel import BioModel
 from .model_writer import ModelWriter, prettify
 from .model_scanner import ModelScanner, get_type_of, same_type

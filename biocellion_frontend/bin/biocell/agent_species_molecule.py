@@ -13,7 +13,7 @@ class AgentSpeciesMolecule( ParamHolder ):
 
     def getMoleculeEnumToken( self ):
         if self.mReference is None:
-            raise Exception( "ERROR: <species><molecule> must be linked to <idynomics><molecule>" )
+            raise Exception( "ERROR: <species><molecule> must be linked to <model><molecule>" )
         return self.mReference.getEnumToken( )
 
     def __str__(self):

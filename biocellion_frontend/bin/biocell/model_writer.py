@@ -52,7 +52,7 @@ class ModelWriter:
         required_timestep = SubElement( required, 'time_step' )
         required_timestep.append( Comment( 'time_step, set the number of baseline time steps, required' ) )
         required_timestep.append( Comment( '  num_baseline: number of baseline (to simulate 1-2 and 2) time steps, required, integer, [1,)' ) )
-        required_timestep.set( 'num_baseline', str( biomodel.getIDynoMiCS().getSimulator().getNumBaselineSteps() ) )
+        required_timestep.set( 'num_baseline', str( biomodel.getModel().getSimulator().getNumBaselineSteps() ) )
 
         ## required.domain
         required_domain = SubElement( required, 'domain' )
@@ -62,7 +62,7 @@ class ModelWriter:
         required_domain.append( Comment( '  x(, y, or z) should be positive integer multiple of refine_ratio^(interface grid level in AMR)' ) )
         required_domain.append( Comment( '  x(, y, or z) should be equal to or larger than refine_ratio^(interface grid level in AMR) * 2 (minimum box size)' ) )
         required_domain.append( Comment( '  x(, y, or z) is integer, [4,)' ) )
-        x, y, z = biomodel.getIDynoMiCS().getWorld().getDomainXYZ()
+        x, y, z = biomodel.getModel().getWorld().getDomainXYZ()
         required_domain.set( 'x', str( x ) )
         required_domain.set( 'y', str( y ) )
         required_domain.set( 'z', str( z ) )
@@ -85,7 +85,7 @@ class ModelWriter:
         required_initdata.append( Comment( '  path: valid and required only when src is set to file.' ) )
         required_initdata.append( Comment( '    path is the path to the directory containing input data files' ) )
         required_initdata.append( Comment( '    path is text' ) )
-        partition_size = biomodel.getIDynoMiCS().getWorld().getDomainPartitionSize()
+        partition_size = biomodel.getModel().getWorld().getDomainPartitionSize()
         required_initdata.set( 'partition_size', str( partition_size ) )
         required_initdata.set( 'src', "code" )
 
@@ -100,13 +100,13 @@ class ModelWriter:
         required_output.append( Comment( '  size_x(, y, or z): output box size in the x(, y, or z) direction, must be an integer multiple of refine_ratio^(number of AMR levels - 1), required, integer, [1,)' ) )
     
         required_output.set( 'path', "./output" )
-        required_output.set( 'interval', str( biomodel.getIDynoMiCS( ).getSimulator( ).getOutputInterval( ) ) )
+        required_output.set( 'interval', str( biomodel.getModel( ).getSimulator( ).getOutputInterval( ) ) )
         required_output.set( 'particle', "pvtp" )
         required_output.set( 'grid', "vthb" )
         required_output.set( 'start_x', "0" )
         required_output.set( 'start_y', "0" )
         required_output.set( 'start_z', "0" )
-        size_x, size_y, size_z = biomodel.getIDynoMiCS().getWorld().getDomainXYZ()
+        size_x, size_y, size_z = biomodel.getModel().getWorld().getDomainXYZ()
         required_output.set( 'size_x', str( size_x ) )
         required_output.set( 'size_y', str( size_y ) )
         required_output.set( 'size_z', str( size_z ) )
@@ -150,7 +150,7 @@ class ModelWriter:
         optional_superpartition.append( Comment( '  x(, y, or z): a larger value reduces the communication requirement between node groups at the expense of lower parallelism' ) )
         optional_superpartition.append( Comment( '  x(, y, or z): this number should be an integer multiple of partition_size' ) )
         optional_superpartition.append( Comment( '  x(, y, or z): optional, default=the smallest integer multiple of partition_size that is equal to or larger than x(, y, or z) (of domain), integer, [1,)' ) )
-        supersize_x, supersize_y, supersize_z = biomodel.getIDynoMiCS().getWorld().getDomainXYZ()
+        supersize_x, supersize_y, supersize_z = biomodel.getModel().getWorld().getDomainXYZ()
         # optional_superpartition.set( 'x', str( supersize_x ) )
         # optional_superpartition.set( 'y', str( supersize_y ) )
         # optional_superpartition.set( 'z', str( supersize_z ) )
@@ -172,7 +172,7 @@ class ModelWriter:
         optional_amr.append( Comment( 'amr, controls adaptive mesh refinement' ) )
         optional_amr.append( Comment( 'refine_ratio: adaptive mesh refinement ratio between two consecutive levels, optional, default=2, 2|4|8' ) )
         optional_amr.append( Comment( 'fill_ratio: controls grid efficiency in mesh generation based on model provided tags, large value will generate less filled larger blocks, optional, default=0.5, [0.0,1.0]' ) )
-        refine_ratio = biomodel.getIDynoMiCS( ).getSolvers( ).getRefineRatio( )
+        refine_ratio = biomodel.getModel( ).getSolvers( ).getRefineRatio( )
         optional_amr.set( 'refine_ratio', str( refine_ratio ) )
         optional_amr.set( 'fill_ratio', "0.5" ) # FIXME: fill_ratio is hard-coded here.  Should add an XML parameter sometime
         

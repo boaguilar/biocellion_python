@@ -3,10 +3,10 @@
 #########################################################################
 Simplified model to demonstrate a two species cell sorting in 2D.
 This is a model template.  You can specify adhesion strength and other
-interaction parameters using model_template_to_model.py.
+interaction parameters using biocellion.py.
 #########################################################################
 -->
-<idynomics>
+<model>
   <!--
       #####################################################################
       SIMULATOR SECTION
@@ -199,4 +199,4 @@ interaction parameters using model_template_to_model.py.
     </initArea>
   </species>
   
-</idynomics>
+</model>

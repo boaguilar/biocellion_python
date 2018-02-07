@@ -13,7 +13,7 @@ class AgentSpeciesParticle(ParamHolder):
 
     def getParticleEnumToken( self ):
         if self.mReference is None:
-            raise Exception( "ERROR: <species><particle> must be linked to <idynomics><particle>" )
+            raise Exception( "ERROR: <species><particle> must be linked to <model><particle>" )
         return self.mReference.getEnumToken( )
 
     def __str__(self):

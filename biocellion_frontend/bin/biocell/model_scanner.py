@@ -27,7 +27,7 @@ class ModelScanner:
         return
 
     def scanXML( self, root ):
-        ok = self.scanIdynomicsXML( root )
+        ok = self.scanModelXML( root )
         if self.mScanMode == self.SCAN_VALIDATE_MODE:
             if ok:
                 print( "XML file validated." )
@@ -249,11 +249,11 @@ class ModelScanner:
         
         return
         
-    def scanIdynomicsXML( self, node, parent_object=None ):
+    def scanModelXML( self, node, parent_object=None ):
         may_children = ( "simulator", "input", "solute", "molecule", "particle", "interaction", "world", "reaction", "molecularReactions", "solver", "agentGrid", "species", )
         required_children = ( "simulator", )
-        self.mModel.resetIDynoMiCS( )
-        node_object = self.mModel.getIDynoMiCS( )
+        self.mModel.resetModel( )
+        node_object = self.mModel.getModel( )
         child_methods = {
             "simulator": self.scanSimulatorXML,
             "input": self.scanInputXML,
@@ -277,7 +277,7 @@ class ModelScanner:
     def scanSimulatorXML( self, node, parent_object=None ):
         may_children = ( "param", "timeStep", )
         required_children = (  )
-        node_object = self.mModel.getIDynoMiCS( ).getSimulator()
+        node_object = self.mModel.getModel( ).getSimulator()
         parent_object = None
         child_methods = {
             "param": self.scanGenericParamXML,
@@ -291,7 +291,7 @@ class ModelScanner:
     def scanSimulatorTimeStepXML( self, node, parent_object=None ):
         may_children = ( "param", )
         required_children = (  )
-        node_object = self.mModel.getIDynoMiCS( ).getSimulator().getTimeStep()
+        node_object = self.mModel.getModel( ).getSimulator().getTimeStep()
         parent_object = None
         child_methods = {
             "param": self.scanGenericParamXML,
@@ -367,7 +367,7 @@ class ModelScanner:
     def scanWorldXML( self, node, parent_object=None ):
         may_children = ( "bulk", "agar", "computationDomain", )
         required_children = (  )
-        node_object = self.mModel.getIDynoMiCS( ).getWorld( )
+        node_object = self.mModel.getModel( ).getWorld( )
         parent_object = None # don't need to add this as a child
         child_methods = {
             "bulk": self.scanWorldBulkXML,
@@ -618,17 +618,17 @@ class ModelScanner:
             if yield_key == '*': continue
             yield_item = node_object.getItem( yield_key )
             yield_name = yield_item.getName( )
-            if self.mModel.getIDynoMiCS( ).getParticles( ).hasKey( yield_name ):
+            if self.mModel.getModel( ).getParticles( ).hasKey( yield_name ):
                 node_object.setParticle( yield_name, self.mModel.getItem( 'particle', yield_name ) )
-            elif self.mModel.getIDynoMiCS( ).getSolutes( ).hasKey( yield_name ):
+            elif self.mModel.getModel( ).getSolutes( ).hasKey( yield_name ):
                 node_object.setSolute( yield_name, self.mModel.getItem( 'solute', yield_name ) )
-            elif self.mModel.getIDynoMiCS( ).getMolecules( ).hasKey( yield_name ):
+            elif self.mModel.getModel( ).getMolecules( ).hasKey( yield_name ):
                 node_object.setMolecule( yield_name, self.mModel.getItem( 'molecule', yield_name ) )
             else:
                 msg  = "ERROR: Reaction.Yield.Param should name a solute, molecule or particle. " + str( yield_name ) + " is not in any list.\n"
-                msg += "ERROR: Known solutes: " + ", ".join( self.mModel.getIDynoMiCS( ).getSolutes( ).getKeys( ) ) + ".\n"
-                msg += "ERROR: Known molecules: " + ", ".join( self.mModel.getIDynoMiCS( ).getMolecules( ).getKeys( ) ) + ".\n"
-                msg += "ERROR: Known particles: " + ", ".join( self.mModel.getIDynoMiCS( ).getParticles( ).getKeys( ) ) + ".\n"
+                msg += "ERROR: Known solutes: " + ", ".join( self.mModel.getModel( ).getSolutes( ).getKeys( ) ) + ".\n"
+                msg += "ERROR: Known molecules: " + ", ".join( self.mModel.getModel( ).getMolecules( ).getKeys( ) ) + ".\n"
+                msg += "ERROR: Known particles: " + ", ".join( self.mModel.getModel( ).getParticles( ).getKeys( ) ) + ".\n"
                 raise Exception( msg )
         
         return ok
@@ -674,7 +674,7 @@ class ModelScanner:
     def scanAgentGridXML( self, node, parent_object=None ):
         may_children = ( "param", )
         required_children = ( "param", )
-        node_object = self.mModel.getIDynoMiCS( ).getAgentGrid()
+        node_object = self.mModel.getModel( ).getAgentGrid()
         parent_object = None # don't need to add this as a child
 
         child_methods = {

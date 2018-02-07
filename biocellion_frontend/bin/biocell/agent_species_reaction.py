@@ -32,7 +32,7 @@ class AgentSpeciesReaction( ParamHolder ):
 
     def getReactionEnumToken( self ):
         if self.mReference is None:
-            raise Exception( "ERROR: <species><reaction> must be linked to <idynomics><reaction>" )
+            raise Exception( "ERROR: <species><reaction> must be linked to <model><reaction>" )
         return self.mReference.getEnumToken( )
 
     def __str__(self):
