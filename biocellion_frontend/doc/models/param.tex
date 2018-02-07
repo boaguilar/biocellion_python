@@ -1,0 +1,49 @@
+\subsection{\inlinecode{<param>}}
+
+\inlinecode{<param>} tags are used for specifying various parameters
+to define the model.  For example, how many simulated hours to
+run the simulation.
+Parameters have a name attribute, and a text value.  Most parameters
+also expect a unit attribute.  Many unit conversions are supported.
+
+\subsubsection{Allowed Subtags}
+
+No subtags are allowed.
+
+\subsubsection{Allowed Parameters}
+
+
+No parameters are allowed.
+
+
+
+\subsubsection{Allowed Attributes}
+
+\begin{tabular}{ l | c | p{1.5in} }
+  Attribute & Required & Notes \\
+  \hline
+  \hline
+  \inlinecode{name} & Yes & Name of the parameter. \\
+  \hline
+  \inlinecode{unit} & Recommended & Units of the value. \\
+\end{tabular}
+
+\subsubsection{Allowed Text Values}
+
+The text values is usually a floating point number, but could be
+an integer, or a boolean specification.
+
+\subsubsection{Examples}
+
+\begin{verbatim}
+<model>
+  ...  
+  <simulator>
+    <param name="outputPeriod" unit="hour">0.1</param>
+    <param name="agentTimeStep" unit="hour">0.1</param>
+    <param name="numStateAndGridTimeStepsPerBaseline">1</param>
+    ...  
+  </simulator>
+  ...  
+</model>
+\end{verbatim}

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<model>
+  <simulator>
+    <timeStep>
+      <param name="endOfSimulation" unit="hour">1.0</param>
+    </timeStep>
+    <param name="outputPeriod" unit="hour">0.1</param>
+    <param name="agentTimeStep" unit="hour">0.1</param>
+    <param name="numStateAndGridTimeStepsPerBaseline">1</param>
+  </simulator>
+</model>

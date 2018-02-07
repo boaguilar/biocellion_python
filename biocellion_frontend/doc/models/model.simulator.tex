@@ -1,0 +1,62 @@
+\subsection{\inlinecode{<simulator>}}
+
+
+Every \inlinecode{<model>} must contain one \inlinecode{<simulator>} tag.
+This tag is used to control high-level time related settings for the simulation.
+
+\subsubsection{Allowed Subtags}
+
+\begin{tabular}{ l | c | l}
+  Tag & Required Count & Notes\\
+  \hline
+  \hline
+  \inlinecode{<param>} & & See required parameters below.\\
+  \hline
+  \inlinecode{<timeStep>} & 1 & \\
+\end{tabular}
+
+\subsubsection{Allowed Parameters}
+
+
+\begin{tabular}{ l | c | c | c | p{1.5in} }
+  Parameter & Required & Type & Units & Notes \\
+  \hline
+  \hline
+  \inlinecode{outputPeriod} & Yes & float & time & Simulated time between data output. \\
+  \hline
+  \inlinecode{agentTimeStep} & Yes & float & time & Simulated time delta per baseline timestep \\
+  \hline
+  \inlinecode{numStateAndGridTimeStepsPerBaseline} & Yes & integer &  & Internal timesteps per baseline timestep. \\
+  \hline
+  \inlinecode{restartPreviousRun} & No & boolean & & Not supported yet. \\
+  \hline
+  \inlinecode{randomSeed} & No & integer & & Not supported yet. \\
+  \hline
+  \inlinecode{chemostat} & No & boolean & & Not supported yet. \\
+  \hline
+  \inlinecode{diffusionReactionOnAgentTime} & No & boolean & & Not supported yet. \\
+\end{tabular}
+
+
+\subsubsection{Allowed Attributes}
+
+No attributes are allowed.
+
+\subsubsection{Allowed Text Values}
+
+No text values are allowed, only subtags.
+
+\subsubsection{Example}
+
+\begin{verbatim}
+<model>
+  ...  
+  <simulator>
+    <param name="outputPeriod" unit="hour">0.1</param>
+    <param name="agentTimeStep" unit="hour">0.1</param>
+    <param name="numStateAndGridTimeStepsPerBaseline">1</param>
+    ...  
+  </simulator>
+  ...  
+</model>
+\end{verbatim}

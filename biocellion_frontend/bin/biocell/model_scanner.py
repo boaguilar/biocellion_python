@@ -30,7 +30,8 @@ class ModelScanner:
         ok = self.scanModelXML( root )
         if self.mScanMode == self.SCAN_VALIDATE_MODE:
             if ok:
-                print( "XML file validated." )
+                pass
+                # print( "XML file validated." )
             else:
                 raise Exception( "ERROR : Bad XML file" )
         elif self.mScanMode == self.SCAN_PARSE_MODE:

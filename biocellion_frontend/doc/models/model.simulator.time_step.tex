@@ -1,0 +1,55 @@
+\subsection{\inlinecode{<timeStep>}}
+
+The \inlinecode{<simulator>} must contain one \inlinecode{<timeStep>} tag.
+This tag is used to control the end of the simulation.
+
+\subsubsection{Allowed Subtags}
+
+\begin{tabular}{ l | c | l}
+  Tag & Required Count & Notes\\
+  \hline
+  \hline
+  \inlinecode{<param>} & & See required parameters below.\\
+\end{tabular}
+
+\subsubsection{Allowed Parameters}
+
+
+\begin{tabular}{ l | c | c | c | p{1.5in} }
+  Parameter & Required & Type & Units & Notes \\
+  \hline
+  \hline
+  \inlinecode{endOfSimulation} & Yes & float & time & Simulated time to end the simulation. \\
+  \hline
+  \inlinecode{adaptive} & No & boolean & & Not supported yet. \\
+  \hline
+  \inlinecode{timeStepIni} & No & float & time & Not supported yet. \\
+  \hline
+  \inlinecode{timeStepMin} & No & float & time & Not supported yet. \\
+  \hline
+  \inlinecode{timeStepMax} & No & float & time & Not supported yet. \\
+\end{tabular}
+
+
+\subsubsection{Allowed Attributes}
+
+No attributes are allowed.
+
+\subsubsection{Allowed Text Values}
+
+No text values are allowed, only subtags.
+
+\subsubsection{Example}
+
+\begin{verbatim}
+<model>
+  ...  
+  <simulator>
+    ...  
+    <timeStep>
+      <param name="endOfSimulation" unit="hour">1.0</param>
+    </timeStep>
+  </simulator>
+  ...  
+</model>
+\end{verbatim}

@@ -1,0 +1,53 @@
+\subsection{\inlinecode{<model>}}
+
+Every model must be contained in the \inlinecode{<model></model>} tag, with
+exactly one model per XML file.  Each \inlinecode{<model>} may contain the following
+tags.
+
+
+\subsubsection{Allowed Subtags}
+
+\begin{tabular}{ l | c | l}
+  Tag & Required Count & Notes\\
+  \hline
+  \hline
+  \inlinecode{<simulator>} & $1$ & \\
+  \hline
+  \inlinecode{<input>} & $0$ or $1$ & Not supported yet. \\
+  \hline
+  \inlinecode{<solute>} & $\ge 0$ & \\
+  \hline
+  \inlinecode{<molecule>} & $\ge 0$ & \\
+  \hline
+  \inlinecode{<particle>} & $\ge 0$ & \\
+  \hline
+  \inlinecode{<interaction>} & $\ge 0$ & \\
+  \hline
+  \inlinecode{<world>} & $1$ & \\
+  \hline
+  \inlinecode{<reaction>} & $\ge 0$ & \\
+  \hline
+  \inlinecode{<molecularReactions>} & $0$ & Not supported yet. \\
+  \hline
+  \inlinecode{<solver>} & $\ge 1$ & \\
+  \hline
+  \inlinecode{<agentGrid>} & $1$ & \\
+  \hline
+  \inlinecode{<species>} & $\ge 0$ & \\
+\end{tabular}
+
+\subsubsection{Allowed Attributes}
+
+No attributes are allowed.
+
+\subsubsection{Allowed Text Values}
+
+No text values are allowed, only subtags.
+
+\subsubsection{Example}
+
+\begin{verbatim}
+<model>
+  ...  
+</model>
+\end{verbatim}

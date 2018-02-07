@@ -1,0 +1,30 @@
+\documentclass{article}
+\pagestyle{empty}
+\usepackage{graphicx}
+\usepackage{wrapfig}
+
+\newcommand{\inlinecode}[1]{\texttt{#1}}
+
+
+\begin{document}
+
+\title{Biocellion Model Specification in XML}
+\date{}
+\author{}
+\maketitle
+
+Biocellion models can be represented using the XML tags and attributes discussed
+in this document.  Use \inlinecode{biocellion.py} to translate the XML model
+specification into C++ for compilation and execution.
+
+\section{XML Tags}
+
+The following tags are currently supported.  Some tags are required.
+
+\input{xml}
+\input{model}
+\input{param}
+\input{model.simulator}
+\input{model.simulator.time_step}
+
+\end{document}
