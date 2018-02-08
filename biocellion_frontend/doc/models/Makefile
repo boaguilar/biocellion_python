@@ -7,6 +7,8 @@ DEP_FILES := \
 	model.tex \
 	model.simulator.tex \
 	model.simulator.time_step.tex \
+	model.reaction.tex \
+	model.solver.tex \
 	param.tex
 
 all: $(TARGET)

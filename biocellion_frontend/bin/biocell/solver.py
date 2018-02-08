@@ -102,6 +102,8 @@ class AllSolvers( ItemHolder ):
         return
 
     def getRefineRatio( self ):
+        if len( self.mOrder ) < 1:
+            raise Exception( "ERROR: At least one <solver> must be specified." )
         refine_ratios = set( )
         for name in self.mOrder:
             refine_ratios.add( self.mItems[ name ].getRefineRatio( ) )

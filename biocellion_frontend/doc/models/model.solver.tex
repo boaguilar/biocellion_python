@@ -1,0 +1,81 @@
+\subsection{\inlinecode{<solver>}}
+
+Every \inlinecode{<model>} must contain at least one \inlinecode{<solver>} tag.
+This tag is used to configure PDE solvers for diffusion.  Even if there are no
+solutes to diffuse, a solver must still be specified.  Required biocellion
+configuration parameters, such as refine-ratio are calculated from solver
+parameters.
+
+\subsubsection{Allowed Subtags}
+
+\begin{tabular}{ l | c | l}
+  Tag & Required Count & Notes\\
+  \hline
+  \hline
+  \inlinecode{<param>} & & See required parameters below.\\
+  \hline
+  \inlinecode{<reaction>} & $\ge 0$ & References a \inlinecode{<model>.<reaction>} \\
+\end{tabular}
+
+\subsubsection{Allowed Parameters}
+
+
+\begin{tabular}{ l | c | c | c | p{1.5in} }
+  Parameter & Required & Type & Units & Notes \\
+  \hline
+  \hline
+  \inlinecode{active} & Yes & boolean & bool & Not used, but required. \\
+  \hline
+  \inlinecode{preStep} & Yes & integer & int & Number of pre-step iterations solver uses. \\
+  \hline
+  \inlinecode{postStep} & Yes & integer & int & Number of post-step iterations solver uses. \\
+  \hline
+  \inlinecode{bottomStep} & Yes & integer & int & Number of bottom-step iterations solver uses. \\
+  \hline
+  \inlinecode{nCycles} & Yes & integer & int & Number of iterations solver uses. \\
+  \hline
+  \inlinecode{pdeSolverType} & No & string & string & \inlinecode{StateSteady}, \inlinecode{TimeDependent}. \\
+  \hline
+  \inlinecode{refineRatio} & No & integer & int & AMR refinement ratio for solver. \\
+  \hline
+  \inlinecode{AMRLevels} & No & integer & int & Number of AMR levels for solver. \\
+  \hline
+  \inlinecode{numTimeSteps} & No & integer & int & Number of time steps. \\
+\end{tabular}
+
+
+\subsubsection{Allowed Attributes}
+
+\begin{tabular}{ l | c | p{1.5in} }
+  Attribute & Required & Notes \\
+  \hline
+  \hline
+  \inlinecode{name} & Yes & Name of the solver. \\
+  \hline
+  \inlinecode{class} & Yes & Not used, but required. \\
+  \hline
+  \inlinecode{domain} & Yes & \inlinecode{<ComputationDomain>} reference. \\
+\end{tabular}
+
+\subsubsection{Allowed Text Values}
+
+No text values are allowed, only subtags.
+
+\subsubsection{Example}
+
+\begin{verbatim}
+<model>
+  ...  
+  <solver class="SolverSimple" domain="MyComputationDomain" name="solutes">
+    <param name="active">true</param>
+    <param name="preStep">150</param>
+    <param name="postStep">150</param>
+    <param name="bottomStep">150</param>
+    <param name="nCycles">5</param>
+    <param name="pdeSolverType">TimeDependent</param>
+    <reaction name="MyReaction1"/>
+    ...
+  </solver> 
+  ...  
+</model>
+\end{verbatim}

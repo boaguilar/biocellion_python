@@ -8,4 +8,26 @@
     <param name="agentTimeStep" unit="hour">0.1</param>
     <param name="numStateAndGridTimeStepsPerBaseline">1</param>
   </simulator>
+
+  <reaction catalyzedBy="biomass" class="ReactionFactor" name="MyReaction1">
+    <param name="muMax" unit="hour-1">3.6</param>
+    <kineticFactor class="MonodKinetic" solute="MySolute1">
+      <param name="Ks" unit="g.L-1">0.12e-3</param>
+    </kineticFactor>
+    <yield>
+      <param name="MySolute1" unit="g.g-1">-0.1</param>
+      <param name="MySolute2" unit="g.g-1">0.1</param>
+    </yield>
+  </reaction>
+  
+  <solver class="SolverSimple" domain="MyComputationDomain" name="solutes">
+    <param name="active">true</param>
+    <param name="preStep">150</param>
+    <param name="postStep">150</param>
+    <param name="bottomStep">150</param>
+    <param name="nCycles">5</param>
+    <param name="pdeSolverType">TimeDependent</param>
+    <reaction name="MyReaction1"/>
+  </solver> 
+
 </model>

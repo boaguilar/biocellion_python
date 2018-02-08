@@ -1,0 +1,67 @@
+\subsection{\inlinecode{<model>.<reaction>}}
+
+Every \inlinecode{<model>} may contain multiple \inlinecode{<reaction>} tags.
+This tag is used to configure reactions between agents and solutes.
+These reactions are references inside of \inlinecode{<model>.<solver>} and \inlinecode{<model>.<species>} specifications.
+
+\subsubsection{Allowed Subtags}
+
+\begin{tabular}{ l | c | l}
+  Tag & Required Count & Notes\\
+  \hline
+  \hline
+  \inlinecode{<param>} & & See required parameters below.\\
+  \hline
+  \inlinecode{<kineticFactor>} & $\ge 0$ & Describes a scaling factor of the reaction. \\
+  \hline
+  \inlinecode{<yield>} & $\ge 0$ & Describes the consumption or production of a solute or particle. \\
+\end{tabular}
+
+\subsubsection{Allowed Parameters}
+
+
+\begin{tabular}{ l | c | c | c | p{1.5in} }
+  Parameter & Required & Type & Units & Notes \\
+  \hline
+  \hline
+  \inlinecode{muMax} & Yes & float & inverse time & Reaction scaling factor. \\
+\end{tabular}
+
+
+\subsubsection{Allowed Attributes}
+
+\begin{tabular}{ l | c | p{1.5in} }
+  Attribute & Required & Notes \\
+  \hline
+  \hline
+  \inlinecode{name} & Yes & Name of the reaction. \\
+  \hline
+  \inlinecode{class} & Yes & \inlinecode{ReactionFactor} \\
+  \hline
+  \inlinecode{catalyzedBy} & Yes & \inlinecode{<particle>} reference, can be empty \\
+  \hline
+  \inlinecode{catalyst} & No & \inlinecode{<species>} reference, can be empty \\
+\end{tabular}
+
+\subsubsection{Allowed Text Values}
+
+No text values are allowed, only subtags.
+
+\subsubsection{Example}
+
+\begin{verbatim}
+<model>
+  ...  
+  <reaction catalyzedBy="biomass" class="ReactionFactor" name="MyReaction1">
+    <param name="muMax" unit="hour-1">3.6</param>
+    <kineticFactor class="MonodKinetic" solute="MySolute1">
+      <param name="Ks" unit="g.L-1">0.12e-3</param>
+    </kineticFactor>
+    <yield>
+      <param name="MySolute1" unit="g.g-1">-0.1</param>
+      <param name="MySolute2" unit="g.g-1">0.1</param>
+    </yield>
+  </reaction>
+  ...  
+</model>
+\end{verbatim}
