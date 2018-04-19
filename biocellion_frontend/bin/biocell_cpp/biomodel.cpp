@@ -342,6 +342,8 @@ void BioModel::updateFileOutputInfo( FileOutputInfo& fileOutputInfo ) const {
       }
     }
     fileOutputInfo.v_particleExtraOutputVectorVarName.clear();
+    fileOutputInfo.v_particleExtraOutputVectorVarName.push_back("scale");
+    fileOutputInfo.v_particleExtraOutputVectorVarName.push_back("orient");
   } else {
     fileOutputInfo.particleOutput = false;
     fileOutputInfo.v_particleExtraOutputScalarVarName.clear();

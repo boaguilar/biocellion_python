@@ -1138,8 +1138,15 @@ void AgentSpecies::updateSpAgentOutput( const VIdx& vIdx, const SpAgent& spAgent
       }
     }
   }
+
+  v_extraVector[0][0] = spAgent.state.getRadius();
+  v_extraVector[0][1] = spAgent.state.getRadius();
+  v_extraVector[0][2] = spAgent.state.getRadius();
+  v_extraVector[1][0] = 0.0;
+  v_extraVector[1][1] = 0.0;
+  v_extraVector[1][2] = 0.0;
   
   CHECK( v_extraScalar.size() == (size_t) scalar_count );
-  CHECK( v_extraVector.size() == 0 );
+  CHECK( v_extraVector.size() == 2 );
 
 }
