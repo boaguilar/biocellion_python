@@ -143,7 +143,7 @@
          </tightJunction>
       </tightJunctions>
 
-      <initArea number="7350" shape="filledBlock">
+      <initArea number="7350">
          <param name="birthday" unit="hour">0</param>
          <coordinates x="0"    y="4"     z="4"/>
          <coordinates x="28"  y="356"  z="176"/>
