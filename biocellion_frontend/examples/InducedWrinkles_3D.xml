@@ -7,9 +7,9 @@
       <timeStep>
          <param name="adaptive">false</param>
          <param name="timeStepIni" unit="hour">1</param>
-         <param name="timeStepMin" unit="hour">0.025</param>
+         <param name="timeStepMin" unit="hour">0.5</param>
          <param name="timeStepMax" unit="hour">1</param>
-         <param name="endOfSimulation" unit="hour">500</param>
+         <param name="endOfSimulation" unit="hour">5</param>
       </timeStep>
       <param name="agentTimeStep" unit="hour">0.05</param>
    </simulator>
@@ -91,10 +91,10 @@
    </world>
 
    <reaction catalyzedBy="biomass" class="ReactionFactor" name="dummyReaction">
-      <param name="muMax" unit="hour-1">0.0</param>
+      <param name="muMax" unit="hour-1">1.0</param>
       <kineticFactor class="FirstOrderKinetic"/>
       <yield>
-         <param name="DummySolute" unit="g.g-1">0.0</param>
+         <param name="DummySolute" unit="g.g-1">0.00001</param>
       </yield>
    </reaction>
 
