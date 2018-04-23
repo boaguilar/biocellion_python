@@ -834,8 +834,9 @@ void AgentSpecies::limitMotion(VReal& disp) const {
 void AgentSpecies::setDisplacementFromMechanicalInteraction( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, SpAgentState& state/* INOUT */, VReal& disp ) const {
   
   S32 dim;
+  REAL dt = mModel->getAgentTimeStep( ); 
   for( dim = 0 ; dim < 3 ; dim ++ ) {
-    disp[ dim ] = mechIntrctData.getModelReal( mIdxMechForceReals[ dim ] );
+    disp[ dim ] = mechIntrctData.getModelReal( mIdxMechForceReals[ dim ] * dt );
     if( false ) {
       OUTPUT( 0, "disp[ " << dim <<" ]: " << disp[ dim ] );
     }
