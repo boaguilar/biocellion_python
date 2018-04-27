@@ -14,11 +14,12 @@
       <param name="agentTimeStep" unit="hour">0.05</param>
    </simulator>
 
+<!--
    <input>
     <param name="useAgentFile">false</param>
     <param name="useBulkFile">false</param>
    </input>
-
+-->
    <solute domain="MyYeastColony" name="DummySolute">
       <param name="diffusivity" unit="m2.day-1">7.8e-5</param>
       <param name="writeOutput">true</param>
@@ -149,17 +150,15 @@
          <coordinates x="28"  y="356"  z="176"/>
          <blocks      rows="5" cols="70" bars="21"/>
       </initArea>
-<!--
+
       <entryConditions>
-         <entryCondition type="location">
-            <coordinates x="0" y="157.5" z="0"/>
-            <coordinates x="10" y="202.5" z="180"/>
-         </entryCondition>
-         <entryCondition type="timing">
-            <param name="biomass"> 0.1  </param>
-            <param name="time" unit="hour">5</param>
+         <entryCondition type="location" molecule="biomass">
+            <coordinates x="-10" y="130" z="-10"/>
+            <coordinates x="14" y="230" z="190"/>
+            <param name="value" unit="float"> 0.1 </param> 
+            <param name="timestep" unit="int">5</param>
          </entryCondition>
       </entryConditions>
--->
+
    </species>
 </idynomics>
