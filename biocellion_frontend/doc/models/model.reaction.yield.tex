@@ -1,0 +1,61 @@
+\subsection{\inlinecode{<model>.<reaction>.<yield>}}
+
+Every \inlinecode{<model>.<reaction>} may contain one \inlinecode{<yield>} tag.
+This tag is used to configure solutes, particles and molecules that are consumed or produced by the reaction.  They reference \inlinecode{<model>.<particle>}, \inlinecode{<model>.<solute>} and \inlinecode{<model>.<molecule>} specifications with the name attribute of a a \inlinecode{<param>} tag.
+
+\subsubsection{Allowed Subtags}
+
+\begin{tabular}{ l | c | l}
+  Tag & Required Count & Notes\\
+  \hline
+  \hline
+  \inlinecode{<param>} & & See required parameters below.\\
+  \hline
+\end{tabular}
+
+\subsubsection{Allowed Parameters}
+
+
+\begin{tabular}{ l | c | c | c | p{1.5in} }
+  Parameter & Required & Type & Units & Notes \\
+  \hline
+  \hline
+  particle-name & No & float & mass.mass-1 & amount produced (negative means consumed) \\
+  \hline
+  solute-name & No & float & mass.mass-1 & amount produced (negative means consumed) \\
+  \hline
+  molecule-name & No & float & mass.mass-1 & amount produced (negative means consumed) \\
+\end{tabular}
+
+
+\subsubsection{Allowed Attributes}
+
+\begin{tabular}{ l | c | p{1.5in} }
+  Attribute & Required & Notes \\
+  \hline
+  \hline
+  None & No & No attributes allowed \\
+\end{tabular}
+
+\subsubsection{Allowed Text Values}
+
+The text is a numeric value.  Positive values indicate production, and negative values indicate consumption.
+
+\subsubsection{Example}
+
+\begin{verbatim}
+<model>
+  ...  
+  <reaction catalyzedBy="biomass" class="ReactionFactor" name="MyReaction1">
+    <param name="muMax" unit="hour-1">3.6</param>
+    <kineticFactor class="MonodKinetic" solute="MySolute1">
+      <param name="Ks" unit="g.L-1">0.12e-3</param>
+    </kineticFactor>
+    <yield>
+      <param name="MySolute1" unit="g.g-1">-0.1</param>
+      <param name="MySolute2" unit="g.g-1">0.1</param>
+    </yield>
+  </reaction>
+  ...  
+</model>
+\end{verbatim}
