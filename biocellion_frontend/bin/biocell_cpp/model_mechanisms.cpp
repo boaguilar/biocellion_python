@@ -537,10 +537,17 @@ MechIntrctSpAgentTightJunction::~MechIntrctSpAgentTightJunction()
 
 void MechIntrctSpAgentTightJunction::compute( const S32 iter, const VIdx& vIdx0, const SpAgent& spAgent0, const UBEnv& ubEnv0, const VIdx& vIdx1, const SpAgent& spAgent1, const UBEnv& ubEnv1, const VReal& dir/* unit direction vector from spAgent1 to spAgent0 */, const REAL& dist, MechIntrctData& mechIntrctData0, MechIntrctData& mechIntrctData1, BOOL& link, JunctionEnd& end0/* dummy if link == false */, JunctionEnd& end1/* dummy if link == false */, BOOL& unlink )
 {
+  link = false;
+  unlink = false;
+
   S32 agentType0 = spAgent0.state.getType();
   S32 agentType1 = spAgent1.state.getType();
-  REAL scale = mScales[ agentType0 ][ agentType1 ];
+
+  REAL scale = mScales[ agentType0 ][ agentType1 ];  // check this out
   REAL stiffness = mStiffnesses[ agentType0 ][ agentType1 ];
+   
+  REAL mag = 0.0 ;
+  REAL stress = 0.0; // FIXME : this will need to be computed for all possible pair-wise  mechanical interactions
 
   if( scale <= 0.0 || stiffness <= 0.0 ) {
     if( BMD_DO_DEBUG( BMD_TIGHT_JUNCTION ) ) {
@@ -549,50 +556,48 @@ void MechIntrctSpAgentTightJunction::compute( const S32 iter, const VIdx& vIdx0,
     return;
   }
 
-  S32 idx0, idx1;
-  if( !spAgent0.junctionData.isLinked( spAgent1.junctionData, idx0, idx1 ) ) {
-    // these two agents do not have a link, not close enough for tight junction
-    if( BMD_DO_DEBUG( BMD_TIGHT_JUNCTION ) ) {
-      OUTPUT( 0, "tightJunction::compute: bail out: no junction" );
-    }
-    return;
+  REAL A_AGENT_BOND_DESTROY_FACTOR = 1.8;
+  REAL A_AGENT_BOND_CREATE_FACTOR = 1.1;
+
+  REAL R0 = scale*spAgent0.state.getRadius(); 
+  REAL R1 = scale*spAgent1.state.getRadius();
+  REAL dist_threshold = R0 + R1;
+
+  if ( spAgent0.junctionData.isLinked( spAgent1.junctionData ) ) {
+      if( dist > A_AGENT_BOND_DESTROY_FACTOR * dist_threshold ) {
+          unlink = true;/* break junction */
+      }
+      else{
+              // compute elastic force
+          REAL sij = stiffness  ;
+          if ( sij  >  0.0 ) {
+              REAL D = R0 + R1;
+              REAL xij  = D - dist  ;
+              REAL Fij = 0.5 * xij * tanh(FABS(xij)*sij);
+              mag = mag + Fij ;
+              stress = stress + dist*Fij ;
+          }
+      }    
+       
   }
-  // Tight Junctions only occur if the agents have touched
-  if( !spAgent0.junctionData.getJunctionEndRef( idx0 ).getModelInt( mIntTouchedIdx ) ) {
-    if( BMD_DO_DEBUG( BMD_TIGHT_JUNCTION ) ) {
-      OUTPUT( 0, "tightJunction::compute: bail out: junction, but not touched." );
-    }
-    return;
+  else {
+      if( dist < A_AGENT_BOND_CREATE_FACTOR* dist_threshold ) {
+          link = true;/* form junction */
+          end0.setType(0);
+          end1.setType(0);
+
+          // add force right away  
+          REAL sij = stiffness ;
+          if ( sij  >  0.0 ) {
+              REAL D = R0 + R1;
+              REAL xij  = D - dist  ;
+              REAL Fij = 0.5 * xij * tanh(FABS(xij)*sij);
+              mag = mag + Fij ;
+              stress = stress + dist*Fij ;
+          }
+      }
   }
 
-  REAL R = spAgent0.state.getRadius() + spAgent1.state.getRadius();
-  REAL difference = (dist - R) / R;
-  // If two agents are separated by part of another agent,
-  // we don't want them pulling through the sandwiched agent.
-  // reducing max difference from 1.0 to 0.6
-  // FIXME: 0.6, 1.0, ???
-  if( difference > 1.0 || stiffness == 0.0 ) { // too far apart
-    if( BMD_DO_DEBUG( BMD_TIGHT_JUNCTION ) ) {
-      OUTPUT( 0, "tightJunction::compute: bail out: difference: " << difference << " stiffness: " << stiffness );
-    }
-    return;
-  }
-  REAL hyper = tanh( difference * stiffness );
-  // FIXME: unit analysis.  compare with cDynoMiCS
-  // 0.5 to share between the agents
-  // scale = um.hour-1
-  // difference = unitless [ -1, 1 ]
-  // hyper = unitless [ -1, 1 ]
-  // stiffness = unitless [ 0, oo ) 
-  // scales the responsiveness of tanh to difference
-  // if <= 1, also limits the maximum value of tanh
-  //             0   -> hyper = 0
-  //             0.5 -> medium
-  //             1   -> fast
-  //             10  -> faster
-  //             
-  REAL mag = - 0.5 * scale * fabs( difference ) * hyper * gBioModel->getAgentTimeStep( );
-  
   mechIntrctData0.setModelReal( gBioModel->getAgentSpecies()[ agentType0 ]->getIdxMechForceRealX(), dir[0] * mag );
   mechIntrctData0.setModelReal( gBioModel->getAgentSpecies()[ agentType0 ]->getIdxMechForceRealY(), dir[1] * mag );
   mechIntrctData0.setModelReal( gBioModel->getAgentSpecies()[ agentType0 ]->getIdxMechForceRealZ(), dir[2] * mag );
@@ -601,16 +606,7 @@ void MechIntrctSpAgentTightJunction::compute( const S32 iter, const VIdx& vIdx0,
   mechIntrctData1.setModelReal( gBioModel->getAgentSpecies()[ agentType1 ]->getIdxMechForceRealY(), -dir[1] * mag );
   mechIntrctData1.setModelReal( gBioModel->getAgentSpecies()[ agentType1 ]->getIdxMechForceRealZ(), -dir[2] * mag );
 
-  if( gBioModel->getInteractions( )[ INTERACTION_tightJunction ]->getParamBool( INTERACTION_writeOutput ) ) {
-    S32 dim;
-    if( BMD_DO_DEBUG( BMD_TIGHT_JUNCTION ) ) {
-      OUTPUT( 0, "tightJunction::compute: setting output values." );
-    }
-    for( dim = 0 ; dim < 3 ; dim ++ ) {
-      gBioModel->getAgentSpecies()[ agentType0 ]->setMechInteractionValue( gBioModel->getInteractions( )[ INTERACTION_tightJunction ]->getInteractionIdx( ), dim,  dir[ dim ] * mag, mechIntrctData0 );
-      gBioModel->getAgentSpecies()[ agentType1 ]->setMechInteractionValue( gBioModel->getInteractions( )[ INTERACTION_tightJunction ]->getInteractionIdx( ), dim, -dir[ dim ] * mag, mechIntrctData1 );
-    }
-  }
+  // FIXME: Need a way to stor mechanical stresss
   
 }
 

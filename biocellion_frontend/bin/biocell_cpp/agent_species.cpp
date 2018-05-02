@@ -781,12 +781,13 @@ void AgentSpecies::spAgentSecretionBySpAgent( const VIdx& vIdx, const JunctionDa
 void AgentSpecies::updateSpAgentBirthDeath( const VIdx& vIdx, const SpAgent& spAgent, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, BOOL& divide, BOOL& disappear ) const {
 
   disappear = false;
+  divide  = false;
   if ( spAgent.state.getRadius() >= getParamReal( getIdxReal( SPECIES_divRadius ) ) ) {
     divide = true;
-  } else {
-    divide = false;
+  } 
+  else if ( spAgent.state.getRadius() <=  getParamReal( getIdxReal( SPECIES_deathRadius ) )){
+    disappear = true ;
   }
-
 }
 
 /*
@@ -834,8 +835,9 @@ void AgentSpecies::limitMotion(VReal& disp) const {
 void AgentSpecies::setDisplacementFromMechanicalInteraction( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, SpAgentState& state/* INOUT */, VReal& disp ) const {
   
   S32 dim;
+  REAL dt = mModel->getAgentTimeStep( ); 
   for( dim = 0 ; dim < 3 ; dim ++ ) {
-    disp[ dim ] = mechIntrctData.getModelReal( mIdxMechForceReals[ dim ] );
+    disp[ dim ] = mechIntrctData.getModelReal( mIdxMechForceReals[ dim ] ) * dt ;
     if( false ) {
       OUTPUT( 0, "disp[ " << dim <<" ]: " << disp[ dim ] );
     }
@@ -875,6 +877,9 @@ void AgentSpecies::adjustSpAgent( const VIdx& vIdx, const JunctionData& junction
   brownianMotion( vIdx, junctionData, vOffset, mechIntrctData, nbrUBEnv, state, disp );
   adjustSpAgentChemotaxis( vIdx, junctionData, vOffset, mechIntrctData, nbrUBEnv, state, disp );
   limitMotion(disp);
+  perturbAgents( vIdx, vOffset, state );
+
+  
 }
 /*
 **************************************** ADJUSTSPAGENT END ****************************************************
@@ -1042,6 +1047,15 @@ void AgentSpecies::divideSpAgent( const VIdx& vIdx, const JunctionData& junction
   
   motherDaughterLinked = false;
   
+}
+
+void AgentSpecies::perturbAgents(const VIdx& vIdx, const VReal& vOffset, SpAgentState& state) const {
+  S32 j ;
+  for( j = 0 ; j < (S32)mEntryConditions.size( ) ; j++ ) {
+      mEntryConditions[ j ]->perturbAgents( vIdx, vOffset, state  );
+  }
+
+  return;
 }
 
 /**********************************************

@@ -7,12 +7,25 @@
       <timeStep>
          <param name="adaptive">false</param>
          <param name="timeStepIni" unit="hour">1</param>
-         <param name="timeStepMin" unit="hour">0.025</param>
+         <param name="timeStepMin" unit="hour">0.5</param>
          <param name="timeStepMax" unit="hour">1</param>
-         <param name="endOfSimulation" unit="hour">500</param>
+         <param name="endOfSimulation" unit="hour">5</param>
       </timeStep>
       <param name="agentTimeStep" unit="hour">0.05</param>
    </simulator>
+
+<!--
+   <input>
+    <param name="useAgentFile">false</param>
+    <param name="useBulkFile">false</param>
+   </input>
+-->
+   <solute domain="MyYeastColony" name="DummySolute">
+      <param name="diffusivity" unit="m2.day-1">7.8e-5</param>
+      <param name="writeOutput">true</param>
+      <param name="decayRate" unit="hour-1">0.1</param>
+      <param name="concentration" unit="g.L-1">0</param>
+   </solute> 
 
    <particle name="biomass">
       <param name="density" unit="g.L-1">150</param>
@@ -22,6 +35,16 @@
    </particle>
 
    <world>
+      <bulk name="MyTank">
+         <param name="isConstant">true</param>
+         <param name="D" unit="h-1">0.6</param>
+         <solute name="DummySolute">
+            <param name="Sbulk" unit="fg.L-1">0.0</param>
+            <param name="Sin" unit="fg.L-1">0</param>
+            <param name="isConstant">true</param>
+         </solute>
+      </bulk>
+
       <computationDomain name="MyYeastColony">
          <grid nDim="3" nI="8" nJ="8" nK="4"/>
          <param name="resolution" unit="um">45</param>
@@ -68,21 +91,31 @@
       </computationDomain>
    </world>
 
+   <reaction catalyzedBy="biomass" class="ReactionFactor" name="dummyReaction">
+      <param name="muMax" unit="hour-1">1.0</param>
+      <kineticFactor class="FirstOrderKinetic"/>
+      <yield>
+         <param name="DummySolute" unit="g.g-1">0.00001</param>
+      </yield>
+   </reaction>
+
    <solver class="SolverSimple" domain="MyYeastColony" name="solutes">
       <param name="active">true</param>
       <param name="preStep">150</param>
       <param name="postStep">150</param>
-      <param name="coarseStep">1500</param>
+      <param name="bottomStep">150</param>
+      <param name="numTimeSteps" unit="int">1</param>
+      <param name="pdeSolverType">TimeDependent</param>
       <param name="nCycles">5</param>
+      <param name="refineRatio">2</param>
+      <param name="AMRLevels">1</param>
+      <reaction name="dummyReaction"/>
    </solver>
+
 
    <agentGrid>
       <param name="computationDomain">MyYeastColony</param>
-      <param name="resolution" unit="um">8</param>
-      <param name="shovingMaxNodes">2000000</param>
-      <param name="shovingFraction" unit="hour">0.2</param>
-      <param name="shovingMaxIter">1000</param>
-      <param name="shovingMutual">true</param>
+      <param name="resolution" unit="um">45</param>
    </agentGrid>
 
    <species class="Yeast" name="GActive">
@@ -103,11 +136,15 @@
       <param name="attachToBoundaryDestroyFactor">1.8</param>
       <param name="attachCreateFactor">1.1</param>
       <param name="attachDestroyFactor">1.8</param>
-
+ 
       <tightJunctions>
-         <tightJunction stiffness="0.04" withSpecies="GActive"/>
+         <tightJunction withSpecies="GActive">
+             <param name="stiffness">0.03</param>
+             <param name="scale" unit="um.hour-1">1.0</param>
+         </tightJunction>
       </tightJunctions>
-      <initArea number="7350" shape="filledBlock">
+
+      <initArea number="7350">
          <param name="birthday" unit="hour">0</param>
          <coordinates x="0"    y="4"     z="4"/>
          <coordinates x="28"  y="356"  z="176"/>
@@ -115,14 +152,13 @@
       </initArea>
 
       <entryConditions>
-         <entryCondition type="location">
-            <coordinates x="0" y="157.5" z="0"/>
-            <coordinates x="10" y="202.5" z="180"/>
-         </entryCondition>
-         <entryCondition type="timing">
-            <param name="biomass"> 0.1  </param>
-            <param name="time" unit="hour">5</param>
+         <entryCondition type="location" molecule="biomass">
+            <coordinates x="-10" y="130" z="-10"/>
+            <coordinates x="14" y="230" z="190"/>
+            <param name="value" unit="float"> 0.1 </param> 
+            <param name="timestep" unit="int">5</param>
          </entryCondition>
       </entryConditions>
+
    </species>
 </idynomics>

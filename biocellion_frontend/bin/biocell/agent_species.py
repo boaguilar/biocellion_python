@@ -32,6 +32,7 @@ class AgentSpecies(ParamHolder):
 
         self.mInitAreas = ItemHolder( InitArea )
         self.mAdhesions = ItemHolder( Adhesion )
+        self.mEntryConditions = ItemHolder( EntryCondition )
         self.mDistanceJunctions = ItemHolder( DistanceJunction )
         self.mTightJunctions = ItemHolder( TightJunction )
         self.mChemotaxis = ItemHolder( Chemotaxis )
@@ -88,6 +89,9 @@ class AgentSpecies(ParamHolder):
         container_name = "%s->getInitAreas()" % ( varname )
         for i in range( len( self.mInitAreas ) ):
             lines.append( self.mInitAreas[ i ].getInitializeBioModel( varname, container_name, indent, depth ) )
+        container_name = "%s->getEntryConditions()" % ( varname )
+        for i in range( len( self.mEntryConditions  ) ):
+            lines.append( self.mEntryConditions[ i ].getInitializeBioModel( varname, container_name, indent, depth ) )
         container_name = "%s->getAdhesions()" % ( varname )
         for i in range( len( self.mAdhesions ) ):
             lines.append( self.mAdhesions[ i ].getInitializeBioModel( varname, container_name, indent, depth ) )
@@ -147,6 +151,9 @@ class AgentSpecies(ParamHolder):
 
     def getInitAreas( self ):
         return self.mInitAreas
+
+    def getEntryConditions( self ):
+        return self.mEntryConditions
 
     def getAdhesions( self ):
         return self.mAdhesions
@@ -368,6 +375,7 @@ class AgentSpecies(ParamHolder):
         s += str( self.mAdhesions )
         s += str( self.mDistanceJunctions )
         s += str( self.mTightJunctions )
+        s += str( self.mEntryConditions )
         s += str( self.mChemotaxis )
         s += additional
         s += "</species>"

@@ -1,20 +1,38 @@
 #ifndef _ENTRY_CONDITION_H
 #define _ENTRY_CONDITION_H
 #include "biomodel.h"
+#include <string>
+
 class EntryCondition : public ParamHolder {
 public:
   EntryCondition();
-  S32 getType() const { return mType; };
+  ~EntryCondition();
+  S32 getTimestep() const { return mTimestep; };
+  std::string getMolecule() const { return mMolecule; }; 
+  std::string getType() const { return mType; }; 
   S32 getItemIdx() const { return mItemIdx; };
-  S32 getFromSpecies() const { return mFromSpecies; };  
-  void setType(const S32& type);
-  void setItemIdx(const S32& ItemIdx);
-  void setFromSpecies(const S32& FromSpecies);
+  REAL getValue() const { return mValue; }; 
+  const Vector<Coordinates *>& getCoordinates( ) const;
+  Vector<Coordinates *>& getCoordinates( );
+  AgentSpecies* getAgentSpecies() const;
+
+  void setMolecule( const std::string& molecule );
+  void setType( const std::string& type );
+  void setTimestep( const S32& timestep );
+  void setItemIdx( const S32& ItemIdx );
+  void setValue( const REAL& value );
+  void setAgentSpecies(AgentSpecies* species);
+
+  void perturbAgents( const VIdx& vIdx, const VReal& vOffset, SpAgentState& state );
 
 protected:
-  S32 mType;
+  std::string mMolecule; 
+  std::string mType;
+  S32 mTimestep;
   S32 mItemIdx;
-  S32 mFromSpecies;
+  REAL mValue;
+  Vector<Coordinates *> mCoordinates;
+  AgentSpecies *mAgentSpecies; 
 };
 
 #endif /*_ENTRY_CONDITION_H*/

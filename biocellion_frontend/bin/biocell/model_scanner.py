@@ -923,9 +923,42 @@ class ModelScanner:
         return ok
 
     def scanSpeciesEntryConditionsXML( self, node, parent_object=None ):
-        ok = True
-        print( "species::entryConditions not scaned yet" )
+
+        may_children = ( "entryCondition", )
+        required_children = ( "entryCondition", )
+        if parent_object is None:
+            node_object = ItemHolder( EntryCondition  )
+        else:
+            node_object = parent_object.getEntryConditions( )
+            parent_object = None # don't need to add this as a child
+        child_methods = {
+            "entryCondition": self.scanSpeciesEntryConditionXML,
+        }
+
+        ok = self.scanNodeXML( node, may_children, required_children, child_methods, node_object, parent_object )
+
         return ok
+
+    def scanSpeciesEntryConditionXML( self, node, parent_object=None ):
+
+        may_children = ( "param", "coordinates", )
+        required_children = ( "param",  )
+        if parent_object is None:
+            node_object = EntryCondition( )
+        else:
+            if not parent_object.addItem(  ):
+                raise Exception( "ERROR : couldn't add a species tight junction." )
+            node_object = parent_object.getLastItem( )
+            parent_object = None # don't need to add this as a child
+        child_methods = {
+            "param": self.scanGenericParamXML,
+            "coordinates": self.scanCoordinatesXML,
+        }
+
+        ok = self.scanNodeXML( node, may_children, required_children, child_methods, node_object, parent_object )
+        
+        return ok
+
 
     def scanSpeciesChemotaxisXML( self, node, parent_object=None ):
         may_children = ( "chemotactic", )

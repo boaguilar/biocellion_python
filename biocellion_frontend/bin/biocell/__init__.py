@@ -16,6 +16,7 @@ from .agent_species_reaction import AgentSpeciesReaction
 from .chemotaxis import Chemotaxis
 from .distance_junction import DistanceJunction
 from .init_area import Blocks, Coordinates, InitArea
+from .entry_condition import EntryCondition
 from .ode_network import ODENetwork
 from .tight_junction import TightJunction
 from .agent_species import AgentSpecies, AllAgentSpecies
