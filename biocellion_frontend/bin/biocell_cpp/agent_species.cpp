@@ -532,6 +532,9 @@ void AgentSpecies::setInitialAgentState( SpAgentState& state ) const {
     }
     state.setODEVal( 0, mMolecules[ i ].getODEIdx( ), mMolecules[ i ].getInitialValue( ) );
   }
+  // FIXMEE
+  state.setModelInt( AGENT_SPECIES_INT_BOND_B, 0 );
+  
 }
 
 void AgentSpecies::setNumODEVariables( const S32& numODEVariables ) {
@@ -746,6 +749,23 @@ void AgentSpecies::updateSpAgentState( const VIdx& vIdx, const JunctionData& jun
               );
     }
   }
+
+  // update bond with agar.
+  if ( getParamReal( getIdxReal( SPECIES_tightJunctionToBoundaryStrength ) )  > 0.0 ) {
+      REAL R0 = getParamReal( getIdxReal( SPECIES_shoveFactor) ) *state.getRadius(); 
+      REAL x=((REAL)vIdx[0] +0.5)*mModel->getAgentGrid().getResolution() + vOffset[0];
+
+      if (state.getModelInt(AGENT_SPECIES_INT_BOND_B)==0){
+         if ( x < R0*getParamReal(getIdxReal(SPECIES_attachToBoundaryCreateFactor))){
+            state.setModelInt(AGENT_SPECIES_INT_BOND_B,1);
+         }
+      }
+      else{
+         if ( x > R0*getParamReal(getIdxReal(SPECIES_attachToBoundaryDestroyFactor))){
+            state.setModelInt(AGENT_SPECIES_INT_BOND_B,0);
+         }
+      }     
+  }
   
 }
 
@@ -837,7 +857,7 @@ void AgentSpecies::setDisplacementFromMechanicalInteraction( const VIdx& vIdx, c
   S32 dim;
   REAL dt = mModel->getAgentTimeStep( ); 
   for( dim = 0 ; dim < 3 ; dim ++ ) {
-    disp[ dim ] = mechIntrctData.getModelReal( mIdxMechForceReals[ dim ] ) * dt ;
+    disp[ dim ] = mechIntrctData.getModelReal( mIdxMechForceReals[ dim ] ) * dt * 0.055 ;
     if( false ) {
       OUTPUT( 0, "disp[ " << dim <<" ]: " << disp[ dim ] );
     }
@@ -860,8 +880,18 @@ void AgentSpecies::setDisplacementFromMechanicalInteraction( const VIdx& vIdx, c
       }
     }
   }
-  
-  
+
+  // Force due to Bond with agar
+  if (state.getModelInt( AGENT_SPECIES_INT_BOND_B ) == 1) {
+
+       REAL x=((REAL)vIdx[0]+0.5)*mModel->getAgentGrid( ).getResolution( )  + vOffset[0];
+
+       REAL xij = getParamReal( getIdxReal( SPECIES_shoveFactor) ) *state.getRadius() - x;
+
+       REAL mag ;
+       mag = xij * tanh( FABS(xij) *  getParamReal( getIdxReal( SPECIES_tightJunctionToBoundaryStrength ) )  );
+       disp[0] += mag*dt*0.11 ;  // stress
+  }  
 }
 
 void AgentSpecies::adjustSpAgent( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, SpAgentState& state/* INOUT */, VReal& disp ) const {
