@@ -3,23 +3,17 @@
    <simulator>
       <param name="restartPreviousRun">false</param>
       <param name="randomSeed">72</param>
-      <param name="outputPeriod" unit="hour">1</param>
+      <param name="outputPeriod" unit="hour"> 10   </param>
       <timeStep>
          <param name="adaptive">false</param>
          <param name="timeStepIni" unit="hour">1</param>
          <param name="timeStepMin" unit="hour">0.5</param>
          <param name="timeStepMax" unit="hour">1</param>
-         <param name="endOfSimulation" unit="hour">5</param>
+         <param name="endOfSimulation" unit="hour">4000</param>
       </timeStep>
-      <param name="agentTimeStep" unit="hour">0.05</param>
+      <param name="agentTimeStep" unit="hour">2</param>
    </simulator>
 
-<!--
-   <input>
-    <param name="useAgentFile">false</param>
-    <param name="useBulkFile">false</param>
-   </input>
--->
    <solute domain="MyYeastColony" name="DummySolute">
       <param name="diffusivity" unit="m2.day-1">7.8e-5</param>
       <param name="writeOutput">true</param>
@@ -46,7 +40,7 @@
       </bulk>
 
       <computationDomain name="MyYeastColony">
-         <grid nDim="3" nI="8" nJ="8" nK="4"/>
+         <grid nDim="3" nI="12" nJ="32" nK="8"/>
          <param name="resolution" unit="um">45</param>
          <param name="boundaryLayer" unit="um">0</param>
          <param name="biofilmDiffusivity">0.8</param>
@@ -60,31 +54,31 @@
          </boundaryCondition>
          <boundaryCondition class="BoundaryZeroFlux" name="yNz">
             <shape class="Planar">
-               <param name="pointIn" x="8" y="0" z="0"/>
+               <param name="pointIn" x="12" y="0" z="0"/>
                <param name="vectorOut" x="1" y="0" z="0"/>
             </shape>
          </boundaryCondition>
-         <boundaryCondition class="BoundaryZeroFlux" name="x0z">
+         <boundaryCondition class="BoundaryCyclic" name="x0z">
             <shape class="Planar">
                <param name="pointIn" x="0" y="-1" z="0"/>
                <param name="vectorOut" x="0" y="-1" z="0"/>
             </shape>
          </boundaryCondition>
-         <boundaryCondition class="BoundaryZeroFlux" name="xNz">
+         <boundaryCondition class="BoundaryCyclic" name="xNz">
             <shape class="Planar">
-               <param name="pointIn" x="0" y="8" z="0"/>
+               <param name="pointIn" x="0" y="32" z="0"/>
                <param name="vectorOut" x="0" y="1" z="0"/>
             </shape>
          </boundaryCondition>
-         <boundaryCondition class="BoundaryZeroFlux" name="x0y">
+         <boundaryCondition class="BoundaryCyclic" name="x0y">
             <shape class="Planar">
                <param name="pointIn" x="0" y="0" z="-1"/>
                <param name="vectorOut" x="0" y="0" z="-1"/>
             </shape>
          </boundaryCondition>
-         <boundaryCondition class="BoundaryZeroFlux" name="x0y">
+         <boundaryCondition class="BoundaryCyclic" name="x0y">
             <shape class="Planar">
-               <param name="pointIn" x="0" y="0" z="4"/>
+               <param name="pointIn" x="0" y="0" z="8"/>
                <param name="vectorOut" x="0" y="0" z="1"/>
             </shape>
          </boundaryCondition>
@@ -120,10 +114,10 @@
 
    <species class="Yeast" name="GActive">
       <particle name="biomass">
-         <param name="mass" unit="fg">3529.52</param>
+         <param name="mass" unit="fg">44101.0 </param>
       </particle>
       <particle name="inert">
-         <param name="mass" unit="fg">70</param>
+         <param name="mass" unit="fg">0.0</param>
       </particle>
       <param name="color">blue</param>
       <param name="computationDomain">MyYeastColony</param>
@@ -131,30 +125,33 @@
       <param name="deathRadius" unit="um">1.0</param>
       <param name="shoveFactor" unit="um">2.5</param>
       <param name="shoveLimit" unit="um">45</param>
-      <param name="tightJunctionToBoundaryStrength">0.02</param>
-      <param name="attachToBoundaryCreateFactor">1.1</param>
+      <param name="tightJunctionToBoundaryStrength">0.08</param>
+      <param name="attachToBoundaryCreateFactor">1.0</param>
       <param name="attachToBoundaryDestroyFactor">1.8</param>
       <param name="attachCreateFactor">1.1</param>
-      <param name="attachDestroyFactor">1.8</param>
+      <param name="attachDestroyFactor">1.4</param>
  
       <tightJunctions>
          <tightJunction withSpecies="GActive">
-             <param name="stiffness">0.03</param>
-             <param name="scale" unit="um.hour-1">1.0</param>
+             <param name="stiffness">0.08</param>
+             <param name="scale" unit="um.hour-1">2.5</param>
          </tightJunction>
       </tightJunctions>
 
-      <initArea number="7350">
+<!--      <initArea number="25223"> -->
+      <initArea number="18961">
          <param name="birthday" unit="hour">0</param>
-         <coordinates x="0"    y="4"     z="4"/>
-         <coordinates x="28"  y="356"  z="176"/>
+         <coordinates x="0"    y="0"     z="0"/>
+         <coordinates x="90"  y="1440"  z="360"/>
+         <!--
          <blocks      rows="5" cols="70" bars="21"/>
+         -->
       </initArea>
 
       <entryConditions>
          <entryCondition type="location" molecule="biomass">
-            <coordinates x="-10" y="130" z="-10"/>
-            <coordinates x="14" y="230" z="190"/>
+            <coordinates x="-10" y="420" z="-10"/>
+            <coordinates x="36" y="1020" z="365"/>
             <param name="value" unit="float"> 0.1 </param> 
             <param name="timestep" unit="int">5</param>
          </entryCondition>
