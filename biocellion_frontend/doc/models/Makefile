@@ -8,6 +8,8 @@ DEP_FILES := \
 	model.simulator.tex \
 	model.simulator.time_step.tex \
 	model.reaction.tex \
+	model.reaction.yield.tex \
+	model.reaction.kineticFactor.tex \
 	model.solver.tex \
 	param.tex
 
