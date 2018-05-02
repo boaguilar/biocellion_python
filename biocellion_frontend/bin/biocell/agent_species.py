@@ -287,6 +287,9 @@ class AgentSpecies(ParamHolder):
         lines = []
         lines.append( (depth*indent) + "typedef enum _%s_int_type_e {" % ( self.getEnumToken(), ) )
         depth += 1
+        #s = (depth*indent) + "%s_INT_BOND_B," % ( self.getEnumToken(), )
+        s = (depth*indent) + "AGENT_SPECIES_INT_BOND_B," #FIXME 
+        lines.append( s )
         s = (depth*indent) + "%s_NUM_INTS" % ( self.getEnumToken(), )
         lines.append( s )
         depth -= 1
